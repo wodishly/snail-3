@@ -1,5 +1,5 @@
 import { Tract } from "./gract";
-import { backCtx, temp, time, tractCtx } from "./grain";
+import { backCtx, temp, time, tractCtx } from "./main";
 import { Glottis } from "./grottis";
 import { UI } from "./grui";
 import { clamp } from "./math";

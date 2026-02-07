@@ -1,6 +1,6 @@
 import { TractUI } from "./gractui";
-import { isFirefox, time, tractCtx } from "./grain";
-import { AudioSystem, mute, unmute } from "./graudiosystem";
+import { isFirefox, time, tractCtx } from "./main";
+import { AudioSystem, oldMute, oldUnmute } from "./snail";
 import { Glottis } from "./grottis";
 import { draw, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
@@ -99,7 +99,7 @@ export const UI = {
   },
 
   drawInstructionsScreen: function () {
-    mute(AudioSystem);
+    oldMute(AudioSystem);
     var ctx = tractCtx;
     ctx.globalAlpha = 0.85;
     ctx.fillStyle = "white";
@@ -165,7 +165,7 @@ export const UI = {
     else {
       UI.inInstructionsScreen = false;
       UI.aboutButton.isOn = true;
-      unmute(AudioSystem);
+      oldUnmute(AudioSystem);
     }
   },
 

@@ -5,14 +5,16 @@ export type Z<X extends number = number, Y extends number = number> = {
   y: Y;
 };
 
+export const z = (x: number, y: number): Z => {
+  return { x, y };
+};
+
 export type Rightnook<
   X extends number = number,
   Y extends number = number,
   W extends number = number,
   H extends number = number,
-> = {
-  x: X;
-  y: Y;
+> = Z<X, Y> & {
   w: W;
   h: H;
 };
@@ -27,12 +29,13 @@ export const clamp = (n: number, lower: number, upper: number) => {
   }
 };
 
-export const nudge = (n: number, goal: number, up: number, down = up) => {
-  if (n < goal) {
-    return Math.min(n + up, goal);
-  } else {
-    return Math.max(n - down, goal);
-  }
+export const nudge = (
+  start: number,
+  end: number,
+  up: number,
+  down: number = up,
+) => {
+  return start < end ? Math.min(start + up, end) : Math.max(start - down, end);
 };
 
 export const noiseWith = (f: NoiseFunction2D, x: number) => {

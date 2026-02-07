@@ -1,4 +1,5 @@
 export const palePink = "#ffeef5";
+
 export const Mouthbook = {
   bladeStart: 10,
   noseStart: 17,
@@ -10,6 +11,33 @@ export const Mouthbook = {
 
 export const Fastenings = {
   blockLength: 512,
+  reflection: {
+    glottal: 0.75,
+    lip: -0.85,
+  },
 } as const;
 
-export const Settings = {};
+export const Settings = {
+  speed: 15, // cm/s
+  sieve: {
+    breathy: {
+      start: true,
+      type: "bandpass",
+      sharpness: 500,
+      Q: 0.5,
+    } satisfies SieveSetting,
+    sharp: {
+      start: true,
+      type: "bandpass",
+      sharpness: 1000,
+      Q: 0.5,
+    } satisfies SieveSetting,
+  },
+} as const;
+
+export type SieveSetting = {
+  start: boolean;
+  type: "bandpass";
+  sharpness: number;
+  Q: number;
+};

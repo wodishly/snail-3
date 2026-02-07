@@ -1,5 +1,5 @@
-import { backCtx, simplex1 } from "./grain";
-import { AudioSystem } from "./graudiosystem";
+import { backCtx, simplex1 } from "./main";
+import { AudioSystem } from "./snail";
 import { UI } from "./grui";
 import { clamp } from "./math";
 import { palePink } from "./settings";

@@ -23,6 +23,7 @@ export const makeButton = (
     isOn,
   };
 };
+
 export const draw = (button: Grutton, context: CanvasRenderingContext2D) => {
   var radius = 10;
   context.strokeStyle = palePink;
