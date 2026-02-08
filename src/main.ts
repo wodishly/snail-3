@@ -1,10 +1,4 @@
-import {
-  drawUi,
-  initUi,
-  makeUi,
-  shapeToFitScreen,
-  updateTouches,
-} from "./ui";
+import { drawUi, initUi, makeUi, shapeToFitScreen, updateTouches } from "./ui";
 import { makeThroat } from "./throat";
 import { Tract } from "./tract";
 import { drawTractUi, initTractUi, makeTractUi } from "./tractUi";

@@ -2,7 +2,14 @@ import { Tract } from "./tract";
 import { type Throat } from "./throat";
 import { type UiType } from "./ui";
 import { clamp, type Z } from "./help/math";
-import { Mouthbook, palePink, Settings } from "./settings";
+import {
+  Mouthbook,
+  palePink,
+  Settings,
+  tongueLowerBound,
+  tongueMiddle,
+  tongueUpperBound,
+} from "./settings";
 
 export type TractUiType = ReturnType<typeof makeTractUi>;
 
@@ -27,13 +34,9 @@ export const initTractUi = (
     Tract.diameter[i] = Tract.targetDiameter[i] = Tract.restDiameter[i];
   }
   drawBackground(tractUi, backContext, tractContext);
-  tractUi.tongueLowerIndexBound = Mouthbook.bladeStart + 2;
-  tractUi.tongueUpperIndexBound = Mouthbook.tipStart - 3;
-  tractUi.tongueIndexCentre =
-    0.5 * (tractUi.tongueLowerIndexBound + tractUi.tongueUpperIndexBound);
 };
 
-export const getIndex = (tractUi: TractUiType, x: number, y: number) => {
+export const getIndex = (x: number, y: number) => {
   const xx = x - Settings.ui.mouthUi.originX;
   const yy = y - Settings.ui.mouthUi.originY;
 
@@ -49,7 +52,7 @@ export const getIndex = (tractUi: TractUiType, x: number, y: number) => {
   );
 };
 
-export const getDiameter = (tractUi: TractUiType, x: number, y: number) => {
+export const getDiameter = (x: number, y: number) => {
   const xx = x - Settings.ui.mouthUi.originX;
   const yy = y - Settings.ui.mouthUi.originY;
 
@@ -271,18 +274,14 @@ export const drawTongueControl = (tractUi: TractUiType) => {
   //outline
   moveTractUiTo(
     tractUi,
-    tractUi.tongueLowerIndexBound,
+    tongueLowerBound(),
     Settings.ui.mouthUi.innerTongueControlRadius,
   );
-  for (
-    var i = tractUi.tongueLowerIndexBound + 1;
-    i <= tractUi.tongueUpperIndexBound;
-    i++
-  )
+  for (var i = tongueLowerBound() + 1; i <= tongueUpperBound(); i++)
     lineTractUiTo(tractUi, i, Settings.ui.mouthUi.innerTongueControlRadius);
   lineTractUiTo(
     tractUi,
-    tractUi.tongueIndexCentre,
+    tongueMiddle(),
     Settings.ui.mouthUi.outerTongueControlRadius,
   );
   tractUi.ctx.closePath();
@@ -295,15 +294,15 @@ export const drawTongueControl = (tractUi: TractUiType) => {
   var r = 3;
   tractUi.ctx.fillStyle = "orchid";
   tractUi.ctx.globalAlpha = 0.3;
-  drawCircle(tractUi, tractUi.tongueIndexCentre, a, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre - 4.25, a, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre - 8.5, a, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre + 4.25, a, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre + 8.5, a, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre - 6.1, b, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre + 6.1, b, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre, b, r);
-  drawCircle(tractUi, tractUi.tongueIndexCentre, c, r);
+  drawCircle(tractUi, tongueMiddle(), a, r);
+  drawCircle(tractUi, tongueMiddle() - 4.25, a, r);
+  drawCircle(tractUi, tongueMiddle() - 8.5, a, r);
+  drawCircle(tractUi, tongueMiddle() + 4.25, a, r);
+  drawCircle(tractUi, tongueMiddle() + 8.5, a, r);
+  drawCircle(tractUi, tongueMiddle() - 6.1, b, r);
+  drawCircle(tractUi, tongueMiddle() + 6.1, b, r);
+  drawCircle(tractUi, tongueMiddle(), b, r);
+  drawCircle(tractUi, tongueMiddle(), c, r);
 
   tractUi.ctx.globalAlpha = 1.0;
 
@@ -499,11 +498,11 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
       if (touch.fricative_intensity == 1) continue; //only new touches will pass tractUi
       var x = touch.x;
       var y = touch.y;
-      var index = getIndex(tractUi, x, y);
-      var diameter = getDiameter(tractUi, x, y);
+      var index = getIndex(x, y);
+      var diameter = getDiameter(x, y);
       if (
-        index >= tractUi.tongueLowerIndexBound - 4 &&
-        index <= tractUi.tongueUpperIndexBound + 4 &&
+        index >= tongueLowerBound() - 4 &&
+        index <= tongueUpperBound() + 4 &&
         diameter >= Settings.ui.mouthUi.innerTongueControlRadius - 0.5 &&
         diameter <= Settings.ui.mouthUi.outerTongueControlRadius + 0.5
       ) {
@@ -515,8 +514,8 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
   if (tractUi.tongueTouch != 0) {
     var x = tractUi.tongueTouch.x;
     var y = tractUi.tongueTouch.y;
-    var index = getIndex(tractUi, x, y);
-    var diameter = getDiameter(tractUi, x, y);
+    var index = getIndex(x, y);
+    var diameter = getDiameter(x, y);
     var fromPoint =
       (Settings.ui.mouthUi.outerTongueControlRadius - diameter) /
       (Settings.ui.mouthUi.outerTongueControlRadius -
@@ -529,15 +528,12 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
       Settings.ui.mouthUi.innerTongueControlRadius,
       Settings.ui.mouthUi.outerTongueControlRadius,
     );
-    //tractUi.tongueIndex = clamp(index, tractUi.tongueLowerIndexBound, tractUi.tongueUpperIndexBound);
-    var out =
-      fromPoint *
-      0.5 *
-      (tractUi.tongueUpperIndexBound - tractUi.tongueLowerIndexBound);
+    //tractUi.tongueIndex = clamp(index, tongueLowerBound(), tongueUpperBound());
+    var out = fromPoint * 0.5 * (tongueUpperBound() - tongueLowerBound());
     tractUi.tongueIndex = clamp(
       index,
-      tractUi.tongueIndexCentre - out,
-      tractUi.tongueIndexCentre + out,
+      tongueMiddle() - out,
+      tongueMiddle() + out,
     );
   }
 
@@ -552,8 +548,8 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
     if (!touch.alive) continue;
     var x = touch.x;
     var y = touch.y;
-    var index = getIndex(tractUi, x, y);
-    var diameter = getDiameter(tractUi, x, y);
+    var index = getIndex(x, y);
+    var diameter = getDiameter(x, y);
     if (
       index > Mouthbook.noseStart &&
       diameter < -Settings.ui.mouthUi.noseOffset

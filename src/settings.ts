@@ -1,3 +1,5 @@
+import { plus, minus, halve } from "./help/rime";
+
 export const palePink = "#ffeef5";
 
 export const Mouthbook = {
@@ -8,6 +10,11 @@ export const Mouthbook = {
   lipStart: 39,
   n: 44,
 } as const;
+
+export const tongueLowerBound = () => plus(Mouthbook.bladeStart, 2);
+export const tongueUpperBound = () => minus(Mouthbook.tipStart, 3);
+export const tongueMiddle = () =>
+  halve(plus(tongueLowerBound(), tongueUpperBound()));
 
 export const Fastenings = {
   blockLength: 512,

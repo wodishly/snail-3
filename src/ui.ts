@@ -179,8 +179,8 @@ const moveMouse = (
 
   rine.x = ((e.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
   rine.y = ((e.pageY - tractCanvas.offsetTop) / ui.width) * 600;
-  rine.index = getIndex(tractUi, rine.x, rine.y);
-  rine.diameter = getDiameter(tractUi, rine.x, rine.y);
+  rine.index = getIndex(rine.x, rine.y);
+  rine.diameter = getDiameter(rine.x, rine.y);
   handleUiTouches(glottis, ui, tractUi);
 };
 
@@ -265,8 +265,8 @@ export const startMouse = (
     endTime: 0,
     alive: true,
     id: `mouse${Math.random()}`,
-    index: getIndex(tractUi, z.x, z.y),
-    diameter: getDiameter(tractUi, z.x, z.y),
+    index: getIndex(z.x, z.y),
+    diameter: getDiameter(z.x, z.y),
   };
   ui.mouseTouch = rine;
   ui.touchesWithMouse.push(rine);

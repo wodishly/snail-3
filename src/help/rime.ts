@@ -5,7 +5,12 @@ import type { Assert } from "./type";
 /**
  * @param N <= 998
  */
-export type After<N extends number> = [N, ...Flight<any, N>]["length"];
+export type After<N extends number> = [
+  N,
+  ...Flight<any, N>,
+]["length"] extends infer T extends number
+  ? T
+  : never;
 export const after = <N extends number>(n: N) => (n + 1) as Assert<After<N>>;
 
 expectTypeOf<After<0>>().toEqualTypeOf(1 as const);
@@ -23,12 +28,41 @@ expectTypeOf(0 as const).toEqualTypeOf<Before<1>>();
 expectTypeOf(1 as const).toEqualTypeOf<Before<2>>();
 expectTypeOf(2 as const).toEqualTypeOf<Before<3>>();
 
+export type Plus<N extends number, M extends number> = [
+  ...Flight<any, N>,
+  ...Flight<any, M>,
+]["length"];
+export const plus = <N extends number, M extends number>(n: N, m: M) =>
+  (n + m) as Assert<Plus<N, M>>;
+
+expectTypeOf(0 as const).toEqualTypeOf<Plus<0, 0>>();
+expectTypeOf(1 as const).toEqualTypeOf<Plus<1, 0>>();
+expectTypeOf(1 as const).toEqualTypeOf<Plus<0, 1>>();
+expectTypeOf(2 as const).toEqualTypeOf<Plus<1, 1>>();
+expectTypeOf(plus(3, 4)).toEqualTypeOf<7>();
+
 export type Minus<N extends number, M extends number> =
   Flight<any, N> extends [...Flight<any, M>, ...infer R] ? R["length"] : never;
+export const minus = <N extends number, M extends number>(n: N, m: M) =>
+  (n - m) as Assert<Minus<N, M>>;
 
 expectTypeOf<Minus<0, 0>>().toEqualTypeOf(0 as const);
 expectTypeOf<Minus<1, 0>>().toEqualTypeOf(1 as const);
 expectTypeOf<Minus<4, 2>>().toEqualTypeOf(2 as const);
+
+export type Divide<N extends number, M extends number> = M extends 0
+  ? never
+  : Minus<N, M> extends never
+    ? 0
+    : After<Divide<Minus<N, M>, M>>;
+
+export type Half<N extends number> =
+  Oddly<N> extends never ? Divide<N, 2> : ParseInt<`${Divide<N, 2>}.5`>;
+export const halve = <N extends number>(n: N) => (n / 2) as Assert<Half<N>>;
+
+expectTypeOf(0 as const).toEqualTypeOf<Divide<0, 1>>();
+expectTypeOf(1 as const).toEqualTypeOf<Divide<1, 1>>();
+expectTypeOf(1 as const).toEqualTypeOf<Divide<3, 2>>();
 
 export type Modulo<N extends number, M extends number> =
   Minus<N, M> extends never ? N : Modulo<Minus<N, M>, M>;
@@ -53,20 +87,33 @@ expectTypeOf<Modulo<7, 3>>().toEqualTypeOf(1 as const);
 expectTypeOf<Modulo<7, 4>>().toEqualTypeOf(3 as const);
 expectTypeOf<Modulo<7, 5>>().toEqualTypeOf(2 as const);
 
-export type Odd<N extends number> = N extends number
+export type Oddly<N extends number> = N extends number
   ? Modulo<N, 2> extends 1
     ? N
     : never
   : never;
 
-expectTypeOf<Odd<0>>().toBeNever();
-expectTypeOf<Odd<1>>().toEqualTypeOf(1 as const);
-expectTypeOf<Odd<2>>().toBeNever();
-expectTypeOf<Odd<3>>().toEqualTypeOf(3 as const);
-expectTypeOf<Odd<4>>().toBeNever();
-expectTypeOf<Odd<5>>().toEqualTypeOf(5 as const);
-expectTypeOf<Odd<6>>().toBeNever();
-expectTypeOf<Odd<7>>().toEqualTypeOf(7 as const);
+expectTypeOf<Oddly<0>>().toBeNever();
+expectTypeOf<Oddly<1>>().toEqualTypeOf(1 as const);
+expectTypeOf<Oddly<2>>().toBeNever();
+expectTypeOf<Oddly<3>>().toEqualTypeOf(3 as const);
+expectTypeOf<Oddly<4>>().toBeNever();
+expectTypeOf<Oddly<5>>().toEqualTypeOf(5 as const);
+expectTypeOf<Oddly<6>>().toBeNever();
+expectTypeOf<Oddly<7>>().toEqualTypeOf(7 as const);
+
+export type Wholly<N extends number> = `${N}` extends `${number}.${number}`
+  ? never
+  : N;
+
+export type ParseInt<S extends string> = S extends `${infer T extends number}`
+  ? T
+  : never;
+
+expectTypeOf<Wholly<0.0>>().toEqualTypeOf(0 as const);
+expectTypeOf<Wholly<0.1>>().toBeNever();
+expectTypeOf<Wholly<1.0>>().toEqualTypeOf(1 as const);
+expectTypeOf<Wholly<1.1>>().toBeNever();
 
 /**
  * Union of the numbers `0` through `N`, inclusive.
