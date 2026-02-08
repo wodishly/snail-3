@@ -1,6 +1,6 @@
 import { reckonBlockTime, type Snail } from "./grail";
 import { getNoiseModulator, type Throat } from "./grottis";
-import { UI } from "./grui";
+import { type UiType } from "./grui";
 import { nudge, clamp } from "./math";
 import type { Upto } from "./rime";
 import { Fastenings, Mouthbook, Settings } from "./settings";
@@ -92,10 +92,11 @@ export const calculateNoseReflections = (tract: TractType) => {
 export const addTurbulenceNoise = (
   tract: TractType,
   glottis: Throat,
+  ui: UiType,
   turbulenceNoise: number,
 ) => {
-  for (var j = 0; j < UI.touchesWithMouse.length; j++) {
-    var touch = UI.touchesWithMouse[j];
+  for (var j = 0; j < ui.touchesWithMouse.length; j++) {
+    var touch = ui.touchesWithMouse[j];
     if (touch.index < 2 || touch.index > Mouthbook.n) continue;
     if (touch.diameter <= 0) continue;
     var intensity = touch.fricative_intensity;
@@ -175,6 +176,7 @@ export const runTractStep = (
   tract: TractType,
   glottis: Throat,
   audioSystem: Snail,
+  ui: UiType,
   glottalOutput: number,
   turbulenceNoise: number,
   lambda: number,
@@ -183,7 +185,7 @@ export const runTractStep = (
 
   //mouth
   processTransients(tract, audioSystem);
-  addTurbulenceNoise(tract, glottis, turbulenceNoise);
+  addTurbulenceNoise(tract, glottis, ui, turbulenceNoise);
 
   tract.junctionOutputR[0] =
     tract.L[0] * Fastenings.reflection.glottal + glottalOutput;

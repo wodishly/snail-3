@@ -24,7 +24,7 @@ export const makeButton = (
   };
 };
 
-export const draw = (button: Grutton, context: CanvasRenderingContext2D) => {
+export const drawButton = (button: Grutton, context: CanvasRenderingContext2D) => {
   var radius = 10;
   context.strokeStyle = palePink;
   context.fillStyle = palePink;

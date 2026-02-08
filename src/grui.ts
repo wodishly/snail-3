@@ -1,9 +1,8 @@
 import { TractUI } from "./gractui";
 import { mute, startSound, unmute, type Snail } from "./grail";
-import { handleTouches, type Throat } from "./grottis";
-import { draw, handleTouchStart, makeButton } from "./grutton";
+import { handleThroatTouches, type Throat } from "./grottis";
+import { drawButton, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
-import type { Wave } from "./wave";
 
 export type UiType = typeof UI;
 
@@ -17,280 +16,303 @@ export const UI = {
   debugText: "",
   autoWobble: true,
   alwaysVoice: true,
+};
 
-  init: function (audioSystem: Snail, glottis: Throat) {
-    this.touchesWithMouse = [];
-    this.mouseTouch = { alive: false, endTime: 0 };
-    this.mouseDown = false;
+export const initUi = (
+  ui: UiType,
+  audioSystem: Snail,
+  glottis: Throat,
+  tractCanvas: HTMLCanvasElement,
+) => {
+  ui.touchesWithMouse = [];
+  ui.mouseTouch = { alive: false, endTime: 0 };
+  ui.mouseDown = false;
 
-    this.aboutButton = makeButton(460, 392, 140, 30, "about...", true);
-    this.alwaysVoiceButton = makeButton(
-      460,
-      428,
-      140,
-      30,
-      "always voice",
-      true,
+  ui.aboutButton = makeButton(460, 392, 140, 30, "about...", true);
+  ui.alwaysVoiceButton = makeButton(460, 428, 140, 30, "always voice", true);
+  ui.autoWobbleButton = makeButton(460, 464, 140, 30, "pitch wobble", true);
+
+  document.addEventListener("pointerdown", (e) => {
+    ui.mouseDown = true;
+    e.preventDefault();
+    startMouse(audioSystem, glottis, ui, e);
+  });
+  document.addEventListener("pointerup", () => {
+    ui.mouseDown = false;
+    endMouse(glottis);
+  });
+  document.addEventListener("pointermove", (e) =>
+    moveMouse(glottis, tractCanvas, e),
+  );
+};
+
+const handleUiTouches = (glottis: Throat) => {
+  TractUI.handleTouches();
+  handleThroatTouches(glottis);
+};
+
+export const shapeToFitScreen = (
+  ui: UiType,
+  tractCanvas: HTMLCanvasElement,
+  backCanvas: HTMLCanvasElement,
+) => {
+  if (window.innerWidth <= window.innerHeight) {
+    ui.width = window.innerWidth - 10;
+    ui.left_margin = 5;
+    ui.top_margin = 0.5 * (window.innerHeight - ui.width);
+  } else {
+    ui.width = window.innerHeight - 10;
+    ui.left_margin = 0.5 * (window.innerWidth - ui.width);
+    ui.top_margin = 5;
+  }
+  document.body.style.marginLeft = ui.left_margin.toString();
+  document.body.style.marginTop = ui.top_margin.toString();
+  tractCanvas.style.width = ui.width.toString();
+  backCanvas.style.width = ui.width.toString();
+};
+
+export const drawUi = (
+  ui: UiType,
+  tractCtx: CanvasRenderingContext2D,
+  audioSystem: Snail,
+) => {
+  drawButton(ui.alwaysVoiceButton, tractCtx);
+  drawButton(ui.autoWobbleButton, tractCtx);
+  drawButton(ui.aboutButton, tractCtx);
+  if (ui.inAboutScreen) drawAboutScreen(tractCtx);
+  else if (ui.inInstructionsScreen)
+    drawInstructionsScreen(ui, tractCtx, audioSystem);
+};
+
+const drawAboutScreen = (tractCtx: CanvasRenderingContext2D) => {
+  tractCtx.globalAlpha = 0.8;
+  tractCtx.fillStyle = "white";
+  tractCtx.rect(0, 0, 600, 600);
+  tractCtx.fill();
+
+  drawAboutText(tractCtx);
+};
+
+const drawAboutText = (tractCtx: CanvasRenderingContext2D) => {
+  tractCtx.globalAlpha = 1.0;
+  tractCtx.fillStyle = "#C070C6";
+  tractCtx.strokeStyle = "#C070C6";
+  tractCtx.font = "50px Arial";
+  tractCtx.lineWidth = 3;
+  tractCtx.textAlign = "center";
+  tractCtx.strokeText("P i n k   T r o m b o n e", 300, 230);
+  tractCtx.fillText("P i n k   T r o m b o n e", 300, 230);
+
+  tractCtx.font = "28px Arial";
+  tractCtx.fillText("bare-handed  speech synthesis", 300, 330);
+
+  tractCtx.font = "20px Arial";
+
+  if (navigator.userAgent.toLowerCase().indexOf("firefox") > -1) {
+    tractCtx.font = "20px Arial";
+    tractCtx.fillText(
+      "(sorry - may work poorly with the Firefox browser)",
+      300,
+      430,
     );
-    this.autoWobbleButton = makeButton(460, 464, 140, 30, "pitch wobble", true);
+  }
+};
 
-    document.addEventListener("mousedown", function (event) {
-      UI.mouseDown = true;
-      event.preventDefault();
-      UI.startMouse(audioSystem, glottis, event);
-    });
-    document.addEventListener("mouseup", function (e) {
-      UI.mouseDown = false;
-      UI.endMouse(glottis, e);
-    });
-    document.addEventListener("mousemove", (e) => UI.moveMouse(glottis, e));
-  },
+const instructionsScreenHandleTouch = (
+  audioSystem: Snail,
+  x: number,
+  y: number,
+) => {
+  if (x >= 35 && x <= 265 && y >= 535 && y <= 570)
+    window.location.href = "http://venuspatrol.nfshost.com";
+  else if (x >= 370 && x <= 570 && y >= 505 && y <= 555) {
+    location.reload();
+  } else {
+    UI.inInstructionsScreen = false;
+    UI.aboutButton.isOn = true;
+    unmute(audioSystem);
+  }
+};
 
-  draw: function (tractCtx: CanvasRenderingContext2D, audioSystem: Snail) {
-    draw(this.alwaysVoiceButton, tractCtx);
-    draw(this.autoWobbleButton, tractCtx);
-    draw(this.aboutButton, tractCtx);
-    if (this.inAboutScreen) this.drawAboutScreen(tractCtx);
-    else if (this.inInstructionsScreen)
-      this.drawInstructionsScreen(tractCtx, audioSystem);
-  },
+const buttonsHandleTouchStart = (ui: UiType, touch) => {
+  handleTouchStart(ui.alwaysVoiceButton, touch);
+  ui.alwaysVoice = ui.alwaysVoiceButton.isOn;
+  handleTouchStart(ui.autoWobbleButton, touch);
+  ui.autoWobble = ui.autoWobbleButton.isOn;
+  handleTouchStart(ui.aboutButton, touch);
+};
 
-  drawAboutScreen: function (tractCtx: CanvasRenderingContext2D) {
-    var ctx = tractCtx;
-    ctx.globalAlpha = 0.8;
-    ctx.fillStyle = "white";
-    ctx.rect(0, 0, 600, 600);
-    ctx.fill();
+const moveMouse = (
+  glottis: Throat,
+  tractCanvas: HTMLCanvasElement,
+  e: PointerEvent,
+) => {
+  const touch = UI.mouseTouch;
+  if (!touch.alive) {
+    return;
+  }
 
-    this.drawAboutText(tractCtx);
-  },
+  touch.x = ((e.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
+  touch.y = ((e.pageY - tractCanvas.offsetTop) / UI.width) * 600;
+  touch.index = TractUI.getIndex(touch.x, touch.y);
+  touch.diameter = TractUI.getDiameter(touch.x, touch.y);
+  handleUiTouches(glottis);
+};
 
-  drawAboutText: function (tractCtx: CanvasRenderingContext2D) {
-    var ctx = tractCtx;
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = "#C070C6";
-    ctx.strokeStyle = "#C070C6";
-    ctx.font = "50px Arial";
-    ctx.lineWidth = 3;
-    ctx.textAlign = "center";
-    ctx.strokeText("P i n k   T r o m b o n e", 300, 230);
-    ctx.fillText("P i n k   T r o m b o n e", 300, 230);
+const endMouse = (glottis: Throat) => {
+  const touch = UI.mouseTouch;
+  if (!touch.alive) {
+    return;
+  }
+  touch.alive = false;
+  touch.endTime = performance.now() / 1000;
+  handleUiTouches(glottis);
 
-    ctx.font = "28px Arial";
-    ctx.fillText("bare-handed  speech synthesis", 300, 330);
+  if (!UI.aboutButton.isOn) UI.inInstructionsScreen = true;
+};
 
-    ctx.font = "20px Arial";
-    //ctx.fillText("(tap to start)", 300, 380);
+const write = (
+  ui: UiType,
+  tractCtx: CanvasRenderingContext2D,
+  text: string,
+) => {
+  tractCtx.fillText(text, 50, 100 + ui.instructionsLine * 22);
+  ui.instructionsLine += 1;
+  if (text === "") {
+    ui.instructionsLine -= 0.3;
+  }
+};
 
-    if (navigator.userAgent.toLowerCase().indexOf("firefox") > -1) {
-      ctx.font = "20px Arial";
-      ctx.fillText(
-        "(sorry - may work poorly with the Firefox browser)",
-        300,
-        430,
+export const updateTouches = () => {
+  const fricativeAttackTime = 0.1;
+  for (let j = UI.touchesWithMouse.length - 1; j >= 0; j--) {
+    const touch = UI.touchesWithMouse[j];
+    const time = performance.now() / 1000;
+    if (!touch.alive && time > touch.endTime + 1) {
+      UI.touchesWithMouse.splice(j, 1);
+    } else if (touch.alive) {
+      touch.fricative_intensity = clamp(
+        (time - touch.startTime) / fricativeAttackTime,
+        0,
+        1,
+      );
+    } else {
+      touch.fricative_intensity = clamp(
+        1 - (time - touch.endTime) / fricativeAttackTime,
+        0,
+        1,
       );
     }
-  },
+  }
+};
 
-  drawInstructionsScreen: function (
-    tractCtx: CanvasRenderingContext2D,
-    audioSystem: Snail,
-  ) {
-    mute(audioSystem);
-    var ctx = tractCtx;
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = "white";
-    ctx.rect(0, 0, 600, 600);
-    ctx.fill();
+export const startMouse = (
+  audioSystem: Snail,
+  glottis: Throat,
+  ui: UiType,
+  event: PointerEvent,
+) => {
+  if (!audioSystem.isStarted) {
+    audioSystem.isStarted = true;
+    startSound(audioSystem, glottis, ui);
+  }
+  if (UI.inAboutScreen) {
+    UI.inAboutScreen = false;
+    return;
+  }
+  if (UI.inInstructionsScreen) {
+    var x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
+    var y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
+    instructionsScreenHandleTouch(audioSystem, x, y);
+    return;
+  }
 
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = "#C070C6";
-    ctx.strokeStyle = "#C070C6";
-    ctx.font = "24px Arial";
-    ctx.lineWidth = 2;
-    ctx.textAlign = "center";
+  var touch = {};
+  touch.startTime = performance.now() / 1000;
+  touch.fricative_intensity = 0;
+  touch.endTime = 0;
+  touch.alive = true;
+  touch.id = "mouse" + Math.random();
+  touch.x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
+  touch.y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
+  touch.index = TractUI.getIndex(touch.x, touch.y);
+  touch.diameter = TractUI.getDiameter(touch.x, touch.y);
+  UI.mouseTouch = touch;
+  UI.touchesWithMouse.push(touch);
+  buttonsHandleTouchStart(UI, touch);
+  handleUiTouches(glottis);
+};
 
-    ctx.font = "19px Arial";
-    ctx.textAlign = "left";
-    this.instructionsLine = 0;
-    this.write(
-      tractCtx,
-      "Sound is generated in the glottis (at the bottom left) then ",
-    );
-    this.write(
-      tractCtx,
-      "filtered by the shape of the vocal tract. The voicebox ",
-    );
-    this.write(
-      tractCtx,
-      "controls the pitch and intensity of the initial sound.",
-    );
-    this.write(tractCtx, "");
-    this.write(tractCtx, "Then, to talk:");
-    this.write(tractCtx, "");
-    this.write(tractCtx, "- move the body of the tongue to shape vowels");
-    this.write(tractCtx, "");
-    this.write(
-      tractCtx,
-      "- touch the oral cavity to narrow it, for fricative consonants",
-    );
-    this.write(tractCtx, "");
-    this.write(
-      tractCtx,
-      "- touch above the oral cavity to close it, for stop consonants",
-    );
-    this.write(tractCtx, "");
-    this.write(
-      tractCtx,
-      "- touch the nasal cavity to open the velum and let sound ",
-    );
-    this.write(tractCtx, "   flow through the nose.");
-    this.write(tractCtx, "");
-    this.write(tractCtx, "");
-    this.write(tractCtx, "(tap anywhere to continue)");
+export const drawInstructionsScreen = (
+  ui: UiType,
+  tractCtx: CanvasRenderingContext2D,
+  audioSystem: Snail,
+) => {
+  mute(audioSystem);
+  var ctx = tractCtx;
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = "white";
+  ctx.rect(0, 0, 600, 600);
+  ctx.fill();
 
-    ctx.textAlign = "center";
-    ctx.fillText("[tap here to RESET]", 470, 535);
+  ctx.globalAlpha = 1.0;
+  ctx.fillStyle = "#C070C6";
+  ctx.strokeStyle = "#C070C6";
+  ctx.font = "24px Arial";
+  ctx.lineWidth = 2;
+  ctx.textAlign = "center";
 
-    this.instructionsLine = 18.8;
-    ctx.textAlign = "left";
-    this.write(tractCtx, "Pink Trombone v1.1");
-    this.write(tractCtx, "by Neil Thapen");
-    ctx.fillStyle = "blue";
-    ctx.globalAlpha = 0.6;
-    this.write(tractCtx, "venuspatrol.nfshost.com");
+  ctx.font = "19px Arial";
+  ctx.textAlign = "left";
+  ui.instructionsLine = 0;
+  write(
+    ui,
+    tractCtx,
+    "Sound is generated in the glottis (at the bottom left) then ",
+  );
+  write(
+    ui,
+    tractCtx,
+    "filtered by the shape of the vocal tract. The voicebox ",
+  );
+  write(ui, tractCtx, "controls the pitch and intensity of the initial sound.");
+  write(ui, tractCtx, "");
+  write(ui, tractCtx, "Then, to talk:");
+  write(ui, tractCtx, "");
+  write(ui, tractCtx, "- move the body of the tongue to shape vowels");
+  write(ui, tractCtx, "");
+  write(
+    ui,
+    tractCtx,
+    "- touch the oral cavity to narrow it, for fricative consonants",
+  );
+  write(ui, tractCtx, "");
+  write(
+    ui,
+    tractCtx,
+    "- touch above the oral cavity to close it, for stop consonants",
+  );
+  write(ui, tractCtx, "");
+  write(
+    ui,
+    tractCtx,
+    "- touch the nasal cavity to open the velum and let sound ",
+  );
+  write(ui, tractCtx, "   flow through the nose.");
+  write(ui, tractCtx, "");
+  write(ui, tractCtx, "");
+  write(ui, tractCtx, "(tap anywhere to continue)");
 
-    /*ctx.beginPath();
-        ctx.rect(35, 535, 230, 35);
-        ctx.rect(370, 505, 200, 50);
-        ctx.fill();*/
+  ctx.textAlign = "center";
+  ctx.fillText("[tap here to RESET]", 470, 535);
 
-    ctx.globalAlpha = 1.0;
-  },
+  ui.instructionsLine = 18.8;
+  ctx.textAlign = "left";
+  write(ui, tractCtx, "Pink Trombone v1.1");
+  write(ui, tractCtx, "by Neil Thapen");
+  ctx.fillStyle = "blue";
+  ctx.globalAlpha = 0.6;
+  write(ui, tractCtx, "venuspatrol.nfshost.com");
 
-  instructionsScreenHandleTouch: function (audioSystem: Snail, x, y) {
-    if (x >= 35 && x <= 265 && y >= 535 && y <= 570)
-      window.location.href = "http://venuspatrol.nfshost.com";
-    else if (x >= 370 && x <= 570 && y >= 505 && y <= 555)
-      location.reload(false);
-    else {
-      UI.inInstructionsScreen = false;
-      UI.aboutButton.isOn = true;
-      unmute(audioSystem);
-    }
-  },
-
-  write: function (tractCtx: CanvasRenderingContext2D, text: string) {
-    tractCtx.fillText(text, 50, 100 + this.instructionsLine * 22);
-    this.instructionsLine += 1;
-    if (text == "") this.instructionsLine -= 0.3;
-  },
-
-  buttonsHandleTouchStart: function (touch) {
-    handleTouchStart(this.alwaysVoiceButton, touch);
-    this.alwaysVoice = this.alwaysVoiceButton.isOn;
-    handleTouchStart(this.autoWobbleButton, touch);
-    this.autoWobble = this.autoWobbleButton.isOn;
-    handleTouchStart(this.aboutButton, touch);
-  },
-
-  startMouse: function (
-    audioSystem: Snail,
-    glottis: Throat,
-    event: PointerEvent,
-  ) {
-    if (!audioSystem.isStarted) {
-      audioSystem.isStarted = true;
-      startSound(audioSystem, glottis);
-    }
-    if (UI.inAboutScreen) {
-      UI.inAboutScreen = false;
-      return;
-    }
-    if (UI.inInstructionsScreen) {
-      var x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
-      var y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
-      UI.instructionsScreenHandleTouch(audioSystem, x, y);
-      return;
-    }
-
-    var touch = {};
-    touch.startTime = performance.now() / 1000;
-    touch.fricative_intensity = 0;
-    touch.endTime = 0;
-    touch.alive = true;
-    touch.id = "mouse" + Math.random();
-    touch.x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
-    touch.y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
-    touch.index = TractUI.getIndex(touch.x, touch.y);
-    touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-    UI.mouseTouch = touch;
-    UI.touchesWithMouse.push(touch);
-    UI.buttonsHandleTouchStart(touch);
-    UI.handleTouches(glottis);
-  },
-
-  moveMouse: function (glottis: Throat, e: PointerEvent) {
-    var touch = UI.mouseTouch;
-    if (!touch.alive) return;
-    touch.x = ((e.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
-    touch.y = ((e.pageY - tractCanvas.offsetTop) / UI.width) * 600;
-    touch.index = TractUI.getIndex(touch.x, touch.y);
-    touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-    UI.handleTouches(glottis);
-  },
-
-  endMouse: function (glottis: Throat) {
-    var touch = UI.mouseTouch;
-    if (!touch.alive) return;
-    touch.alive = false;
-    touch.endTime = performance.now() / 1000;
-    UI.handleTouches(glottis);
-
-    if (!UI.aboutButton.isOn) UI.inInstructionsScreen = true;
-  },
-
-  handleTouches: function (glottis: Throat) {
-    TractUI.handleTouches();
-    handleTouches(glottis);
-  },
-
-  updateTouches: function () {
-    var fricativeAttackTime = 0.1;
-    for (var j = UI.touchesWithMouse.length - 1; j >= 0; j--) {
-      var touch = UI.touchesWithMouse[j];
-      const time = performance.now() / 1000;
-      if (!touch.alive && time > touch.endTime + 1) {
-        UI.touchesWithMouse.splice(j, 1);
-      } else if (touch.alive) {
-        touch.fricative_intensity = clamp(
-          (time - touch.startTime) / fricativeAttackTime,
-          0,
-          1,
-        );
-      } else {
-        touch.fricative_intensity = clamp(
-          1 - (time - touch.endTime) / fricativeAttackTime,
-          0,
-          1,
-        );
-      }
-    }
-  },
-
-  shapeToFitScreen: function () {
-    if (window.innerWidth <= window.innerHeight) {
-      this.width = window.innerWidth - 10;
-      this.left_margin = 5;
-      this.top_margin = 0.5 * (window.innerHeight - this.width);
-    } else {
-      this.width = window.innerHeight - 10;
-      this.left_margin = 0.5 * (window.innerWidth - this.width);
-      this.top_margin = 5;
-    }
-    document.body.style.marginLeft = this.left_margin.toString();
-    document.body.style.marginTop = this.top_margin.toString();
-    tractCanvas.style.width = this.width;
-    backCanvas.style.width = this.width;
-  },
+  ctx.globalAlpha = 1.0;
 };
