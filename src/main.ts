@@ -13,9 +13,10 @@ export const simplex1 = (x: number) => noiseWith(noise, x);
 export var backCtx = (
   document.getElementById("backCanvas") as Assert<HTMLCanvasElement>
 ).getContext("2d")!;
-export var tractCtx = (
-  document.getElementById("tractCanvas") as Assert<HTMLCanvasElement>
-).getContext("2d")!;
+export const tractCanvas = document.getElementById(
+  "tractCanvas",
+) as Assert<HTMLCanvasElement>;
+export var tractCtx = tractCanvas.getContext("2d")!;
 
 export var time = 0;
 export var temp = { a: 0, b: 0 };
@@ -30,12 +31,12 @@ window.onload = () => {
   UI.init();
   Glottis.init();
   Tract.init();
-  TractUI.init();
+  TractUI.init(tractCtx);
 
   requestAnimationFrame(redraw);
   function redraw() {
     UI.shapeToFitScreen();
-    TractUI.draw();
+    TractUI.draw(tractCanvas);
     UI.draw();
     requestAnimationFrame(redraw);
     time = performance.now() / 1000;

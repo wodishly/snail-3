@@ -3,7 +3,9 @@ import { backCtx, temp, time, tractCtx } from "./main";
 import { Glottis } from "./grottis";
 import { UI } from "./grui";
 import { clamp } from "./math";
-import { palePink } from "./settings";
+import { Mouthbook, palePink } from "./settings";
+
+const TractUiSettings = {} as const;
 
 export var TractUI = {
   originX: 340,
@@ -22,26 +24,27 @@ export var TractUI = {
   fillColour: "pink",
   lineColour: "#C070C6",
 
-  init: function () {
-    this.ctx = tractCtx;
+  init: function (tractContext: CanvasRenderingContext2D) {
+    this.ctx = tractContext;
     this.setRestDiameter();
-    for (var i = 0; i < Tract.n; i++) {
+    for (var i = 0; i < Mouthbook.n; i++) {
       Tract.diameter[i] = Tract.targetDiameter[i] = Tract.restDiameter[i];
     }
     this.drawBackground();
-    this.tongueLowerIndexBound = Tract.bladeStart + 2;
-    this.tongueUpperIndexBound = Tract.tipStart - 3;
+    this.tongueLowerIndexBound = Mouthbook.bladeStart + 2;
+    this.tongueUpperIndexBound = Mouthbook.tipStart - 3;
     this.tongueIndexCentre =
       0.5 * (this.tongueLowerIndexBound + this.tongueUpperIndexBound);
   },
 
-  moveTo: function (i, d) {
-    var angle =
-      this.angleOffset + (i * this.angleScale * Math.PI) / (Tract.lipStart - 1);
-    var wobble =
-      Tract.maxAmplitude[Tract.n - 1] +
-      Tract.noseMaxAmplitude[Tract.noseLength - 1];
-    wobble *= (0.03 * Math.sin(2 * i - 50 * time) * i) / Tract.n;
+  moveTo: function (i: number, d: number) {
+    let angle =
+      this.angleOffset +
+      (i * this.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
+    let wobble =
+      Tract.maxAmplitude[Mouthbook.n - 1] +
+      Tract.noseMaxAmplitude[Mouthbook.noseLength - 1];
+    wobble *= (0.03 * Math.sin(2 * i - 50 * time) * i) / Mouthbook.n;
     angle += wobble;
     var r = this.radius - this.scale * d + 100 * wobble;
     this.ctx.moveTo(
@@ -50,53 +53,56 @@ export var TractUI = {
     );
   },
 
-  lineTo: function (i, d) {
-    var angle =
-      this.angleOffset + (i * this.angleScale * Math.PI) / (Tract.lipStart - 1);
-    var wobble =
-      Tract.maxAmplitude[Tract.n - 1] +
-      Tract.noseMaxAmplitude[Tract.noseLength - 1];
-    wobble *= (0.03 * Math.sin(2 * i - 50 * time) * i) / Tract.n;
+  lineTo: function (i: number, d: number) {
+    let angle =
+      this.angleOffset +
+      (i * this.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
+    let wobble =
+      Tract.maxAmplitude[Mouthbook.n - 1] +
+      Tract.noseMaxAmplitude[Mouthbook.noseLength - 1];
+    wobble *= (0.03 * Math.sin(2 * i - 50 * time) * i) / Mouthbook.n;
     angle += wobble;
-    var r = this.radius - this.scale * d + 100 * wobble;
+    const r = this.radius - this.scale * d + 100 * wobble;
     this.ctx.lineTo(
       this.originX - r * Math.cos(angle),
       this.originY - r * Math.sin(angle),
     );
   },
 
-  drawText: function (i, d, text) {
-    var angle =
-      this.angleOffset + (i * this.angleScale * Math.PI) / (Tract.lipStart - 1);
-    var r = this.radius - this.scale * d;
+  drawText: function (i: number, d: number, text: string) {
+    const angle =
+      this.angleOffset +
+      (i * this.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
+    const r = this.radius - this.scale * d;
     this.ctx.save();
     this.ctx.translate(
       this.originX - r * Math.cos(angle),
       this.originY - r * Math.sin(angle) + 2,
-    ); //+8);
+    );
     this.ctx.rotate(angle - Math.PI / 2);
     this.ctx.fillText(text, 0, 0);
     this.ctx.restore();
   },
 
-  drawTextStraight: function (i, d, text) {
-    var angle =
-      this.angleOffset + (i * this.angleScale * Math.PI) / (Tract.lipStart - 1);
-    var r = this.radius - this.scale * d;
+  drawTextStraight: function (i: number, d: number, text: string) {
+    const angle =
+      this.angleOffset +
+      (i * this.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
+    const r = this.radius - this.scale * d;
     this.ctx.save();
     this.ctx.translate(
       this.originX - r * Math.cos(angle),
       this.originY - r * Math.sin(angle) + 2,
-    ); //+8);
-    //this.ctx.rotate(angle-Math.PI/2);
+    );
     this.ctx.fillText(text, 0, 0);
     this.ctx.restore();
   },
 
-  drawCircle: function (i, d, radius) {
-    var angle =
-      this.angleOffset + (i * this.angleScale * Math.PI) / (Tract.lipStart - 1);
-    var r = this.radius - this.scale * d;
+  drawCircle: function (i: number, d: number, radius: number) {
+    const angle =
+      this.angleOffset +
+      (i * this.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
+    const r = this.radius - this.scale * d;
     this.ctx.beginPath();
     this.ctx.arc(
       this.originX - r * Math.cos(angle),
@@ -108,23 +114,23 @@ export var TractUI = {
     this.ctx.fill();
   },
 
-  getIndex: function (x, y) {
-    var xx = x - this.originX;
-    var yy = y - this.originY;
-    var angle = Math.atan2(yy, xx);
+  getIndex: function (x: number, y: number) {
+    const xx = x - this.originX;
+    const yy = y - this.originY;
+    let angle = Math.atan2(yy, xx);
     while (angle > 0) angle -= 2 * Math.PI;
     return (
-      ((Math.PI + angle - this.angleOffset) * (Tract.lipStart - 1)) /
+      ((Math.PI + angle - this.angleOffset) * (Mouthbook.lipStart - 1)) /
       (this.angleScale * Math.PI)
     );
   },
-  getDiameter: function (x, y) {
-    var xx = x - this.originX;
-    var yy = y - this.originY;
+  getDiameter: function (x: number, y: number) {
+    const xx = x - this.originX;
+    const yy = y - this.originY;
     return (this.radius - Math.sqrt(xx * xx + yy * yy)) / this.scale;
   },
 
-  draw: function () {
+  draw: function (tractCanvas: HTMLCanvasElement) {
     this.ctx.clearRect(0, 0, tractCanvas.width, tractCanvas.height);
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
@@ -141,8 +147,8 @@ export var TractUI = {
     this.ctx.strokeStyle = this.fillColour;
     this.ctx.fillStyle = this.fillColour;
     this.moveTo(1, 0);
-    for (var i = 1; i < Tract.n; i++) this.lineTo(i, Tract.diameter[i]);
-    for (var i = Tract.n - 1; i >= 2; i--) this.lineTo(i, 0);
+    for (var i = 1; i < Mouthbook.n; i++) this.lineTo(i, Tract.diameter[i]);
+    for (var i = Mouthbook.n - 1; i >= 2; i--) this.lineTo(i, 0);
     this.ctx.closePath();
     this.ctx.stroke();
     this.ctx.fill();
@@ -152,14 +158,14 @@ export var TractUI = {
     this.ctx.lineWidth = 2;
     this.ctx.strokeStyle = this.fillColour;
     this.ctx.fillStyle = this.fillColour;
-    this.moveTo(Tract.noseStart, -this.noseOffset);
-    for (var i = 1; i < Tract.noseLength; i++)
+    this.moveTo(Mouthbook.noseStart, -this.noseOffset);
+    for (var i = 1; i < Mouthbook.noseLength; i++)
       this.lineTo(
-        i + Tract.noseStart,
+        i + Mouthbook.noseStart,
         -this.noseOffset - Tract.noseDiameter[i] * 0.9,
       );
-    for (var i = Tract.noseLength - 1; i >= 1; i--)
-      this.lineTo(i + Tract.noseStart, -this.noseOffset);
+    for (var i = Mouthbook.noseLength - 1; i >= 1; i--)
+      this.lineTo(i + Mouthbook.noseStart, -this.noseOffset);
     this.ctx.closePath();
     //this.ctx.stroke();
     this.ctx.fill();
@@ -169,10 +175,10 @@ export var TractUI = {
     this.ctx.lineWidth = 2;
     this.ctx.strokeStyle = this.fillColour;
     this.ctx.fillStyle = this.fillColour;
-    this.moveTo(Tract.noseStart - 2, 0);
-    this.lineTo(Tract.noseStart, -this.noseOffset);
-    this.lineTo(Tract.noseStart + velumAngle, -this.noseOffset);
-    this.lineTo(Tract.noseStart + velumAngle - 2, 0);
+    this.moveTo(Mouthbook.noseStart - 2, 0);
+    this.lineTo(Mouthbook.noseStart, -this.noseOffset);
+    this.lineTo(Mouthbook.noseStart + velumAngle, -this.noseOffset);
+    this.lineTo(Mouthbook.noseStart + velumAngle - 2, 0);
     this.ctx.closePath();
     this.ctx.stroke();
     this.ctx.fill();
@@ -182,12 +188,12 @@ export var TractUI = {
     this.ctx.font = "20px Arial";
     this.ctx.textAlign = "center";
     this.ctx.globalAlpha = 1.0;
-    this.drawText(Tract.n * 0.1, 0.425, "throat");
-    this.drawText(Tract.n * 0.71, -1.8, "nasal");
-    this.drawText(Tract.n * 0.71, -1.3, "cavity");
+    this.drawText(Mouthbook.n * 0.1, 0.425, "throat");
+    this.drawText(Mouthbook.n * 0.71, -1.8, "nasal");
+    this.drawText(Mouthbook.n * 0.71, -1.3, "cavity");
     this.ctx.font = "22px Arial";
-    this.drawText(Tract.n * 0.6, 0.9, "oral");
-    this.drawText(Tract.n * 0.7, 0.9, "cavity");
+    this.drawText(Mouthbook.n * 0.6, 0.9, "oral");
+    this.drawText(Mouthbook.n * 0.7, 0.9, "cavity");
 
     this.drawAmplitudes();
 
@@ -198,11 +204,15 @@ export var TractUI = {
     this.ctx.lineJoin = "round";
     this.ctx.lineCap = "round";
     this.moveTo(1, Tract.diameter[0]);
-    for (var i = 2; i < Tract.n; i++) this.lineTo(i, Tract.diameter[i]);
+    for (let i = 2; i < Mouthbook.n; i++) this.lineTo(i, Tract.diameter[i]);
     this.moveTo(1, 0);
-    for (var i = 2; i <= Tract.noseStart - 2; i++) this.lineTo(i, 0);
-    this.moveTo(Tract.noseStart + velumAngle - 2, 0);
-    for (var i = Tract.noseStart + Math.ceil(velumAngle) - 2; i < Tract.n; i++)
+    for (let i = 2; i <= Mouthbook.noseStart - 2; i++) this.lineTo(i, 0);
+    this.moveTo(Mouthbook.noseStart + velumAngle - 2, 0);
+    for (
+      let i = Mouthbook.noseStart + Math.ceil(velumAngle) - 2;
+      i < Mouthbook.n;
+      i++
+    )
       this.lineTo(i, 0);
     this.ctx.stroke();
 
@@ -211,24 +221,24 @@ export var TractUI = {
     this.ctx.lineWidth = 5;
     this.ctx.strokeStyle = this.lineColour;
     this.ctx.lineJoin = "round";
-    this.moveTo(Tract.noseStart, -this.noseOffset);
-    for (var i = 1; i < Tract.noseLength; i++)
+    this.moveTo(Mouthbook.noseStart, -this.noseOffset);
+    for (var i = 1; i < Mouthbook.noseLength; i++)
       this.lineTo(
-        i + Tract.noseStart,
+        i + Mouthbook.noseStart,
         -this.noseOffset - Tract.noseDiameter[i] * 0.9,
       );
-    this.moveTo(Tract.noseStart + velumAngle, -this.noseOffset);
-    for (var i = Math.ceil(velumAngle); i < Tract.noseLength; i++)
-      this.lineTo(i + Tract.noseStart, -this.noseOffset);
+    this.moveTo(Mouthbook.noseStart + velumAngle, -this.noseOffset);
+    for (let i = Math.ceil(velumAngle); i < Mouthbook.noseLength; i++)
+      this.lineTo(i + Mouthbook.noseStart, -this.noseOffset);
     this.ctx.stroke();
 
     //velum
     this.ctx.globalAlpha = velum * 5;
     this.ctx.beginPath();
-    this.moveTo(Tract.noseStart - 2, 0);
-    this.lineTo(Tract.noseStart, -this.noseOffset);
-    this.moveTo(Tract.noseStart + velumAngle - 2, 0);
-    this.lineTo(Tract.noseStart + velumAngle, -this.noseOffset);
+    this.moveTo(Mouthbook.noseStart - 2, 0);
+    this.lineTo(Mouthbook.noseStart, -this.noseOffset);
+    this.moveTo(Mouthbook.noseStart + velumAngle - 2, 0);
+    this.lineTo(Mouthbook.noseStart + velumAngle, -this.noseOffset);
     this.ctx.stroke();
 
     this.ctx.fillStyle = "orchid";
@@ -236,8 +246,8 @@ export var TractUI = {
     this.ctx.textAlign = "center";
     this.ctx.globalAlpha = 0.7;
     this.drawText(
-      Tract.n * 0.95,
-      0.8 + 0.8 * Tract.diameter[Tract.n - 1],
+      Mouthbook.n * 0.95,
+      0.8 + 0.8 * Tract.diameter[Mouthbook.n - 1],
       " lip",
     );
 
@@ -245,7 +255,6 @@ export var TractUI = {
     this.ctx.fillStyle = "black";
     this.ctx.textAlign = "left";
     this.ctx.fillText(UI.debugText, 20, 20);
-    //this.drawPositions();
   },
 
   drawBackground: function () {
@@ -256,26 +265,26 @@ export var TractUI = {
     this.ctx.font = "20px Arial";
     this.ctx.textAlign = "center";
     this.ctx.globalAlpha = 0.7;
-    this.drawText(Tract.n * 0.44, -0.28, "soft");
-    this.drawText(Tract.n * 0.51, -0.28, "palate");
-    this.drawText(Tract.n * 0.77, -0.28, "hard");
-    this.drawText(Tract.n * 0.84, -0.28, "palate");
-    this.drawText(Tract.n * 0.95, -0.28, " lip");
+    this.drawText(Mouthbook.n * 0.44, -0.28, "soft");
+    this.drawText(Mouthbook.n * 0.51, -0.28, "palate");
+    this.drawText(Mouthbook.n * 0.77, -0.28, "hard");
+    this.drawText(Mouthbook.n * 0.84, -0.28, "palate");
+    this.drawText(Mouthbook.n * 0.95, -0.28, " lip");
 
     this.ctx.font = "17px Arial";
-    this.drawTextStraight(Tract.n * 0.18, 3, "  tongue control");
+    this.drawTextStraight(Mouthbook.n * 0.18, 3, "  tongue control");
     this.ctx.textAlign = "left";
-    this.drawText(Tract.n * 1.03, -1.07, "nasals");
-    this.drawText(Tract.n * 1.03, -0.28, "stops");
-    this.drawText(Tract.n * 1.03, 0.51, "fricatives");
+    this.drawText(Mouthbook.n * 1.03, -1.07, "nasals");
+    this.drawText(Mouthbook.n * 1.03, -0.28, "stops");
+    this.drawText(Mouthbook.n * 1.03, 0.51, "fricatives");
     //this.drawTextStraight(1.5, +0.8, "glottis")
     this.ctx.strokeStyle = "orchid";
     this.ctx.lineWidth = 2;
     this.ctx.beginPath();
-    this.moveTo(Tract.n * 1.03, 0);
-    this.lineTo(Tract.n * 1.07, 0);
-    this.moveTo(Tract.n * 1.03, -this.noseOffset);
-    this.lineTo(Tract.n * 1.07, -this.noseOffset);
+    this.moveTo(Mouthbook.n * 1.03, 0);
+    this.lineTo(Mouthbook.n * 1.07, 0);
+    this.moveTo(Mouthbook.n * 1.03, -this.noseOffset);
+    this.lineTo(Mouthbook.n * 1.07, -this.noseOffset);
     this.ctx.stroke();
     this.ctx.globalAlpha = 0.9;
     this.ctx.globalAlpha = 1.0;
@@ -343,19 +352,19 @@ export var TractUI = {
     this.ctx.strokeStyle = "orchid";
     this.ctx.lineCap = "butt";
     this.ctx.globalAlpha = 0.3;
-    for (var i = 2; i < Tract.n - 1; i++) {
+    for (var i = 2; i < Mouthbook.n - 1; i++) {
       this.ctx.beginPath();
       this.ctx.lineWidth = Math.sqrt(Tract.maxAmplitude[i]) * 3;
       this.moveTo(i, 0);
       this.lineTo(i, Tract.diameter[i]);
       this.ctx.stroke();
     }
-    for (var i = 1; i < Tract.noseLength - 1; i++) {
+    for (var i = 1; i < Mouthbook.noseLength - 1; i++) {
       this.ctx.beginPath();
       this.ctx.lineWidth = Math.sqrt(Tract.noseMaxAmplitude[i]) * 3;
-      this.moveTo(i + Tract.noseStart, -this.noseOffset);
+      this.moveTo(i + Mouthbook.noseStart, -this.noseOffset);
       this.lineTo(
-        i + Tract.noseStart,
+        i + Mouthbook.noseStart,
         -this.noseOffset - Tract.noseDiameter[i] * 0.9,
       );
       this.ctx.stroke();
@@ -406,7 +415,7 @@ export var TractUI = {
     //circle for tongue position
     var angle =
       this.angleOffset +
-      (this.tongueIndex * this.angleScale * Math.PI) / (Tract.lipStart - 1);
+      (this.tongueIndex * this.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
     var r = this.radius - this.scale * this.tongueDiameter;
     var x = this.originX - r * Math.cos(angle);
     var y = this.originY - r * Math.sin(angle);
@@ -444,14 +453,16 @@ export var TractUI = {
   },
 
   setRestDiameter: function () {
-    for (var i = Tract.bladeStart; i < Tract.lipStart; i++) {
+    for (var i = Mouthbook.bladeStart; i < Mouthbook.lipStart; i++) {
       var t =
         (1.1 * Math.PI * (this.tongueIndex - i)) /
-        (Tract.tipStart - Tract.bladeStart);
+        (Mouthbook.tipStart - Mouthbook.bladeStart);
       var fixedTongueDiameter = 2 + (this.tongueDiameter - 2) / 1.5;
       var curve = (1.5 - fixedTongueDiameter + this.gridOffset) * Math.cos(t);
-      if (i == Tract.bladeStart - 2 || i == Tract.lipStart - 1) curve *= 0.8;
-      if (i == Tract.bladeStart || i == Tract.lipStart - 2) curve *= 0.94;
+      if (i == Mouthbook.bladeStart - 2 || i == Mouthbook.lipStart - 1)
+        curve *= 0.8;
+      if (i == Mouthbook.bladeStart || i == Mouthbook.lipStart - 2)
+        curve *= 0.94;
       Tract.restDiameter[i] = 1.5 - curve;
     }
   },
@@ -508,7 +519,7 @@ export var TractUI = {
     }
 
     this.setRestDiameter();
-    for (var i = 0; i < Tract.n; i++)
+    for (var i = 0; i < Mouthbook.n; i++)
       Tract.targetDiameter[i] = Tract.restDiameter[i];
 
     //other constrictions and nose
@@ -520,7 +531,7 @@ export var TractUI = {
       var y = touch.y;
       var index = TractUI.getIndex(x, y);
       var diameter = TractUI.getDiameter(x, y);
-      if (index > Tract.noseStart && diameter < -this.noseOffset) {
+      if (index > Mouthbook.noseStart && diameter < -this.noseOffset) {
         Tract.velumTarget = 0.4;
       }
       temp.a = index;
@@ -530,17 +541,17 @@ export var TractUI = {
       if (diameter < 0) diameter = 0;
       var width = 2;
       if (index < 25) width = 10;
-      else if (index >= Tract.tipStart) width = 5;
-      else width = 10 - (5 * (index - 25)) / (Tract.tipStart - 25);
+      else if (index >= Mouthbook.tipStart) width = 5;
+      else width = 10 - (5 * (index - 25)) / (Mouthbook.tipStart - 25);
       if (
         index >= 2 &&
-        index < Tract.n &&
+        index < Mouthbook.n &&
         y < tractCanvas.height &&
         diameter < 3
       ) {
         let intIndex = Math.round(index);
         for (var i = -Math.ceil(width) - 1; i < width + 1; i++) {
-          if (intIndex + i < 0 || intIndex + i >= Tract.n) continue;
+          if (intIndex + i < 0 || intIndex + i >= Mouthbook.n) continue;
           var relpos = intIndex + i - index;
           relpos = Math.abs(relpos) - 0.5;
           var shrink;
