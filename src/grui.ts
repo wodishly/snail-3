@@ -4,18 +4,20 @@ import { handleThroatTouches, type Throat } from "./grottis";
 import { drawButton, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
 
-export type UiType = typeof UI;
+export type UiType = ReturnType<typeof makeUi>;
 
-export const UI = {
-  width: 600,
-  top_margin: 5,
-  left_margin: 5,
-  inAboutScreen: true,
-  inInstructionsScreen: false,
-  instructionsLine: 0,
-  debugText: "",
-  autoWobble: true,
-  alwaysVoice: true,
+export const makeUi = () => {
+  return {
+    width: 600,
+    top_margin: 5,
+    left_margin: 5,
+    inAboutScreen: true,
+    inInstructionsScreen: false,
+    instructionsLine: 0,
+    debugText: "",
+    autoWobble: true,
+    alwaysVoice: true,
+  };
 };
 
 export const initUi = (
@@ -39,16 +41,16 @@ export const initUi = (
   });
   document.addEventListener("pointerup", () => {
     ui.mouseDown = false;
-    endMouse(glottis);
+    endMouse(glottis, ui);
   });
   document.addEventListener("pointermove", (e) =>
-    moveMouse(glottis, tractCanvas, e),
+    moveMouse(glottis, ui, tractCanvas, e),
   );
 };
 
-const handleUiTouches = (glottis: Throat) => {
-  TractUI.handleTouches();
-  handleThroatTouches(glottis);
+const handleUiTouches = (glottis: Throat, ui: UiType) => {
+  TractUI.handleTouches(ui);
+  handleThroatTouches(glottis, ui);
 };
 
 export const shapeToFitScreen = (
@@ -119,6 +121,7 @@ const drawAboutText = (tractCtx: CanvasRenderingContext2D) => {
 };
 
 const instructionsScreenHandleTouch = (
+  ui: UiType,
   audioSystem: Snail,
   x: number,
   y: number,
@@ -128,8 +131,8 @@ const instructionsScreenHandleTouch = (
   else if (x >= 370 && x <= 570 && y >= 505 && y <= 555) {
     location.reload();
   } else {
-    UI.inInstructionsScreen = false;
-    UI.aboutButton.isOn = true;
+    ui.inInstructionsScreen = false;
+    ui.aboutButton.isOn = true;
     unmute(audioSystem);
   }
 };
@@ -144,31 +147,32 @@ const buttonsHandleTouchStart = (ui: UiType, touch) => {
 
 const moveMouse = (
   glottis: Throat,
+  ui: UiType,
   tractCanvas: HTMLCanvasElement,
   e: PointerEvent,
 ) => {
-  const touch = UI.mouseTouch;
+  const touch = ui.mouseTouch;
   if (!touch.alive) {
     return;
   }
 
-  touch.x = ((e.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
-  touch.y = ((e.pageY - tractCanvas.offsetTop) / UI.width) * 600;
+  touch.x = ((e.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
+  touch.y = ((e.pageY - tractCanvas.offsetTop) / ui.width) * 600;
   touch.index = TractUI.getIndex(touch.x, touch.y);
   touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-  handleUiTouches(glottis);
+  handleUiTouches(glottis, ui);
 };
 
-const endMouse = (glottis: Throat) => {
-  const touch = UI.mouseTouch;
+const endMouse = (glottis: Throat, ui: UiType) => {
+  const touch = ui.mouseTouch;
   if (!touch.alive) {
     return;
   }
   touch.alive = false;
   touch.endTime = performance.now() / 1000;
-  handleUiTouches(glottis);
+  handleUiTouches(glottis, ui);
 
-  if (!UI.aboutButton.isOn) UI.inInstructionsScreen = true;
+  if (!ui.aboutButton.isOn) ui.inInstructionsScreen = true;
 };
 
 const write = (
@@ -183,13 +187,13 @@ const write = (
   }
 };
 
-export const updateTouches = () => {
+export const updateTouches = (ui: UiType) => {
   const fricativeAttackTime = 0.1;
-  for (let j = UI.touchesWithMouse.length - 1; j >= 0; j--) {
-    const touch = UI.touchesWithMouse[j];
+  for (let j = ui.touchesWithMouse.length - 1; j >= 0; j--) {
+    const touch = ui.touchesWithMouse[j];
     const time = performance.now() / 1000;
     if (!touch.alive && time > touch.endTime + 1) {
-      UI.touchesWithMouse.splice(j, 1);
+      ui.touchesWithMouse.splice(j, 1);
     } else if (touch.alive) {
       touch.fricative_intensity = clamp(
         (time - touch.startTime) / fricativeAttackTime,
@@ -216,14 +220,14 @@ export const startMouse = (
     audioSystem.isStarted = true;
     startSound(audioSystem, glottis, ui);
   }
-  if (UI.inAboutScreen) {
-    UI.inAboutScreen = false;
+  if (ui.inAboutScreen) {
+    ui.inAboutScreen = false;
     return;
   }
-  if (UI.inInstructionsScreen) {
-    var x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
-    var y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
-    instructionsScreenHandleTouch(audioSystem, x, y);
+  if (ui.inInstructionsScreen) {
+    var x = ((event.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
+    var y = ((event.pageY - tractCanvas.offsetTop) / ui.width) * 600;
+    instructionsScreenHandleTouch(ui, audioSystem, x, y);
     return;
   }
 
@@ -233,14 +237,14 @@ export const startMouse = (
   touch.endTime = 0;
   touch.alive = true;
   touch.id = "mouse" + Math.random();
-  touch.x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
-  touch.y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
+  touch.x = ((event.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
+  touch.y = ((event.pageY - tractCanvas.offsetTop) / ui.width) * 600;
   touch.index = TractUI.getIndex(touch.x, touch.y);
   touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-  UI.mouseTouch = touch;
-  UI.touchesWithMouse.push(touch);
-  buttonsHandleTouchStart(UI, touch);
-  handleUiTouches(glottis);
+  ui.mouseTouch = touch;
+  ui.touchesWithMouse.push(touch);
+  buttonsHandleTouchStart(ui, touch);
+  handleUiTouches(glottis, ui);
 };
 
 export const drawInstructionsScreen = (

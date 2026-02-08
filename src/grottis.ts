@@ -1,5 +1,5 @@
 import { type Snail } from "./grail";
-import { UI } from "./grui";
+import { type UiType } from "./grui";
 import { clamp, type Z } from "./math";
 import { Settings } from "./settings";
 import { createNoise2D } from "simplex-noise";
@@ -85,14 +85,14 @@ export const getNoiseModulator = (throat: Throat) => {
   );
 };
 
-export const handleThroatTouches = (throat: Throat) => {
+export const handleThroatTouches = (throat: Throat, ui: UiType) => {
   if (throat.touch !== undefined && !throat.touch.isAlive) {
     throat.touch = undefined;
   }
 
   if (throat.touch === undefined) {
-    for (let j = 0; j < UI.touchesWithMouse.length; j++) {
-      const touch = UI.touchesWithMouse[j];
+    for (let j = 0; j < ui.touchesWithMouse.length; j++) {
+      const touch = ui.touchesWithMouse[j];
       if (!touch.alive) {
         continue;
       }
@@ -165,7 +165,7 @@ export const runGlottisStep = (
   return out;
 };
 
-export const finishGlottisBlock = (glottis: Throat) => {
+export const finishGlottisBlock = (glottis: Throat, ui: UiType) => {
   let vibrato = 0;
   vibrato +=
     Settings.vibrato.amount *
@@ -173,7 +173,7 @@ export const finishGlottisBlock = (glottis: Throat) => {
   vibrato += 0.02 * glottis.noise(glottis.totalTime * 4.07);
   vibrato += 0.04 * glottis.noise(glottis.totalTime * 2.15);
 
-  if (UI.autoWobble) {
+  if (ui.autoWobble) {
     vibrato += 0.2 * glottis.noise(glottis.totalTime * 0.98);
     vibrato += 0.4 * glottis.noise(glottis.totalTime * 0.5);
   }
@@ -200,12 +200,12 @@ export const finishGlottisBlock = (glottis: Throat) => {
     0.1 * glottis.noise(glottis.totalTime * 0.46) +
     0.05 * glottis.noise(glottis.totalTime * 0.36);
 
-  if (!glottis.isTouched && UI.alwaysVoice) {
+  if (!glottis.isTouched && ui.alwaysVoice) {
     glottis.tenseness.niw +=
       (3 - glottis.tenseness.ui) * (1 - glottis.intensity);
   }
 
-  if (glottis.isTouched || UI.alwaysVoice) {
+  if (glottis.isTouched || ui.alwaysVoice) {
     glottis.intensity += 0.13;
   } else {
     glottis.intensity -= 0.05;

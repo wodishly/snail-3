@@ -68,7 +68,7 @@ export const doScriptProcessor = (
     vocalOutput += Tract.lipOutput + Tract.noseOutput;
     outArray[j] = vocalOutput * 0.125;
   }
-  finishGlottisBlock(glottis);
+  finishGlottisBlock(glottis, ui);
   finishTractBlock(Tract, audioSystem);
 };
 

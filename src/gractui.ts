@@ -1,6 +1,6 @@
 import { Tract } from "./gract";
 import { type Throat } from "./grottis";
-import { UI } from "./grui";
+import { type UiType } from "./grui";
 import { clamp, type Z } from "./math";
 import { Mouthbook, palePink } from "./settings";
 
@@ -136,7 +136,7 @@ export var TractUI = {
     return (this.radius - Math.sqrt(xx * xx + yy * yy)) / this.scale;
   },
 
-  draw: function (glottis: Throat, canvasSize: Z) {
+  drawTractUi: function (glottis: Throat, ui: UiType, canvasSize: Z) {
     this.ctx.clearRect(0, 0, canvasSize.x, canvasSize.y);
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
@@ -260,7 +260,7 @@ export var TractUI = {
     this.ctx.globalAlpha = 1.0;
     this.ctx.fillStyle = "black";
     this.ctx.textAlign = "left";
-    this.ctx.fillText(UI.debugText, 20, 20);
+    this.ctx.fillText(ui.debugText, 20, 20);
   },
 
   drawBackground: function (
@@ -419,12 +419,12 @@ export var TractUI = {
     }
   },
 
-  handleTouches: function () {
+  handleTouches: function (ui: UiType) {
     if (this.tongueTouch != 0 && !this.tongueTouch.alive) this.tongueTouch = 0;
 
     if (this.tongueTouch == 0) {
-      for (var j = 0; j < UI.touchesWithMouse.length; j++) {
-        var touch = UI.touchesWithMouse[j];
+      for (var j = 0; j < ui.touchesWithMouse.length; j++) {
+        var touch = ui.touchesWithMouse[j];
         if (!touch.alive) continue;
         if (touch.fricative_intensity == 1) continue; //only new touches will pass this
         var x = touch.x;
@@ -476,8 +476,8 @@ export var TractUI = {
 
     //other constrictions and nose
     Tract.velumTarget = 0.01;
-    for (var j = 0; j < UI.touchesWithMouse.length; j++) {
-      var touch = UI.touchesWithMouse[j];
+    for (var j = 0; j < ui.touchesWithMouse.length; j++) {
+      var touch = ui.touchesWithMouse[j];
       if (!touch.alive) continue;
       var x = touch.x;
       var y = touch.y;
