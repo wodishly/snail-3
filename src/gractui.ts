@@ -1,5 +1,5 @@
 import { Tract } from "./gract";
-import { backCtx, temp, time, tractCtx } from "./main";
+import { temp, time } from "./main";
 import { Glottis } from "./grottis";
 import { UI } from "./grui";
 import { clamp } from "./math";
@@ -24,13 +24,16 @@ export var TractUI = {
   fillColour: "pink",
   lineColour: "#C070C6",
 
-  init: function (tractContext: CanvasRenderingContext2D) {
+  init: function (
+    backContext: CanvasRenderingContext2D,
+    tractContext: CanvasRenderingContext2D,
+  ) {
     this.ctx = tractContext;
     this.setRestDiameter();
     for (var i = 0; i < Mouthbook.n; i++) {
       Tract.diameter[i] = Tract.targetDiameter[i] = Tract.restDiameter[i];
     }
-    this.drawBackground();
+    this.drawBackground(backContext, tractContext);
     this.tongueLowerIndexBound = Mouthbook.bladeStart + 2;
     this.tongueUpperIndexBound = Mouthbook.tipStart - 3;
     this.tongueIndexCentre =
@@ -257,8 +260,11 @@ export var TractUI = {
     this.ctx.fillText(UI.debugText, 20, 20);
   },
 
-  drawBackground: function () {
-    this.ctx = backCtx;
+  drawBackground: function (
+    backContext: CanvasRenderingContext2D,
+    tractContext: CanvasRenderingContext2D,
+  ) {
+    this.ctx = backContext;
 
     //text
     this.ctx.fillStyle = "orchid";
@@ -288,7 +294,7 @@ export var TractUI = {
     this.ctx.stroke();
     this.ctx.globalAlpha = 0.9;
     this.ctx.globalAlpha = 1.0;
-    this.ctx = tractCtx;
+    this.ctx = tractContext;
   },
 
   drawPositions: function () {

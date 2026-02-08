@@ -55,7 +55,7 @@ export const UI = {
     document.addEventListener("mousemove", UI.moveMouse);
   },
 
-  draw: function () {
+  draw: function (tractCtx: CanvasRenderingContext2D) {
     draw(this.alwaysVoiceButton, tractCtx);
     draw(this.autoWobbleButton, tractCtx);
     draw(this.aboutButton, tractCtx);
@@ -184,6 +184,7 @@ export const UI = {
     this.autoWobble = this.autoWobbleButton.isOn;
     handleTouchStart(this.aboutButton, touch);
   },
+
   startTouches: function (event) {
     event.preventDefault();
     if (!AudioSystem.started) {

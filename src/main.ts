@@ -10,9 +10,6 @@ import { AudioSystem, initAudioSystem } from "./grail";
 const noise = createNoise2D();
 export const simplex1 = (x: number) => noiseWith(noise, x);
 
-export var backCtx = (
-  document.getElementById("backCanvas") as Assert<HTMLCanvasElement>
-).getContext("2d")!;
 export const tractCanvas = document.getElementById(
   "tractCanvas",
 ) as Assert<HTMLCanvasElement>;
@@ -26,18 +23,21 @@ if (browser.indexOf("firefox") > -1) isFirefox = true;
 
 window.onload = () => {
   document.body.style.cursor = "pointer";
+  const backCtx = (
+    document.getElementById("backCanvas") as Assert<HTMLCanvasElement>
+  ).getContext("2d")!;
 
   initAudioSystem(AudioSystem);
   UI.init();
   initGlottis(Glottis, backCtx);
   Tract.init();
-  TractUI.init(tractCtx);
+  TractUI.init(backCtx, tractCtx);
 
   requestAnimationFrame(redraw);
   function redraw() {
     UI.shapeToFitScreen();
     TractUI.draw(tractCanvas);
-    UI.draw();
+    UI.draw(tractCtx);
     requestAnimationFrame(redraw);
     time = performance.now() / 1000;
     UI.updateTouches();
