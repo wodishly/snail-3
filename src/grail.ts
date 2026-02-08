@@ -1,10 +1,5 @@
 import { finishTractBlock, runTractStep, Tract } from "./gract";
-import {
-  finishGlottisBlock,
-  runGlottisStep,
-  type GlottisType,
-  type Wave,
-} from "./grottis";
+import { finishGlottisBlock, runGlottisStep, type Throat } from "./grottis";
 import { Fastenings } from "./settings";
 import type { Maybe } from "./type";
 
@@ -29,9 +24,9 @@ export const makeSnail = (): Snail => {
   };
 };
 
-export const doScriptProcessor = <W extends Wave>(
+export const doScriptProcessor = (
   audioSystem: Snail,
-  glottis: GlottisType<W>,
+  glottis: Throat,
   event: AudioProcessingEvent,
 ): void => {
   const inputArray1 = event.inputBuffer.getChannelData(0);
@@ -95,10 +90,7 @@ export const createWhiteNoiseNode = (
   return source;
 };
 
-export const startSound = <W extends Wave>(
-  audioSystem: Snail,
-  glottis: GlottisType<W>,
-): void => {
+export const startSound = (audioSystem: Snail, glottis: Throat): void => {
   //scriptProcessor may need a dummy input channel on iOS
   audioSystem.processor = audioSystem.context.createScriptProcessor(
     Fastenings.blockLength,

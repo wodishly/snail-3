@@ -1,8 +1,9 @@
 import { TractUI } from "./gractui";
 import { mute, startSound, unmute, type Snail } from "./grail";
-import { handleTouches, type GlottisType } from "./grottis";
+import { handleTouches, type Throat } from "./grottis";
 import { draw, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
+import type { Wave } from "./wave";
 
 export type UiType = typeof UI;
 
@@ -17,7 +18,7 @@ export const UI = {
   autoWobble: true,
   alwaysVoice: true,
 
-  init: function (audioSystem: Snail, glottis: GlottisType) {
+  init: function (audioSystem: Snail, glottis: Throat) {
     this.touchesWithMouse = [];
     this.mouseTouch = { alive: false, endTime: 0 };
     this.mouseDown = false;
@@ -32,17 +33,6 @@ export const UI = {
       true,
     );
     this.autoWobbleButton = makeButton(460, 464, 140, 30, "pitch wobble", true);
-
-    tractCanvas.addEventListener("touchstart", (e) =>
-      UI.startTouches(audioSystem, glottis, e),
-    );
-    tractCanvas.addEventListener("touchmove", UI.moveTouches);
-    tractCanvas.addEventListener("touchend", UI.endTouches);
-    tractCanvas.addEventListener("touchcancel", UI.endTouches);
-
-    document.addEventListener("touchstart", function (event) {
-      event.preventDefault();
-    });
 
     document.addEventListener("mousedown", function (event) {
       UI.mouseDown = true;
@@ -160,7 +150,7 @@ export const UI = {
     this.write(tractCtx, "(tap anywhere to continue)");
 
     ctx.textAlign = "center";
-    ctx.fillText(tractCtx, "[tap here to RESET]", 470, 535);
+    ctx.fillText("[tap here to RESET]", 470, 535);
 
     this.instructionsLine = 18.8;
     ctx.textAlign = "left";
@@ -190,7 +180,7 @@ export const UI = {
     }
   },
 
-  write: function (tractCtx: CanvasRenderingContext2D, text) {
+  write: function (tractCtx: CanvasRenderingContext2D, text: string) {
     tractCtx.fillText(text, 50, 100 + this.instructionsLine * 22);
     this.instructionsLine += 1;
     if (text == "") this.instructionsLine -= 0.3;
@@ -204,86 +194,11 @@ export const UI = {
     handleTouchStart(this.aboutButton, touch);
   },
 
-  startTouches: function (audioSystem: Snail, glottis: GlottisType, event) {
-    event.preventDefault();
-    if (!audioSystem.isStarted) {
-      audioSystem.isStarted = true;
-      startSound(audioSystem, glottis);
-    }
-
-    if (UI.inAboutScreen) {
-      UI.inAboutScreen = false;
-      return;
-    }
-
-    if (UI.inInstructionsScreen) {
-      var touches = event.changedTouches;
-      for (var j = 0; j < touches.length; j++) {
-        var x = ((touches[j].pageX - UI.left_margin) / UI.width) * 600;
-        var y = ((touches[j].pageY - UI.top_margin) / UI.width) * 600;
-      }
-      UI.instructionsScreenHandleTouch(audioSystem, x, y);
-      return;
-    }
-
-    var touches = event.changedTouches;
-    for (var j = 0; j < touches.length; j++) {
-      var touch = {};
-      touch.startTime = performance.now() / 1000;
-      touch.endTime = 0;
-      touch.fricative_intensity = 0;
-      touch.alive = true;
-      touch.id = touches[j].identifier;
-      touch.x = ((touches[j].pageX - UI.left_margin) / UI.width) * 600;
-      touch.y = ((touches[j].pageY - UI.top_margin) / UI.width) * 600;
-      touch.index = TractUI.getIndex(touch.x, touch.y);
-      touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-      UI.touchesWithMouse.push(touch);
-      UI.buttonsHandleTouchStart(touch);
-    }
-
-    UI.handleTouches(glottis);
-  },
-
-  getTouchById: function (id) {
-    for (var j = 0; j < UI.touchesWithMouse.length; j++) {
-      if (UI.touchesWithMouse[j].id == id && UI.touchesWithMouse[j].alive)
-        return UI.touchesWithMouse[j];
-    }
-    return 0;
-  },
-
-  moveTouches: function (glottis: GlottisType, event) {
-    var touches = event.changedTouches;
-    for (var j = 0; j < touches.length; j++) {
-      var touch = UI.getTouchById(touches[j].identifier);
-      if (touch != 0) {
-        touch.x = ((touches[j].pageX - UI.left_margin) / UI.width) * 600;
-        touch.y = ((touches[j].pageY - UI.top_margin) / UI.width) * 600;
-        touch.index = TractUI.getIndex(touch.x, touch.y);
-        touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-      }
-    }
-    UI.handleTouches(glottis);
-  },
-
-  endTouches: function (glottis: GlottisType, event) {
-    var touches = event.changedTouches;
-    for (var j = 0; j < touches.length; j++) {
-      var touch = UI.getTouchById(touches[j].identifier);
-      if (touch != 0) {
-        touch.alive = false;
-        touch.endTime = performance.now() / 1000;
-      }
-    }
-    UI.handleTouches(glottis);
-
-    if (!UI.aboutButton.isOn) {
-      UI.inInstructionsScreen = true;
-    }
-  },
-
-  startMouse: function (audioSystem: Snail, glottis: GlottisType, event) {
+  startMouse: function (
+    audioSystem: Snail,
+    glottis: Throat,
+    event: PointerEvent,
+  ) {
     if (!audioSystem.isStarted) {
       audioSystem.isStarted = true;
       startSound(audioSystem, glottis);
@@ -315,17 +230,17 @@ export const UI = {
     UI.handleTouches(glottis);
   },
 
-  moveMouse: function (glottis: GlottisType, event) {
+  moveMouse: function (glottis: Throat, e: PointerEvent) {
     var touch = UI.mouseTouch;
     if (!touch.alive) return;
-    touch.x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
-    touch.y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
+    touch.x = ((e.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
+    touch.y = ((e.pageY - tractCanvas.offsetTop) / UI.width) * 600;
     touch.index = TractUI.getIndex(touch.x, touch.y);
     touch.diameter = TractUI.getDiameter(touch.x, touch.y);
     UI.handleTouches(glottis);
   },
 
-  endMouse: function (glottis: GlottisType, event) {
+  endMouse: function (glottis: Throat) {
     var touch = UI.mouseTouch;
     if (!touch.alive) return;
     touch.alive = false;
@@ -335,7 +250,7 @@ export const UI = {
     if (!UI.aboutButton.isOn) UI.inInstructionsScreen = true;
   },
 
-  handleTouches: function (glottis: GlottisType) {
+  handleTouches: function (glottis: Throat) {
     TractUI.handleTouches();
     handleTouches(glottis);
   },
@@ -373,8 +288,8 @@ export const UI = {
       this.left_margin = 0.5 * (window.innerWidth - this.width);
       this.top_margin = 5;
     }
-    document.body.style.marginLeft = this.left_margin;
-    document.body.style.marginTop = this.top_margin;
+    document.body.style.marginLeft = this.left_margin.toString();
+    document.body.style.marginTop = this.top_margin.toString();
     tractCanvas.style.width = this.width;
     backCanvas.style.width = this.width;
   },

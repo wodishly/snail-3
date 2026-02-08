@@ -1,5 +1,5 @@
 import { reckonBlockTime, type Snail } from "./grail";
-import { getNoiseModulator, type GlottisType } from "./grottis";
+import { getNoiseModulator, type Throat } from "./grottis";
 import { UI } from "./grui";
 import { nudge, clamp } from "./math";
 import type { Upto } from "./rime";
@@ -91,7 +91,7 @@ export const calculateNoseReflections = (tract: TractType) => {
 
 export const addTurbulenceNoise = (
   tract: TractType,
-  glottis: GlottisType,
+  glottis: Throat,
   turbulenceNoise: number,
 ) => {
   for (var j = 0; j < UI.touchesWithMouse.length; j++) {
@@ -112,7 +112,7 @@ export const addTurbulenceNoise = (
 
 export const addTurbulenceNoiseAtIndex = (
   tract: TractType,
-  glottis: GlottisType,
+  glottis: Throat,
   turbulenceNoise: number,
   index: number,
   diameter: number,
@@ -173,7 +173,7 @@ export const reshapeTract = (tract: TractType, deltaTime: number) => {
 
 export const runTractStep = (
   tract: TractType,
-  glottis: GlottisType,
+  glottis: Throat,
   audioSystem: Snail,
   glottalOutput: number,
   turbulenceNoise: number,

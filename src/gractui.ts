@@ -1,5 +1,5 @@
 import { Tract } from "./gract";
-import { type GlottisType } from "./grottis";
+import { type Throat } from "./grottis";
 import { UI } from "./grui";
 import { clamp, type Z } from "./math";
 import { Mouthbook, palePink } from "./settings";
@@ -136,7 +136,7 @@ export var TractUI = {
     return (this.radius - Math.sqrt(xx * xx + yy * yy)) / this.scale;
   },
 
-  draw: function (glottis: GlottisType, canvasSize: Z) {
+  draw: function (glottis: Throat, canvasSize: Z) {
     this.ctx.clearRect(0, 0, canvasSize.x, canvasSize.y);
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
@@ -384,7 +384,7 @@ export var TractUI = {
     this.ctx.fillStyle = "orchid";
   },
 
-  drawPitchControl: function (glottis: GlottisType) {
+  drawPitchControl: function (glottis: Throat) {
     var w = 9;
     var h = 15;
     if (glottis.z.x) {

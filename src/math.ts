@@ -1,5 +1,3 @@
-import { type NoiseFunction2D } from "simplex-noise";
-
 export type Z<X extends number = number, Y extends number = number> = {
   x: X;
   y: Y;
@@ -36,8 +34,4 @@ export const nudge = (
   down: number = up,
 ) => {
   return start < end ? Math.min(start + up, end) : Math.max(start - down, end);
-};
-
-export const noiseWith = (f: NoiseFunction2D, x: number) => {
-  return f(x * 1.2, -x * 0.7);
 };

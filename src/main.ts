@@ -1,9 +1,10 @@
 import { UI } from "./grui";
-import { Glottis, initGlottis } from "./grottis";
+import { makeThroat } from "./grottis";
 import { Tract } from "./gract";
 import { TractUI } from "./gractui";
 import type { Assert } from "./type";
 import { makeSnail } from "./grail";
+import { drawKeyboard } from "./glottisUi";
 
 window.onload = () => {
   document.body.style.cursor = "pointer";
@@ -17,14 +18,15 @@ window.onload = () => {
   const tractCtx = tractCanvas.getContext("2d")!;
 
   const snail = makeSnail();
-  UI.init(snail, Glottis);
-  initGlottis(Glottis, backCtx);
+  const throat = makeThroat();
+  drawKeyboard(backCtx);
+  UI.init(snail, throat);
   Tract.init();
   TractUI.init(backCtx, tractCtx);
 
   const redraw = () => {
     UI.shapeToFitScreen();
-    TractUI.draw(Glottis, { x: tractCanvas.width, y: tractCanvas.height });
+    TractUI.draw(throat, { x: tractCanvas.width, y: tractCanvas.height });
     UI.draw(tractCtx, snail);
     requestAnimationFrame(redraw);
     UI.updateTouches();
