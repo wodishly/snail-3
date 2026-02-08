@@ -84,7 +84,7 @@ export const getNoiseModulator = (throat: Throat) => {
 };
 
 export const handleThroatTouches = (throat: Throat, ui: UiType) => {
-  if (throat.touch !== undefined && !throat.touch.isAlive) {
+  if (throat.touch !== undefined && !throat.touch.alive) {
     throat.touch = undefined;
   }
 

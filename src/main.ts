@@ -7,7 +7,7 @@ import {
 } from "./grui";
 import { makeThroat } from "./grottis";
 import { Tract } from "./gract";
-import { TractUI } from "./gractui";
+import { drawTractUi, initTractUi, TractUI } from "./gractui";
 import type { Assert } from "./type";
 import { makeSnail } from "./grail";
 import { drawKeyboard } from "./glottisUi";
@@ -30,13 +30,13 @@ window.onload = () => {
   const ui = makeUi();
 
   drawKeyboard(backCtx);
-  initUi(ui, snail, throat, tractCanvas);
+  initUi(ui, TractUI, snail, throat, tractCanvas);
   Tract.init();
-  TractUI.init(backCtx, tractCtx);
+  initTractUi(TractUI, backCtx, tractCtx);
 
   const redraw = () => {
     shapeToFitScreen(ui, tractCanvas, backCanvas);
-    TractUI.drawTractUi(throat, ui, {
+    drawTractUi(TractUI, throat, ui, {
       x: tractCanvas.width,
       y: tractCanvas.height,
     });

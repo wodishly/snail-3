@@ -1,10 +1,29 @@
-import { TractUI } from "./gractui";
+import {
+  getDiameter,
+  getIndex,
+  handleTractUiTouches,
+  type TractUiType,
+} from "./gractui";
 import { mute, startSound, unmute, type Snail } from "./grail";
 import { handleThroatTouches, type Throat } from "./grottis";
 import { drawButton, handleTouchStart, makeButton } from "./grutton";
 import { clamp, type Z } from "./math";
 
 export type UiType = ReturnType<typeof makeUi>;
+
+type RineId<N extends number = number> = `mouse${N}`;
+
+export type Rine = Z & {
+  id: RineId;
+
+  startTime: number;
+  endTime: number;
+  alive: boolean;
+
+  index: number;
+  diameter: number;
+  fricative_intensity: number;
+};
 
 export const makeUi = () => {
   return {
@@ -21,13 +40,14 @@ export const makeUi = () => {
     aboutButton: makeButton(460, 392, 140, 30, "about...", true),
     alwaysVoiceButton: makeButton(460, 428, 140, 30, "always voice", true),
     autoWobbleButton: makeButton(460, 464, 140, 30, "pitch wobble", true),
-    touchesWithMouse: [],
-    mouseTouch: { alive: false, endTime: 0 },
+    touchesWithMouse: [] as Rine[],
+    mouseTouch: { alive: false, endTime: 0 } as Partial<Rine>,
   };
 };
 
 export const initUi = (
   ui: UiType,
+  tractUi: TractUiType,
   audioSystem: Snail,
   glottis: Throat,
   tractCanvas: HTMLCanvasElement,
@@ -37,19 +57,19 @@ export const initUi = (
   document.addEventListener("pointerdown", (e) => {
     ui.isMouseDown = true;
     e.preventDefault();
-    startMouse(audioSystem, glottis, ui, tractCanvas, e);
+    startMouse(audioSystem, glottis, ui, tractUi, tractCanvas, e);
   });
   document.addEventListener("pointerup", () => {
     ui.isMouseDown = false;
-    endMouse(glottis, ui);
+    endMouse(glottis, ui, tractUi);
   });
   document.addEventListener("pointermove", (e) =>
-    moveMouse(glottis, ui, tractCanvas, e),
+    moveMouse(glottis, ui, tractUi, tractCanvas, e),
   );
 };
 
-const handleUiTouches = (glottis: Throat, ui: UiType) => {
-  TractUI.handleTouches(ui);
+const handleUiTouches = (glottis: Throat, ui: UiType, tractUi: TractUiType) => {
+  handleTractUiTouches(tractUi, ui);
   handleThroatTouches(glottis, ui);
 };
 
@@ -137,40 +157,41 @@ const instructionsScreenHandleTouch = (
   }
 };
 
-const buttonsHandleTouchStart = (ui: UiType, touch) => {
-  handleTouchStart(ui.alwaysVoiceButton, touch);
+const buttonsHandleTouchStart = (ui: UiType, rine: Rine) => {
+  handleTouchStart(ui.alwaysVoiceButton, rine);
   ui.isAlwaysVoicing = ui.alwaysVoiceButton.isOn;
-  handleTouchStart(ui.autoWobbleButton, touch);
+  handleTouchStart(ui.autoWobbleButton, rine);
   ui.isAutoWobbling = ui.autoWobbleButton.isOn;
-  handleTouchStart(ui.aboutButton, touch);
+  handleTouchStart(ui.aboutButton, rine);
 };
 
 const moveMouse = (
   glottis: Throat,
   ui: UiType,
+  tractUi: TractUiType,
   tractCanvas: HTMLCanvasElement,
   e: PointerEvent,
 ) => {
-  const touch = ui.mouseTouch;
-  if (!touch.alive) {
+  const rine = ui.mouseTouch;
+  if (!rine.alive) {
     return;
   }
 
-  touch.x = ((e.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
-  touch.y = ((e.pageY - tractCanvas.offsetTop) / ui.width) * 600;
-  touch.index = TractUI.getIndex(touch.x, touch.y);
-  touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-  handleUiTouches(glottis, ui);
+  rine.x = ((e.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
+  rine.y = ((e.pageY - tractCanvas.offsetTop) / ui.width) * 600;
+  rine.index = getIndex(tractUi, rine.x, rine.y);
+  rine.diameter = getDiameter(tractUi, rine.x, rine.y);
+  handleUiTouches(glottis, ui, tractUi);
 };
 
-const endMouse = (glottis: Throat, ui: UiType) => {
+const endMouse = (glottis: Throat, ui: UiType, tractUi: TractUiType) => {
   const touch = ui.mouseTouch;
   if (!touch.alive) {
     return;
   }
   touch.alive = false;
   touch.endTime = performance.now() / 1000;
-  handleUiTouches(glottis, ui);
+  handleUiTouches(glottis, ui, tractUi);
 
   if (!ui.aboutButton.isOn) ui.isInInstructionsScreen = true;
 };
@@ -214,6 +235,7 @@ export const startMouse = (
   audioSystem: Snail,
   glottis: Throat,
   ui: UiType,
+  tractUi: TractUiType,
   tractCanvas: HTMLCanvasElement,
   event: PointerEvent,
 ) => {
@@ -232,34 +254,24 @@ export const startMouse = (
     return;
   }
 
-  var touch = {};
-  touch.startTime = performance.now() / 1000;
-  touch.fricative_intensity = 0;
-  touch.endTime = 0;
-  touch.alive = true;
-  touch.id = "mouse" + Math.random();
-  touch.x = ((event.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
-  touch.y = ((event.pageY - tractCanvas.offsetTop) / ui.width) * 600;
-  touch.index = TractUI.getIndex(touch.x, touch.y);
-  touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-  ui.mouseTouch = touch;
-  ui.touchesWithMouse.push(touch);
-  buttonsHandleTouchStart(ui, touch);
-  handleUiTouches(glottis, ui);
-};
-
-type RineId = `mouse${number}`;
-
-export type Rine = Z & {
-  id: RineId;
-
-  startTime: number;
-  endTime: number;
-  isAlive: boolean;
-
-  index: number;
-  diameter: number;
-  fricative_intensity: number;
+  const z = {
+    x: ((event.pageX - tractCanvas.offsetLeft) / ui.width) * 600,
+    y: ((event.pageY - tractCanvas.offsetTop) / ui.width) * 600,
+  };
+  const rine: Rine = {
+    ...z,
+    startTime: performance.now() / 1000,
+    fricative_intensity: 0,
+    endTime: 0,
+    alive: true,
+    id: `mouse${Math.random()}`,
+    index: getIndex(tractUi, z.x, z.y),
+    diameter: getDiameter(tractUi, z.x, z.y),
+  };
+  ui.mouseTouch = rine;
+  ui.touchesWithMouse.push(rine);
+  buttonsHandleTouchStart(ui, rine);
+  handleUiTouches(glottis, ui, tractUi);
 };
 
 export const drawInstructionsScreen = (
