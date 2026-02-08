@@ -1,13 +1,21 @@
-import { simplex1 } from "./main";
 import { type Snail } from "./grail";
 import { UI } from "./grui";
-import { clamp } from "./math";
+import { clamp, noiseWith } from "./math";
 import { drawKeyboard } from "./glottisUi";
 import { Settings } from "./settings";
+import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
+import type { Maybe } from "./type";
 
 export type GlottisType = typeof Glottis;
 
-export var Glottis = {
+export type Throat = {
+  isTouched: boolean;
+  noise: NoiseFunction2D;
+};
+
+export const makeThroat = () => {};
+
+export const Glottis = {
   timeInWaveform: 0,
   oldFrequency: 140,
   newFrequency: 140,
@@ -23,7 +31,11 @@ export var Glottis = {
   touch: 0,
   x: 240,
   y: 530,
+  waveshape: undefined as Maybe<Waveshape>,
+  noise: createNoise2D(),
 };
+
+export const simplex1 = (x: number) => noiseWith(Glottis.noise, x);
 
 export const initGlottis = (
   glottis: GlottisType,
@@ -31,16 +43,6 @@ export const initGlottis = (
 ) => {
   setupWaveform(glottis, 0);
   drawKeyboard(backCtx);
-};
-
-export const normalizedLFWaveform = (glottis: GlottisType, t: number) => {
-  const output =
-    t > glottis.Te
-      ? (-Math.exp(-glottis.epsilon * (t - glottis.Te)) + glottis.shift) /
-        glottis.Delta
-      : glottis.E0 * Math.exp(glottis.alpha * t) * Math.sin(glottis.omega * t);
-
-  return output * glottis.intensity * glottis.loudness;
 };
 
 export const getNoiseModulator = (glottis: GlottisType) => {
@@ -176,6 +178,17 @@ export const finishGlottisBlock = (glottis: GlottisType) => {
   glottis.intensity = clamp(glottis.intensity, 0, 1);
 };
 
+type Waveshape = {
+  Rd: number;
+  alpha: number;
+  E0: number;
+  epsilon: number;
+  shift: number;
+  Delta: number;
+  Te: number;
+  omega: number;
+};
+
 export const setupWaveform = (glottis: GlottisType, lambda: number) => {
   glottis.frequency =
     glottis.oldFrequency * (1 - lambda) + glottis.newFrequency * lambda;
@@ -227,4 +240,14 @@ export const setupWaveform = (glottis: GlottisType, lambda: number) => {
   glottis.Delta = Delta;
   glottis.Te = Te;
   glottis.omega = omega;
+};
+
+export const normalizedLFWaveform = (glottis: GlottisType, t: number) => {
+  const output =
+    t > glottis.Te
+      ? (-Math.exp(-glottis.epsilon * (t - glottis.Te)) + glottis.shift) /
+        glottis.Delta
+      : glottis.E0 * Math.exp(glottis.alpha * t) * Math.sin(glottis.omega * t);
+
+  return output * glottis.intensity * glottis.loudness;
 };

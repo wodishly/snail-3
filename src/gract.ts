@@ -1,5 +1,5 @@
 import { reckonBlockTime, type Snail } from "./grail";
-import { getNoiseModulator, Glottis } from "./grottis";
+import { getNoiseModulator, type GlottisType } from "./grottis";
 import { UI } from "./grui";
 import { nudge, clamp } from "./math";
 import type { Upto } from "./rime";
@@ -91,6 +91,7 @@ export const calculateNoseReflections = (tract: TractType) => {
 
 export const addTurbulenceNoise = (
   tract: TractType,
+  glottis: GlottisType,
   turbulenceNoise: number,
 ) => {
   for (var j = 0; j < UI.touchesWithMouse.length; j++) {
@@ -101,6 +102,7 @@ export const addTurbulenceNoise = (
     if (intensity == 0) continue;
     addTurbulenceNoiseAtIndex(
       tract,
+      glottis,
       0.66 * turbulenceNoise * intensity,
       touch.index,
       touch.diameter,
@@ -110,13 +112,14 @@ export const addTurbulenceNoise = (
 
 export const addTurbulenceNoiseAtIndex = (
   tract: TractType,
+  glottis: GlottisType,
   turbulenceNoise: number,
   index: number,
   diameter: number,
 ) => {
   const i = Math.floor(index);
   const delta = index - i;
-  turbulenceNoise *= getNoiseModulator(Glottis);
+  turbulenceNoise *= getNoiseModulator(glottis);
   const thinness0 = clamp(8 * (0.7 - diameter), 0, 1);
   const openness = clamp(30 * (diameter - 0.3), 0, 1);
   const noise0 = turbulenceNoise * (1 - delta) * thinness0 * openness;
@@ -170,6 +173,7 @@ export const reshapeTract = (tract: TractType, deltaTime: number) => {
 
 export const runTractStep = (
   tract: TractType,
+  glottis: GlottisType,
   audioSystem: Snail,
   glottalOutput: number,
   turbulenceNoise: number,
@@ -179,7 +183,7 @@ export const runTractStep = (
 
   //mouth
   processTransients(tract, audioSystem);
-  addTurbulenceNoise(tract, turbulenceNoise);
+  addTurbulenceNoise(tract, glottis, turbulenceNoise);
 
   tract.junctionOutputR[0] =
     tract.L[0] * Fastenings.reflection.glottal + glottalOutput;

@@ -1,5 +1,10 @@
 import { finishTractBlock, runTractStep, Tract } from "./gract";
-import { finishGlottisBlock, Glottis, runGlottisStep } from "./grottis";
+import {
+  finishGlottisBlock,
+  Glottis,
+  runGlottisStep,
+  type GlottisType,
+} from "./grottis";
 import { Fastenings } from "./settings";
 import type { Maybe } from "./type";
 
@@ -26,6 +31,7 @@ export const makeSnail = (): Snail => {
 
 export const doScriptProcessor = (
   audioSystem: Snail,
+  glottis: GlottisType,
   event: AudioProcessingEvent,
 ): void => {
   const inputArray1 = event.inputBuffer.getChannelData(0);
@@ -43,13 +49,27 @@ export const doScriptProcessor = (
 
     let vocalOutput = 0;
     //Tract runs at twice the sample rate
-    runTractStep(Tract, audioSystem, glottalOutput, inputArray2[j], lambda1);
+    runTractStep(
+      Tract,
+      Glottis,
+      audioSystem,
+      glottalOutput,
+      inputArray2[j],
+      lambda1,
+    );
     vocalOutput += Tract.lipOutput + Tract.noseOutput;
-    runTractStep(Tract, audioSystem, glottalOutput, inputArray2[j], lambda2);
+    runTractStep(
+      Tract,
+      Glottis,
+      audioSystem,
+      glottalOutput,
+      inputArray2[j],
+      lambda2,
+    );
     vocalOutput += Tract.lipOutput + Tract.noseOutput;
     outArray[j] = vocalOutput * 0.125;
   }
-  finishGlottisBlock(Glottis);
+  finishGlottisBlock(glottis);
   finishTractBlock(Tract, audioSystem);
 };
 
@@ -75,7 +95,7 @@ export const createWhiteNoiseNode = (
   return source;
 };
 
-export const startSound = (audioSystem: Snail): void => {
+export const startSound = (audioSystem: Snail, glottis: GlottisType): void => {
   //scriptProcessor may need a dummy input channel on iOS
   audioSystem.processor = audioSystem.context.createScriptProcessor(
     Fastenings.blockLength,
@@ -84,7 +104,7 @@ export const startSound = (audioSystem: Snail): void => {
   );
   audioSystem.processor.connect(audioSystem.context.destination);
   audioSystem.processor.onaudioprocess = (e: AudioProcessingEvent) =>
-    doScriptProcessor(audioSystem, e);
+    doScriptProcessor(audioSystem, glottis, e);
 
   const whiteNoise = createWhiteNoiseNode(
     audioSystem,

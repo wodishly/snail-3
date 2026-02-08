@@ -1,5 +1,4 @@
 import { Tract } from "./gract";
-import { temp } from "./main";
 import { Glottis } from "./grottis";
 import { UI } from "./grui";
 import { clamp, type Z } from "./math";
@@ -544,8 +543,6 @@ export var TractUI = {
       if (index > Mouthbook.noseStart && diameter < -this.noseOffset) {
         Tract.velumTarget = 0.4;
       }
-      temp.a = index;
-      temp.b = diameter;
       if (diameter < -0.85 - this.noseOffset) continue;
       diameter -= 0.3;
       if (diameter < 0) diameter = 0;

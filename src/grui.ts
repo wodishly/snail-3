@@ -1,6 +1,6 @@
 import { TractUI } from "./gractui";
 import { mute, startSound, unmute, type Snail } from "./grail";
-import { Glottis, handleTouches } from "./grottis";
+import { Glottis, handleTouches, type GlottisType } from "./grottis";
 import { draw, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
 
@@ -34,7 +34,7 @@ export const UI = {
     this.autoWobbleButton = makeButton(460, 464, 140, 30, "pitch wobble", true);
 
     tractCanvas.addEventListener("touchstart", (e) =>
-      UI.startTouches(audioSystem, e),
+      UI.startTouches(audioSystem, Glottis, e),
     );
     tractCanvas.addEventListener("touchmove", UI.moveTouches);
     tractCanvas.addEventListener("touchend", UI.endTouches);
@@ -47,7 +47,7 @@ export const UI = {
     document.addEventListener("mousedown", function (event) {
       UI.mouseDown = true;
       event.preventDefault();
-      UI.startMouse(audioSystem, event);
+      UI.startMouse(audioSystem, Glottis, event);
     });
     document.addEventListener("mouseup", function (event) {
       UI.mouseDown = false;
@@ -204,11 +204,11 @@ export const UI = {
     handleTouchStart(this.aboutButton, touch);
   },
 
-  startTouches: function (audioSystem: Snail, event) {
+  startTouches: function (audioSystem: Snail, glottis: GlottisType, event) {
     event.preventDefault();
     if (!audioSystem.isStarted) {
       audioSystem.isStarted = true;
-      startSound(audioSystem);
+      startSound(audioSystem, glottis);
     }
 
     if (UI.inAboutScreen) {
@@ -283,10 +283,10 @@ export const UI = {
     }
   },
 
-  startMouse: function (audioSystem: Snail, event) {
+  startMouse: function (audioSystem: Snail, glottis: GlottisType, event) {
     if (!audioSystem.isStarted) {
       audioSystem.isStarted = true;
-      startSound(audioSystem);
+      startSound(audioSystem, glottis);
     }
     if (UI.inAboutScreen) {
       UI.inAboutScreen = false;
