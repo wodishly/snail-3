@@ -1,91 +1,8 @@
-import { finishTractBlock, runStep, Tract } from "./gract";
-import { Glottis } from "./grottis";
+import { finishTractBlock, runTractStep, Tract } from "./gract";
+import { finishGlottisBlock, Glottis, runGlottisStep } from "./grottis";
 import { Fastenings } from "./settings";
 
-// export type Snail = {
-//   context: AudioContext;
-//   sievemap: Map<Sievename, BiquadFilterNode>;
-//   isStarted: boolean;
-//   isSoundOn: boolean;
-//   blockTime: number;
-// };
-//
-// export const makeSnail = (): Snail => {
-//   const context = new AudioContext();
-//
-//   const sievemap = new Map<Sievename, BiquadFilterNode>();
-//   sievemap.set("breathy", makeSieveful(context, "breathy").sieve);
-//   sievemap.set("sharp", makeSieveful(context, "sharp").sieve);
-//
-//   return {
-//     context,
-//     sievemap,
-//     isStarted: false,
-//     isSoundOn: false,
-//     blockTime: Fastenings.blockLength / context.sampleRate,
-//   };
-// };
-//
-// export const startKnot = (snail: Snail) => {
-//   const knot = makeKnot(snail, 2 * snail.context.sampleRate); // 2 ticks
-//   knot.connect(snail.sievemap.get("breathy")!);
-//   knot.connect(snail.sievemap.get("sharp")!);
-//
-//   var inputArray1 = event.inputBuffer.getChannelData(0);
-//   var inputArray2 = event.inputBuffer.getChannelData(1);
-//   var outArray = event.outputBuffer.getChannelData(0);
-//   for (var j = 0, N = outArray.length; j < N; j++) {
-//     var lambda1 = j / N;
-//     var lambda2 = (j + 0.5) / N;
-//     var glottalOutput = Glottis.runStep(lambda1, inputArray1[j]);
-//
-//     var vocalOutput = 0;
-//     //Tract runs at twice the sample rate
-//     Tract.runStep(glottalOutput, inputArray2[j], lambda1);
-//     vocalOutput += Tract.lipOutput + Tract.noseOutput;
-//     Tract.runStep(glottalOutput, inputArray2[j], lambda2);
-//     vocalOutput += Tract.lipOutput + Tract.noseOutput;
-//     outArray[j] = vocalOutput * 0.125;
-//   }
-//   Glottis.finishBlock();
-//   Tract.finishBlock();
-//
-//   knot.start();
-// };
-//
-// /**
-//  * @param lifespan in frames
-//  */
-// const makeKnot = (snail: Snail, lifespan: number) => {
-//   const buffer = snail.context.createBuffer(
-//     1,
-//     lifespan,
-//     snail.context.sampleRate,
-//   );
-//
-//   const data = buffer.getChannelData(0);
-//   for (let i = 0; i < lifespan; i++) {
-//     data[i] = Math.random();
-//   }
-//
-//   const knot = snail.context.createBufferSource();
-//   knot.buffer = buffer;
-//   knot.loop = true;
-//
-//   return knot;
-// };
-//
-// export const mute = (snail: Snail) => {
-//   for (const sieve of snail.sievemap.values()) {
-//     sieve.disconnect();
-//   }
-// };
-//
-// export const unmute = (snail: Snail) => {
-//   for (const sieve of snail.sievemap.values()) {
-//     sieve.connect(snail.context.destination);
-//   }
-// };
+export type AudioSystemType = typeof AudioSystem;
 
 export const AudioSystem = {
   started: false,
@@ -156,25 +73,25 @@ export const AudioSystem = {
     for (var j = 0, N = outArray.length; j < N; j++) {
       var lambda1 = j / N;
       var lambda2 = (j + 0.5) / N;
-      var glottalOutput = Glottis.runStep(lambda1, inputArray1[j]);
+      var glottalOutput = runGlottisStep(Glottis, lambda1, inputArray1[j]);
 
       var vocalOutput = 0;
       //Tract runs at twice the sample rate
-      runStep(Tract, glottalOutput, inputArray2[j], lambda1);
+      runTractStep(Tract, glottalOutput, inputArray2[j], lambda1);
       vocalOutput += Tract.lipOutput + Tract.noseOutput;
-      runStep(Tract, glottalOutput, inputArray2[j], lambda2);
+      runTractStep(Tract, glottalOutput, inputArray2[j], lambda2);
       vocalOutput += Tract.lipOutput + Tract.noseOutput;
       outArray[j] = vocalOutput * 0.125;
     }
-    Glottis.finishBlock();
+    finishGlottisBlock(Glottis);
     finishTractBlock(Tract);
   },
 };
 
-export const oldMute = (audioSystem: any) => {
+export const mute = (audioSystem: any) => {
   audioSystem.scriptProcessor.disconnect();
 };
 
-export const oldUnmute = (audioSystem: any) => {
+export const unmute = (audioSystem: any) => {
   audioSystem.scriptProcessor.connect(audioSystem.audioContext.destination);
 };

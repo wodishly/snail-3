@@ -1,9 +1,11 @@
 import { TractUI } from "./gractui";
 import { isFirefox, time, tractCtx } from "./main";
-import { AudioSystem, oldMute, oldUnmute } from "./snail";
-import { Glottis } from "./grottis";
+import { AudioSystem, mute, unmute } from "./snail";
+import { Glottis, handleTouches } from "./grottis";
 import { draw, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
+
+export type UiType = typeof UI;
 
 export const UI = {
   width: 600,
@@ -99,7 +101,7 @@ export const UI = {
   },
 
   drawInstructionsScreen: function () {
-    oldMute(AudioSystem);
+    mute(AudioSystem);
     var ctx = tractCtx;
     ctx.globalAlpha = 0.85;
     ctx.fillStyle = "white";
@@ -165,7 +167,7 @@ export const UI = {
     else {
       UI.inInstructionsScreen = false;
       UI.aboutButton.isOn = true;
-      oldUnmute(AudioSystem);
+      unmute(AudioSystem);
     }
   },
 
@@ -315,7 +317,7 @@ export const UI = {
 
   handleTouches: function (event) {
     TractUI.handleTouches();
-    Glottis.handleTouches();
+    handleTouches(Glottis);
   },
 
   updateTouches: function () {

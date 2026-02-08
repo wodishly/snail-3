@@ -1,5 +1,5 @@
 import { AudioSystem } from "./snail";
-import { Glottis } from "./grottis";
+import { getNoiseModulator, Glottis } from "./grottis";
 import { UI } from "./grui";
 import { nudge, clamp } from "./math";
 import type { Upto } from "./rime";
@@ -116,7 +116,7 @@ export const addTurbulenceNoiseAtIndex = (
 ) => {
   const i = Math.floor(index);
   const delta = index - i;
-  turbulenceNoise *= Glottis.getNoiseModulator();
+  turbulenceNoise *= getNoiseModulator(Glottis);
   const thinness0 = clamp(8 * (0.7 - diameter), 0, 1);
   const openness = clamp(30 * (diameter - 0.3), 0, 1);
   const noise0 = turbulenceNoise * (1 - delta) * thinness0 * openness;
@@ -168,7 +168,7 @@ export const reshapeTract = (tract: TractType, deltaTime: number) => {
   tract.noseA[0] = tract.noseDiameter[0] ** 2;
 };
 
-export const runStep = (
+export const runTractStep = (
   tract: TractType,
   glottalOutput: number,
   turbulenceNoise: number,
@@ -251,9 +251,6 @@ export const runStep = (
 };
 
 export var Tract = {
-  bladeStart: 10,
-  tipStart: 32,
-  lipStart: 39,
   R: [] as number[], //component going right
   L: [] as number[], //component going left
   reflection: [] as number[],
@@ -273,9 +270,6 @@ export var Tract = {
   velumTarget: 0.01,
 
   init: function () {
-    this.bladeStart = Math.floor((this.bladeStart * Mouthbook.n) / 44);
-    this.tipStart = Math.floor((this.tipStart * Mouthbook.n) / 44);
-    this.lipStart = Math.floor((this.lipStart * Mouthbook.n) / 44);
     this.diameter = new Float64Array(Mouthbook.n);
     this.restDiameter = new Float64Array(Mouthbook.n);
     this.targetDiameter = new Float64Array(Mouthbook.n);
@@ -300,19 +294,17 @@ export var Tract = {
     this.A = new Float64Array(Mouthbook.n);
     this.maxAmplitude = new Float64Array(Mouthbook.n);
 
-    this.noseLength = Math.floor((28 * Mouthbook.n) / 44);
-    this.noseStart = Mouthbook.n - this.noseLength + 1;
-    this.noseR = new Float64Array(this.noseLength);
-    this.noseL = new Float64Array(this.noseLength);
-    this.noseJunctionOutputR = new Float64Array(this.noseLength + 1);
-    this.noseJunctionOutputL = new Float64Array(this.noseLength + 1);
-    this.noseReflection = new Float64Array(this.noseLength + 1);
-    this.noseDiameter = new Float64Array(this.noseLength);
-    this.noseA = new Float64Array(this.noseLength);
-    this.noseMaxAmplitude = new Float64Array(this.noseLength);
-    for (var i = 0; i < this.noseLength; i++) {
+    this.noseR = new Float64Array(Mouthbook.noseLength);
+    this.noseL = new Float64Array(Mouthbook.noseLength);
+    this.noseJunctionOutputR = new Float64Array(Mouthbook.noseLength + 1);
+    this.noseJunctionOutputL = new Float64Array(Mouthbook.noseLength + 1);
+    this.noseReflection = new Float64Array(Mouthbook.noseLength + 1);
+    this.noseDiameter = new Float64Array(Mouthbook.noseLength);
+    this.noseA = new Float64Array(Mouthbook.noseLength);
+    this.noseMaxAmplitude = new Float64Array(Mouthbook.noseLength);
+    for (var i = 0; i < Mouthbook.noseLength; i++) {
       var diameter;
-      var d = 2 * (i / this.noseLength);
+      var d = 2 * (i / Mouthbook.noseLength);
       if (d < 1) diameter = 0.4 + 1.6 * d;
       else diameter = 0.5 + 1.5 * (2 - d);
       diameter = Math.min(diameter, 1.9);

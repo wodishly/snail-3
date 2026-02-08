@@ -19,6 +19,10 @@ export const Fastenings = {
 
 export const Settings = {
   speed: 15, // cm/s
+  vibrato: {
+    amount: 0.005,
+    frequency: 6,
+  },
   sieve: {
     breathy: {
       start: true,
@@ -32,6 +36,17 @@ export const Settings = {
       sharpness: 1000,
       Q: 0.5,
     } satisfies SieveSetting,
+  },
+  ui: {
+    glottis: {
+      keyboardTop: 500,
+      keyboardLeft: 0,
+      keyboardWidth: 600,
+      keyboardHeight: 100,
+      semitones: 20,
+      marks: [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+      baseNote: 87.3071, //F
+    },
   },
 } as const;
 

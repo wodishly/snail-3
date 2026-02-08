@@ -1,7 +1,7 @@
 import { createNoise2D } from "simplex-noise";
 import { noiseWith } from "./math";
 import { UI } from "./grui";
-import { Glottis } from "./grottis";
+import { Glottis, initGlottis } from "./grottis";
 import { Tract } from "./gract";
 import { TractUI } from "./gractui";
 import type { Assert } from "./type";
@@ -29,7 +29,7 @@ window.onload = () => {
 
   AudioSystem.init();
   UI.init();
-  Glottis.init();
+  initGlottis(Glottis, backCtx);
   Tract.init();
   TractUI.init(tractCtx);
 
