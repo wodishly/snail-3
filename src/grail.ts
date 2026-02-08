@@ -1,9 +1,9 @@
 import { finishTractBlock, runTractStep, Tract } from "./gract";
 import {
   finishGlottisBlock,
-  Glottis,
   runGlottisStep,
   type GlottisType,
+  type Wave,
 } from "./grottis";
 import { Fastenings } from "./settings";
 import type { Maybe } from "./type";
@@ -29,9 +29,9 @@ export const makeSnail = (): Snail => {
   };
 };
 
-export const doScriptProcessor = (
+export const doScriptProcessor = <W extends Wave>(
   audioSystem: Snail,
-  glottis: GlottisType,
+  glottis: GlottisType<W>,
   event: AudioProcessingEvent,
 ): void => {
   const inputArray1 = event.inputBuffer.getChannelData(0);
@@ -41,7 +41,7 @@ export const doScriptProcessor = (
     const lambda1 = j / N;
     const lambda2 = (j + 0.5) / N;
     const glottalOutput = runGlottisStep(
-      Glottis,
+      glottis,
       audioSystem,
       lambda1,
       inputArray1[j],
@@ -51,7 +51,7 @@ export const doScriptProcessor = (
     //Tract runs at twice the sample rate
     runTractStep(
       Tract,
-      Glottis,
+      glottis,
       audioSystem,
       glottalOutput,
       inputArray2[j],
@@ -60,7 +60,7 @@ export const doScriptProcessor = (
     vocalOutput += Tract.lipOutput + Tract.noseOutput;
     runTractStep(
       Tract,
-      Glottis,
+      glottis,
       audioSystem,
       glottalOutput,
       inputArray2[j],
@@ -95,7 +95,10 @@ export const createWhiteNoiseNode = (
   return source;
 };
 
-export const startSound = (audioSystem: Snail, glottis: GlottisType): void => {
+export const startSound = <W extends Wave>(
+  audioSystem: Snail,
+  glottis: GlottisType<W>,
+): void => {
   //scriptProcessor may need a dummy input channel on iOS
   audioSystem.processor = audioSystem.context.createScriptProcessor(
     Fastenings.blockLength,

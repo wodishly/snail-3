@@ -1,6 +1,6 @@
 import { TractUI } from "./gractui";
 import { mute, startSound, unmute, type Snail } from "./grail";
-import { Glottis, handleTouches, type GlottisType } from "./grottis";
+import { handleTouches, type GlottisType } from "./grottis";
 import { draw, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
 
@@ -17,7 +17,7 @@ export const UI = {
   autoWobble: true,
   alwaysVoice: true,
 
-  init: function (audioSystem: Snail) {
+  init: function (audioSystem: Snail, glottis: GlottisType) {
     this.touchesWithMouse = [];
     this.mouseTouch = { alive: false, endTime: 0 };
     this.mouseDown = false;
@@ -34,7 +34,7 @@ export const UI = {
     this.autoWobbleButton = makeButton(460, 464, 140, 30, "pitch wobble", true);
 
     tractCanvas.addEventListener("touchstart", (e) =>
-      UI.startTouches(audioSystem, Glottis, e),
+      UI.startTouches(audioSystem, glottis, e),
     );
     tractCanvas.addEventListener("touchmove", UI.moveTouches);
     tractCanvas.addEventListener("touchend", UI.endTouches);
@@ -47,13 +47,13 @@ export const UI = {
     document.addEventListener("mousedown", function (event) {
       UI.mouseDown = true;
       event.preventDefault();
-      UI.startMouse(audioSystem, Glottis, event);
+      UI.startMouse(audioSystem, glottis, event);
     });
-    document.addEventListener("mouseup", function (event) {
+    document.addEventListener("mouseup", function (e) {
       UI.mouseDown = false;
-      UI.endMouse(event);
+      UI.endMouse(glottis, e);
     });
-    document.addEventListener("mousemove", UI.moveMouse);
+    document.addEventListener("mousemove", (e) => UI.moveMouse(glottis, e));
   },
 
   draw: function (tractCtx: CanvasRenderingContext2D, audioSystem: Snail) {
@@ -242,7 +242,7 @@ export const UI = {
       UI.buttonsHandleTouchStart(touch);
     }
 
-    UI.handleTouches();
+    UI.handleTouches(glottis);
   },
 
   getTouchById: function (id) {
@@ -253,7 +253,7 @@ export const UI = {
     return 0;
   },
 
-  moveTouches: function (event) {
+  moveTouches: function (glottis: GlottisType, event) {
     var touches = event.changedTouches;
     for (var j = 0; j < touches.length; j++) {
       var touch = UI.getTouchById(touches[j].identifier);
@@ -264,10 +264,10 @@ export const UI = {
         touch.diameter = TractUI.getDiameter(touch.x, touch.y);
       }
     }
-    UI.handleTouches();
+    UI.handleTouches(glottis);
   },
 
-  endTouches: function (event) {
+  endTouches: function (glottis: GlottisType, event) {
     var touches = event.changedTouches;
     for (var j = 0; j < touches.length; j++) {
       var touch = UI.getTouchById(touches[j].identifier);
@@ -276,7 +276,7 @@ export const UI = {
         touch.endTime = performance.now() / 1000;
       }
     }
-    UI.handleTouches();
+    UI.handleTouches(glottis);
 
     if (!UI.aboutButton.isOn) {
       UI.inInstructionsScreen = true;
@@ -312,32 +312,32 @@ export const UI = {
     UI.mouseTouch = touch;
     UI.touchesWithMouse.push(touch);
     UI.buttonsHandleTouchStart(touch);
-    UI.handleTouches();
+    UI.handleTouches(glottis);
   },
 
-  moveMouse: function (event) {
+  moveMouse: function (glottis: GlottisType, event) {
     var touch = UI.mouseTouch;
     if (!touch.alive) return;
     touch.x = ((event.pageX - tractCanvas.offsetLeft) / UI.width) * 600;
     touch.y = ((event.pageY - tractCanvas.offsetTop) / UI.width) * 600;
     touch.index = TractUI.getIndex(touch.x, touch.y);
     touch.diameter = TractUI.getDiameter(touch.x, touch.y);
-    UI.handleTouches();
+    UI.handleTouches(glottis);
   },
 
-  endMouse: function (event) {
+  endMouse: function (glottis: GlottisType, event) {
     var touch = UI.mouseTouch;
     if (!touch.alive) return;
     touch.alive = false;
     touch.endTime = performance.now() / 1000;
-    UI.handleTouches();
+    UI.handleTouches(glottis);
 
     if (!UI.aboutButton.isOn) UI.inInstructionsScreen = true;
   },
 
-  handleTouches: function (event) {
+  handleTouches: function (glottis: GlottisType) {
     TractUI.handleTouches();
-    handleTouches(Glottis);
+    handleTouches(glottis);
   },
 
   updateTouches: function () {

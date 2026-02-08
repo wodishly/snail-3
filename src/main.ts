@@ -17,14 +17,14 @@ window.onload = () => {
   const tractCtx = tractCanvas.getContext("2d")!;
 
   const snail = makeSnail();
-  UI.init(snail);
+  UI.init(snail, Glottis);
   initGlottis(Glottis, backCtx);
   Tract.init();
   TractUI.init(backCtx, tractCtx);
 
   const redraw = () => {
     UI.shapeToFitScreen();
-    TractUI.draw({ x: tractCanvas.width, y: tractCanvas.height });
+    TractUI.draw(Glottis, { x: tractCanvas.width, y: tractCanvas.height });
     UI.draw(tractCtx, snail);
     requestAnimationFrame(redraw);
     UI.updateTouches();

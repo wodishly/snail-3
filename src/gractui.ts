@@ -1,5 +1,5 @@
 import { Tract } from "./gract";
-import { Glottis } from "./grottis";
+import { type GlottisType } from "./grottis";
 import { UI } from "./grui";
 import { clamp, type Z } from "./math";
 import { Mouthbook, palePink } from "./settings";
@@ -136,13 +136,13 @@ export var TractUI = {
     return (this.radius - Math.sqrt(xx * xx + yy * yy)) / this.scale;
   },
 
-  draw: function (canvasSize: Z) {
+  draw: function (glottis: GlottisType, canvasSize: Z) {
     this.ctx.clearRect(0, 0, canvasSize.x, canvasSize.y);
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
 
     this.drawTongueControl();
-    this.drawPitchControl();
+    this.drawPitchControl(glottis);
 
     var velum = Tract.noseDiameter[0];
     var velumAngle = velum * 4;
@@ -300,63 +300,6 @@ export var TractUI = {
     this.ctx = tractContext;
   },
 
-  drawPositions: function () {
-    this.ctx.fillStyle = "orchid";
-    this.ctx.font = "24px Arial";
-    this.ctx.textAlign = "center";
-    this.ctx.globalAlpha = 0.6;
-    var a = 2;
-    var b = 1.5;
-    this.drawText(15, a + b * 0.6, "æ"); //pat
-    this.drawText(13, a + b * 0.27, "ɑ"); //part
-    this.drawText(12, a + b * 0.0, "ɒ"); //pot
-    this.drawText(17.7, a + b * 0.05, "(ɔ)"); //port (rounded)
-    this.drawText(27, a + b * 0.65, "ɪ"); //pit
-    this.drawText(27.4, a + b * 0.21, "i"); //peat
-    this.drawText(20, a + b * 1.0, "e"); //pet
-    this.drawText(18.1, a + b * 0.37, "ʌ"); //putt
-    //put ʊ
-    this.drawText(23, a + b * 0.1, "(u)"); //poot (rounded)
-    this.drawText(21, a + b * 0.6, "ə"); //pert [should be ɜ]
-
-    var nasals = -1.1;
-    var stops = -0.4;
-    var fricatives = 0.3;
-    var approximants = 1.1;
-    this.ctx.globalAlpha = 0.8;
-
-    //approximants
-    this.drawText(38, approximants, "l");
-    this.drawText(41, approximants, "w");
-
-    //?
-    this.drawText(4.5, 0.37, "h");
-
-    if (Glottis.isTouched || UI.alwaysVoice) {
-      //voiced consonants
-      this.drawText(31.5, fricatives, "ʒ");
-      this.drawText(36, fricatives, "z");
-      this.drawText(41, fricatives, "v");
-      this.drawText(22, stops, "g");
-      this.drawText(36, stops, "d");
-      this.drawText(41, stops, "b");
-      this.drawText(22, nasals, "ŋ");
-      this.drawText(36, nasals, "n");
-      this.drawText(41, nasals, "m");
-    } else {
-      //unvoiced consonants
-      this.drawText(31.5, fricatives, "ʃ");
-      this.drawText(36, fricatives, "s");
-      this.drawText(41, fricatives, "f");
-      this.drawText(22, stops, "k");
-      this.drawText(36, stops, "t");
-      this.drawText(41, stops, "p");
-      this.drawText(22, nasals, "ŋ");
-      this.drawText(36, nasals, "n");
-      this.drawText(41, nasals, "m");
-    }
-  },
-
   drawAmplitudes: function () {
     this.ctx.strokeStyle = "orchid";
     this.ctx.lineCap = "butt";
@@ -441,18 +384,18 @@ export var TractUI = {
     this.ctx.fillStyle = "orchid";
   },
 
-  drawPitchControl: function () {
+  drawPitchControl: function (glottis: GlottisType) {
     var w = 9;
     var h = 15;
-    if (Glottis.x) {
+    if (glottis.z.x) {
       this.ctx.lineWidth = 4;
       this.ctx.strokeStyle = "orchid";
       this.ctx.globalAlpha = 0.7;
       this.ctx.beginPath();
-      this.ctx.moveTo(Glottis.x - w, Glottis.y - h);
-      this.ctx.lineTo(Glottis.x + w, Glottis.y - h);
-      this.ctx.lineTo(Glottis.x + w, Glottis.y + h);
-      this.ctx.lineTo(Glottis.x - w, Glottis.y + h);
+      this.ctx.moveTo(glottis.z.x - w, glottis.z.y - h);
+      this.ctx.lineTo(glottis.z.x + w, glottis.z.y - h);
+      this.ctx.lineTo(glottis.z.x + w, glottis.z.y + h);
+      this.ctx.lineTo(glottis.z.x - w, glottis.z.y + h);
       this.ctx.closePath();
       this.ctx.stroke();
       this.ctx.globalAlpha = 0.15;
