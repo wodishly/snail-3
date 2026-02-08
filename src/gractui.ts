@@ -5,7 +5,7 @@ import { UI } from "./grui";
 import { clamp } from "./math";
 import { Mouthbook, palePink } from "./settings";
 
-const TractUiSettings = {} as const;
+export type TractUiType = typeof TractUI;
 
 export var TractUI = {
   originX: 340,

@@ -1,4 +1,4 @@
-import { AudioSystem } from "./snail";
+import { AudioSystem } from "./grail";
 import { getNoiseModulator, Glottis } from "./grottis";
 import { UI } from "./grui";
 import { nudge, clamp } from "./math";

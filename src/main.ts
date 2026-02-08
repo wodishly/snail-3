@@ -5,7 +5,7 @@ import { Glottis, initGlottis } from "./grottis";
 import { Tract } from "./gract";
 import { TractUI } from "./gractui";
 import type { Assert } from "./type";
-import { AudioSystem } from "./snail";
+import { AudioSystem, initAudioSystem } from "./grail";
 
 const noise = createNoise2D();
 export const simplex1 = (x: number) => noiseWith(noise, x);
@@ -27,7 +27,7 @@ if (browser.indexOf("firefox") > -1) isFirefox = true;
 window.onload = () => {
   document.body.style.cursor = "pointer";
 
-  AudioSystem.init();
+  initAudioSystem(AudioSystem);
   UI.init();
   initGlottis(Glottis, backCtx);
   Tract.init();

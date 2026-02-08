@@ -1,6 +1,6 @@
 import { TractUI } from "./gractui";
 import { isFirefox, time, tractCtx } from "./main";
-import { AudioSystem, mute, unmute } from "./snail";
+import { AudioSystem, mute, startSound, unmute } from "./grail";
 import { Glottis, handleTouches } from "./grottis";
 import { draw, handleTouchStart, makeButton } from "./grutton";
 import { clamp } from "./math";
@@ -188,7 +188,7 @@ export const UI = {
     event.preventDefault();
     if (!AudioSystem.started) {
       AudioSystem.started = true;
-      AudioSystem.startSound();
+      startSound(AudioSystem);
     }
 
     if (UI.inAboutScreen) {
@@ -266,7 +266,7 @@ export const UI = {
   startMouse: function (event) {
     if (!AudioSystem.started) {
       AudioSystem.started = true;
-      AudioSystem.startSound();
+      startSound(AudioSystem);
     }
     if (UI.inAboutScreen) {
       UI.inAboutScreen = false;

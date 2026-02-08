@@ -1,5 +1,5 @@
 import { simplex1 } from "./main";
-import { AudioSystem } from "./snail";
+import { AudioSystem } from "./grail";
 import { UI } from "./grui";
 import { clamp } from "./math";
 import { drawKeyboard } from "./glottisUi";
