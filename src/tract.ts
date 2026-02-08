@@ -2,48 +2,102 @@ import { reckonBlockTime, type Snail } from "./snail";
 import { getNoiseModulator, type Throat } from "./throat";
 import { type UiType } from "./ui";
 import { nudge, clamp } from "./help/math";
-import type { Upto } from "./help/rime";
 import { Fastenings, Mouthbook, Settings } from "./settings";
+import { makeTransient, processTransients, type Transient } from "./transient";
+import type { Flight } from "./help/list";
+import type { After } from "./help/rime";
 
-export type TractType = typeof Tract;
+export type TractType = ReturnType<typeof makeTract>;
 
-type Dealtell = Upto<44>;
+type Handed<T = number> = Record<"left" | "right", T>;
+type Bend<T = number> = Record<"old" | "niw", T>;
+type Width<T = number> = Record<"now" | "rest" | "goal" | "niw", T>;
+type Mouthful<T = number> = Flight<T, (typeof Mouthbook)["n"]>;
+type Overmouthful<T = number> = Flight<T, After<(typeof Mouthbook)["n"]>>;
 
-type Transient = {
-  position: Dealtell;
-  timeAlive: number;
-  lifeTime: number;
-  strength: number;
-  exponent: number;
+export type Mouth = {
+  main: Mouthful<Handed>;
+  junctionOutput: Overmouthful<Handed>;
+  maxAmplitude: Mouthful;
+  width: Mouthful<Width>;
+  area: Mouthful;
 };
 
-export const makeTransient = (position: Dealtell): Transient => {
+export const makeTract = () => {
   return {
-    position,
-    timeAlive: 0,
-    lifeTime: 0.2,
-    strength: 0.3,
-    exponent: 200,
+    R: [] as unknown as Float64Array, //component going right
+    L: [] as unknown as Float64Array, //component going left
+
+    junctionOutputR: [] as unknown as Float64Array,
+    junctionOutputL: [] as unknown as Float64Array,
+
+    reflection: [] as unknown as Float64Array,
+
+    maxAmplitude: [] as unknown as Float64Array,
+
+    diameter: [] as unknown as Float64Array,
+    restDiameter: [] as unknown as Float64Array,
+    targetDiameter: [] as unknown as Float64Array,
+    newDiameter: [] as unknown as Float64Array,
+
+    A: [] as unknown as Float64Array,
+
+    lastObstruction: -1,
+    transients: [] as Transient[],
+    lipOutput: 0,
+    noseOutput: 0,
+    velumTarget: 0.01,
   };
 };
 
-export const processTransients = (tract: TractType, audioSystem: Snail) => {
-  for (let i = 0; i < tract.transients.length; i++) {
-    const transient = tract.transients[i];
-    const amplitude =
-      transient.strength *
-      Math.pow(2, -transient.exponent * transient.timeAlive);
-    tract.R[transient.position] += amplitude / 2;
-    tract.L[transient.position] += amplitude / 2;
-    transient.timeAlive += 1 / (audioSystem.context.sampleRate * 2);
+export const initTract = (tract: TractType) => {
+  tract.diameter = new Float64Array(Mouthbook.n);
+  tract.restDiameter = new Float64Array(Mouthbook.n);
+  tract.targetDiameter = new Float64Array(Mouthbook.n);
+  tract.newDiameter = new Float64Array(Mouthbook.n);
+  for (var i = 0; i < Mouthbook.n; i++) {
+    var diameter = 0;
+    if (i < (7 * Mouthbook.n) / 44 - 0.5) diameter = 0.6;
+    else if (i < (12 * Mouthbook.n) / 44) diameter = 1.1;
+    else diameter = 1.5;
+    tract.diameter[i] =
+      tract.restDiameter[i] =
+      tract.targetDiameter[i] =
+      tract.newDiameter[i] =
+        diameter;
   }
+  tract.R = new Float64Array(Mouthbook.n);
+  tract.L = new Float64Array(Mouthbook.n);
+  tract.reflection = new Float64Array(Mouthbook.n + 1);
+  tract.newReflection = new Float64Array(Mouthbook.n + 1);
+  tract.junctionOutputR = new Float64Array(Mouthbook.n + 1);
+  tract.junctionOutputL = new Float64Array(Mouthbook.n + 1);
+  tract.A = new Float64Array(Mouthbook.n);
+  tract.maxAmplitude = new Float64Array(Mouthbook.n);
 
-  for (let i = tract.transients.length - 1; i >= 0; i--) {
-    const transient = tract.transients[i];
-    if (transient.timeAlive > transient.lifeTime) {
-      tract.transients.splice(i, 1);
-    }
+  tract.noseR = new Float64Array(Mouthbook.noseLength);
+  tract.noseL = new Float64Array(Mouthbook.noseLength);
+  tract.noseJunctionOutputR = new Float64Array(Mouthbook.noseLength + 1);
+  tract.noseJunctionOutputL = new Float64Array(Mouthbook.noseLength + 1);
+  tract.noseReflection = new Float64Array(Mouthbook.noseLength + 1);
+  tract.noseDiameter = new Float64Array(Mouthbook.noseLength);
+  tract.noseA = new Float64Array(Mouthbook.noseLength);
+  tract.noseMaxAmplitude = new Float64Array(Mouthbook.noseLength);
+  for (var i = 0; i < Mouthbook.noseLength; i++) {
+    var diameter;
+    var d = 2 * (i / Mouthbook.noseLength);
+    if (d < 1) diameter = 0.4 + 1.6 * d;
+    else diameter = 0.5 + 1.5 * (2 - d);
+    diameter = Math.min(diameter, 1.9);
+    tract.noseDiameter[i] = diameter;
   }
+  tract.newReflectionLeft =
+    tract.newReflectionRight =
+    tract.newReflectionNose =
+      0;
+  calculateReflections(tract);
+  calculateNoseReflections(tract);
+  tract.noseDiameter[0] = tract.velumTarget;
 };
 
 export const finishTractBlock = (tract: TractType, audioSystem: Snail) => {
@@ -99,7 +153,7 @@ export const addTurbulenceNoise = (
     var touch = ui.touchesWithMouse[j];
     if (touch.index < 2 || touch.index > Mouthbook.n) continue;
     if (touch.diameter <= 0) continue;
-    var intensity = touch.fricative_intensity;
+    var intensity = touch.fricativeIntensity;
     if (intensity == 0) continue;
     addTurbulenceNoiseAtIndex(
       tract,
@@ -217,9 +271,6 @@ export const runTractStep = (
     tract.R[i] = tract.junctionOutputR[i] * 0.999;
     tract.L[i] = tract.junctionOutputL[i + 1] * 0.999;
 
-    //tract.R[i] = clamp(tract.junctionOutputR[i] * tract.fade, -1, 1);
-    //tract.L[i] = clamp(tract.junctionOutputL[i+1] * tract.fade, -1, 1);
-
     if (updateAmplitudes) {
       var amplitude = Math.abs(tract.R[i] + tract.L[i]);
       if (amplitude > tract.maxAmplitude[i]) tract.maxAmplitude[i] = amplitude;
@@ -240,11 +291,8 @@ export const runTractStep = (
   }
 
   for (var i = 0; i < Mouthbook.noseLength; i++) {
-    tract.noseR[i] = tract.noseJunctionOutputR[i] * tract.fade;
-    tract.noseL[i] = tract.noseJunctionOutputL[i + 1] * tract.fade;
-
-    //tract.noseR[i] = clamp(tract.noseJunctionOutputR[i] * tract.fade, -1, 1);
-    //tract.noseL[i] = clamp(tract.noseJunctionOutputL[i+1] * tract.fade, -1, 1);
+    tract.noseR[i] = tract.noseJunctionOutputR[i] * Settings.fade;
+    tract.noseL[i] = tract.noseJunctionOutputL[i + 1] * Settings.fade;
 
     if (updateAmplitudes) {
       var amplitude = Math.abs(tract.noseR[i] + tract.noseL[i]);
@@ -255,74 +303,4 @@ export const runTractStep = (
   }
 
   tract.noseOutput = tract.noseR[Mouthbook.noseLength - 1];
-};
-
-export var Tract = {
-  R: [] as number[], //component going right
-  L: [] as number[], //component going left
-  reflection: [] as number[],
-  junctionOutputR: [] as number[],
-  junctionOutputL: [] as number[],
-  maxAmplitude: [] as number[],
-  diameter: [] as number[],
-  restDiameter: [] as number[],
-  targetDiameter: [] as number[],
-  newDiameter: [] as number[],
-  A: [] as number[],
-  lastObstruction: -1,
-  fade: 1.0, //0.9999,
-  transients: [] as Transient[],
-  lipOutput: 0,
-  noseOutput: 0,
-  velumTarget: 0.01,
-
-  init: function () {
-    this.diameter = new Float64Array(Mouthbook.n);
-    this.restDiameter = new Float64Array(Mouthbook.n);
-    this.targetDiameter = new Float64Array(Mouthbook.n);
-    this.newDiameter = new Float64Array(Mouthbook.n);
-    for (var i = 0; i < Mouthbook.n; i++) {
-      var diameter = 0;
-      if (i < (7 * Mouthbook.n) / 44 - 0.5) diameter = 0.6;
-      else if (i < (12 * Mouthbook.n) / 44) diameter = 1.1;
-      else diameter = 1.5;
-      this.diameter[i] =
-        this.restDiameter[i] =
-        this.targetDiameter[i] =
-        this.newDiameter[i] =
-          diameter;
-    }
-    this.R = new Float64Array(Mouthbook.n);
-    this.L = new Float64Array(Mouthbook.n);
-    this.reflection = new Float64Array(Mouthbook.n + 1);
-    this.newReflection = new Float64Array(Mouthbook.n + 1);
-    this.junctionOutputR = new Float64Array(Mouthbook.n + 1);
-    this.junctionOutputL = new Float64Array(Mouthbook.n + 1);
-    this.A = new Float64Array(Mouthbook.n);
-    this.maxAmplitude = new Float64Array(Mouthbook.n);
-
-    this.noseR = new Float64Array(Mouthbook.noseLength);
-    this.noseL = new Float64Array(Mouthbook.noseLength);
-    this.noseJunctionOutputR = new Float64Array(Mouthbook.noseLength + 1);
-    this.noseJunctionOutputL = new Float64Array(Mouthbook.noseLength + 1);
-    this.noseReflection = new Float64Array(Mouthbook.noseLength + 1);
-    this.noseDiameter = new Float64Array(Mouthbook.noseLength);
-    this.noseA = new Float64Array(Mouthbook.noseLength);
-    this.noseMaxAmplitude = new Float64Array(Mouthbook.noseLength);
-    for (var i = 0; i < Mouthbook.noseLength; i++) {
-      var diameter;
-      var d = 2 * (i / Mouthbook.noseLength);
-      if (d < 1) diameter = 0.4 + 1.6 * d;
-      else diameter = 0.5 + 1.5 * (2 - d);
-      diameter = Math.min(diameter, 1.9);
-      this.noseDiameter[i] = diameter;
-    }
-    this.newReflectionLeft =
-      this.newReflectionRight =
-      this.newReflectionNose =
-        0;
-    calculateReflections(this);
-    calculateNoseReflections(this);
-    this.noseDiameter[0] = this.velumTarget;
-  },
 };

@@ -8,6 +8,7 @@ import { mute, startSound, unmute, type Snail } from "./snail";
 import { handleThroatTouches, type Throat } from "./throat";
 import { drawButton, handleTouchStart, makeButton } from "./button";
 import { clamp, type Z } from "./help/math";
+import type { TractType } from "./tract";
 
 export type UiType = ReturnType<typeof makeUi>;
 
@@ -18,11 +19,11 @@ export type Rine = Z & {
 
   startTime: number;
   endTime: number;
-  alive: boolean;
+  isAlive: boolean;
 
   index: number;
   diameter: number;
-  fricative_intensity: number;
+  fricativeIntensity: number;
 };
 
 export const makeUi = () => {
@@ -41,30 +42,31 @@ export const makeUi = () => {
     alwaysVoiceButton: makeButton(460, 428, 140, 30, "always voice", true),
     autoWobbleButton: makeButton(460, 464, 140, 30, "pitch wobble", true),
     touchesWithMouse: [] as Rine[],
-    mouseTouch: { alive: false, endTime: 0 } as Partial<Rine>,
+    mouseTouch: { isAlive: false, endTime: 0 } as Partial<Rine>,
   };
 };
 
 export const initUi = (
   ui: UiType,
+  tract: TractType,
   tractUi: TractUiType,
   audioSystem: Snail,
   glottis: Throat,
-  tractCanvas: HTMLCanvasElement,
+  tractCtx: CanvasRenderingContext2D,
 ) => {
   ui.isMouseDown = false;
 
   document.addEventListener("pointerdown", (e) => {
     ui.isMouseDown = true;
     e.preventDefault();
-    startMouse(audioSystem, glottis, ui, tractUi, tractCanvas, e);
+    startMouse(audioSystem, glottis, tract, ui, tractUi, tractCtx.canvas, e);
   });
   document.addEventListener("pointerup", () => {
     ui.isMouseDown = false;
     endMouse(glottis, ui, tractUi);
   });
   document.addEventListener("pointermove", (e) =>
-    moveMouse(glottis, ui, tractUi, tractCanvas, e),
+    moveMouse(glottis, ui, tractUi, tractCtx.canvas, e),
   );
 };
 
@@ -75,8 +77,8 @@ const handleUiTouches = (glottis: Throat, ui: UiType, tractUi: TractUiType) => {
 
 export const shapeToFitScreen = (
   ui: UiType,
-  tractCanvas: HTMLCanvasElement,
-  backCanvas: HTMLCanvasElement,
+  backCtx: CanvasRenderingContext2D,
+  tractCtx: CanvasRenderingContext2D,
 ) => {
   if (window.innerWidth <= window.innerHeight) {
     ui.width = window.innerWidth - 10;
@@ -89,8 +91,8 @@ export const shapeToFitScreen = (
   }
   document.body.style.marginLeft = ui.left_margin.toString();
   document.body.style.marginTop = ui.top_margin.toString();
-  tractCanvas.style.width = ui.width.toString();
-  backCanvas.style.width = ui.width.toString();
+  backCtx.canvas.style.width = ui.width.toString();
+  tractCtx.canvas.style.width = ui.width.toString();
 };
 
 export const drawUi = (
@@ -173,7 +175,7 @@ const moveMouse = (
   e: PointerEvent,
 ) => {
   const rine = ui.mouseTouch;
-  if (!rine.alive) {
+  if (!rine.isAlive) {
     return;
   }
 
@@ -186,10 +188,10 @@ const moveMouse = (
 
 const endMouse = (glottis: Throat, ui: UiType, tractUi: TractUiType) => {
   const touch = ui.mouseTouch;
-  if (!touch.alive) {
+  if (!touch.isAlive) {
     return;
   }
-  touch.alive = false;
+  touch.isAlive = false;
   touch.endTime = performance.now() / 1000;
   handleUiTouches(glottis, ui, tractUi);
 
@@ -213,16 +215,16 @@ export const updateTouches = (ui: UiType) => {
   for (let j = ui.touchesWithMouse.length - 1; j >= 0; j--) {
     const touch = ui.touchesWithMouse[j];
     const time = performance.now() / 1000;
-    if (!touch.alive && time > touch.endTime + 1) {
+    if (!touch.isAlive && time > touch.endTime + 1) {
       ui.touchesWithMouse.splice(j, 1);
-    } else if (touch.alive) {
-      touch.fricative_intensity = clamp(
+    } else if (touch.isAlive) {
+      touch.fricativeIntensity = clamp(
         (time - touch.startTime) / fricativeAttackTime,
         0,
         1,
       );
     } else {
-      touch.fricative_intensity = clamp(
+      touch.fricativeIntensity = clamp(
         1 - (time - touch.endTime) / fricativeAttackTime,
         0,
         1,
@@ -234,6 +236,7 @@ export const updateTouches = (ui: UiType) => {
 export const startMouse = (
   audioSystem: Snail,
   glottis: Throat,
+  tract: TractType,
   ui: UiType,
   tractUi: TractUiType,
   tractCanvas: HTMLCanvasElement,
@@ -241,7 +244,7 @@ export const startMouse = (
 ) => {
   if (!audioSystem.isStarted) {
     audioSystem.isStarted = true;
-    startSound(audioSystem, glottis, ui);
+    startSound(audioSystem, glottis, tract, ui);
   }
   if (ui.isInAboutScreen) {
     ui.isInAboutScreen = false;
@@ -261,9 +264,9 @@ export const startMouse = (
   const rine: Rine = {
     ...z,
     startTime: performance.now() / 1000,
-    fricative_intensity: 0,
+    fricativeIntensity: 0,
     endTime: 0,
-    alive: true,
+    isAlive: true,
     id: `mouse${Math.random()}`,
     index: getIndex(z.x, z.y),
     diameter: getDiameter(z.x, z.y),

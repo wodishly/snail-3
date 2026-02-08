@@ -26,6 +26,7 @@ export const Fastenings = {
 
 export const Settings = {
   speed: 15, // cm/s
+  fade: 1.0, //0.9999,
   vibrato: {
     amount: 0.005,
     frequency: 6,

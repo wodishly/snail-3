@@ -84,14 +84,14 @@ export const getNoiseModulator = (throat: Throat) => {
 };
 
 export const handleThroatTouches = (throat: Throat, ui: UiType) => {
-  if (throat.touch !== undefined && !throat.touch.alive) {
+  if (throat.touch !== undefined && !throat.touch.isAlive) {
     throat.touch = undefined;
   }
 
   if (throat.touch === undefined) {
     for (let j = 0; j < ui.touchesWithMouse.length; j++) {
       const touch = ui.touchesWithMouse[j];
-      if (!touch.alive) {
+      if (!touch.isAlive) {
         continue;
       }
       if (touch.y < Settings.ui.throat.keyboardTop) {

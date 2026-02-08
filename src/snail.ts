@@ -1,4 +1,4 @@
-import { finishTractBlock, runTractStep, Tract } from "./tract";
+import { finishTractBlock, runTractStep, type TractType } from "./tract";
 import { finishGlottisBlock, runGlottisStep, type Throat } from "./throat";
 import type { UiType } from "./ui";
 import { Fastenings } from "./settings";
@@ -28,6 +28,7 @@ export const makeSnail = (): Snail => {
 export const doScriptProcessor = (
   audioSystem: Snail,
   glottis: Throat,
+  tract: TractType,
   ui: UiType,
   event: AudioProcessingEvent,
 ): void => {
@@ -47,7 +48,7 @@ export const doScriptProcessor = (
     let vocalOutput = 0;
     //Tract runs at twice the sample rate
     runTractStep(
-      Tract,
+      tract,
       glottis,
       audioSystem,
       ui,
@@ -55,9 +56,9 @@ export const doScriptProcessor = (
       inputArray2[j],
       lambda1,
     );
-    vocalOutput += Tract.lipOutput + Tract.noseOutput;
+    vocalOutput += tract.lipOutput + tract.noseOutput;
     runTractStep(
-      Tract,
+      tract,
       glottis,
       audioSystem,
       ui,
@@ -65,11 +66,11 @@ export const doScriptProcessor = (
       inputArray2[j],
       lambda2,
     );
-    vocalOutput += Tract.lipOutput + Tract.noseOutput;
+    vocalOutput += tract.lipOutput + tract.noseOutput;
     outArray[j] = vocalOutput * 0.125;
   }
   finishGlottisBlock(glottis, ui);
-  finishTractBlock(Tract, audioSystem);
+  finishTractBlock(tract, audioSystem);
 };
 
 export const createWhiteNoiseNode = (
@@ -97,6 +98,7 @@ export const createWhiteNoiseNode = (
 export const startSound = (
   audioSystem: Snail,
   glottis: Throat,
+  tract: TractType,
   ui: UiType,
 ): void => {
   //scriptProcessor may need a dummy input channel on iOS
@@ -107,7 +109,7 @@ export const startSound = (
   );
   audioSystem.processor.connect(audioSystem.context.destination);
   audioSystem.processor.onaudioprocess = (e: AudioProcessingEvent) =>
-    doScriptProcessor(audioSystem, glottis, ui, e);
+    doScriptProcessor(audioSystem, glottis, tract, ui, e);
 
   const whiteNoise = createWhiteNoiseNode(
     audioSystem,
