@@ -1,5 +1,5 @@
 import { simplex1 } from "./main";
-import { AudioSystem } from "./grail";
+import { type Snail } from "./grail";
 import { UI } from "./grui";
 import { clamp } from "./math";
 import { drawKeyboard } from "./glottisUi";
@@ -111,10 +111,11 @@ export const handleTouches = (glottis: GlottisType) => {
 
 export const runGlottisStep = (
   glottis: GlottisType,
+  audioSystem: Snail,
   lambda: number,
   noiseSource: number,
 ) => {
-  const timeStep = 1.0 / AudioSystem.sampleRate;
+  const timeStep = 1.0 / audioSystem.context.sampleRate;
   glottis.timeInWaveform += timeStep;
   glottis.totalTime += timeStep;
 

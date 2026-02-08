@@ -1,4 +1,4 @@
-import { AudioSystem } from "./grail";
+import { reckonBlockTime, type Snail } from "./grail";
 import { getNoiseModulator, Glottis } from "./grottis";
 import { UI } from "./grui";
 import { nudge, clamp } from "./math";
@@ -27,7 +27,7 @@ export const makeTransient = (position: Dealtell): Transient => {
   };
 };
 
-export const processTransients = (tract: TractType) => {
+export const processTransients = (tract: TractType, audioSystem: Snail) => {
   for (let i = 0; i < tract.transients.length; i++) {
     const transient = tract.transients[i];
     const amplitude =
@@ -35,7 +35,7 @@ export const processTransients = (tract: TractType) => {
       Math.pow(2, -transient.exponent * transient.timeAlive);
     tract.R[transient.position] += amplitude / 2;
     tract.L[transient.position] += amplitude / 2;
-    transient.timeAlive += 1 / (AudioSystem.sampleRate * 2);
+    transient.timeAlive += 1 / (audioSystem.context.sampleRate * 2);
   }
 
   for (let i = tract.transients.length - 1; i >= 0; i--) {
@@ -46,8 +46,8 @@ export const processTransients = (tract: TractType) => {
   }
 };
 
-export const finishTractBlock = (tract: TractType) => {
-  reshapeTract(tract, AudioSystem.blockTime);
+export const finishTractBlock = (tract: TractType, audioSystem: Snail) => {
+  reshapeTract(tract, reckonBlockTime(audioSystem));
   calculateReflections(tract);
 };
 
@@ -170,6 +170,7 @@ export const reshapeTract = (tract: TractType, deltaTime: number) => {
 
 export const runTractStep = (
   tract: TractType,
+  audioSystem: Snail,
   glottalOutput: number,
   turbulenceNoise: number,
   lambda: number,
@@ -177,7 +178,7 @@ export const runTractStep = (
   var updateAmplitudes = Math.random() < 0.1;
 
   //mouth
-  processTransients(tract);
+  processTransients(tract, audioSystem);
   addTurbulenceNoise(tract, turbulenceNoise);
 
   tract.junctionOutputR[0] =

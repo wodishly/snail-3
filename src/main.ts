@@ -5,30 +5,27 @@ import { Glottis, initGlottis } from "./grottis";
 import { Tract } from "./gract";
 import { TractUI } from "./gractui";
 import type { Assert } from "./type";
-import { AudioSystem, initAudioSystem } from "./grail";
+import { makeSnail } from "./grail";
 
 const noise = createNoise2D();
 export const simplex1 = (x: number) => noiseWith(noise, x);
 
-export const tractCanvas = document.getElementById(
-  "tractCanvas",
-) as Assert<HTMLCanvasElement>;
-export var tractCtx = tractCanvas.getContext("2d")!;
-
-export var time = 0;
 export var temp = { a: 0, b: 0 };
-export var isFirefox = false;
-var browser = navigator.userAgent.toLowerCase();
-if (browser.indexOf("firefox") > -1) isFirefox = true;
 
 window.onload = () => {
   document.body.style.cursor = "pointer";
+
   const backCtx = (
     document.getElementById("backCanvas") as Assert<HTMLCanvasElement>
   ).getContext("2d")!;
+  const tractCanvas = document.getElementById(
+    "tractCanvas",
+  ) as Assert<HTMLCanvasElement>;
+  const tractCtx = tractCanvas.getContext("2d")!;
 
-  initAudioSystem(AudioSystem);
-  UI.init();
+  const snail = makeSnail();
+
+  UI.init(snail);
   initGlottis(Glottis, backCtx);
   Tract.init();
   TractUI.init(backCtx, tractCtx);
@@ -36,10 +33,9 @@ window.onload = () => {
   requestAnimationFrame(redraw);
   function redraw() {
     UI.shapeToFitScreen();
-    TractUI.draw(tractCanvas);
-    UI.draw(tractCtx);
+    TractUI.draw({ x: tractCanvas.width, y: tractCanvas.height });
+    UI.draw(tractCtx, snail);
     requestAnimationFrame(redraw);
-    time = performance.now() / 1000;
     UI.updateTouches();
   }
 };

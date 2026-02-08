@@ -1,8 +1,8 @@
 import { Tract } from "./gract";
-import { temp, time } from "./main";
+import { temp } from "./main";
 import { Glottis } from "./grottis";
 import { UI } from "./grui";
-import { clamp } from "./math";
+import { clamp, type Z } from "./math";
 import { Mouthbook, palePink } from "./settings";
 
 export type TractUiType = typeof TractUI;
@@ -47,7 +47,9 @@ export var TractUI = {
     let wobble =
       Tract.maxAmplitude[Mouthbook.n - 1] +
       Tract.noseMaxAmplitude[Mouthbook.noseLength - 1];
-    wobble *= (0.03 * Math.sin(2 * i - 50 * time) * i) / Mouthbook.n;
+    wobble *=
+      (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
+      Mouthbook.n;
     angle += wobble;
     var r = this.radius - this.scale * d + 100 * wobble;
     this.ctx.moveTo(
@@ -63,7 +65,9 @@ export var TractUI = {
     let wobble =
       Tract.maxAmplitude[Mouthbook.n - 1] +
       Tract.noseMaxAmplitude[Mouthbook.noseLength - 1];
-    wobble *= (0.03 * Math.sin(2 * i - 50 * time) * i) / Mouthbook.n;
+    wobble *=
+      (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
+      Mouthbook.n;
     angle += wobble;
     const r = this.radius - this.scale * d + 100 * wobble;
     this.ctx.lineTo(
@@ -133,8 +137,8 @@ export var TractUI = {
     return (this.radius - Math.sqrt(xx * xx + yy * yy)) / this.scale;
   },
 
-  draw: function (tractCanvas: HTMLCanvasElement) {
-    this.ctx.clearRect(0, 0, tractCanvas.width, tractCanvas.height);
+  draw: function (canvasSize: Z) {
+    this.ctx.clearRect(0, 0, canvasSize.x, canvasSize.y);
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
 

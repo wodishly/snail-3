@@ -1,60 +1,66 @@
 import { finishTractBlock, runTractStep, Tract } from "./gract";
 import { finishGlottisBlock, Glottis, runGlottisStep } from "./grottis";
 import { Fastenings } from "./settings";
+import type { Maybe } from "./type";
 
-export type AudioSystemType = typeof AudioSystem;
-
-export const AudioSystem = {
-  started: false,
-  soundOn: false,
-  sampleRate: -1,
-  blockTime: 1,
+export type Snail = {
+  isStarted: boolean;
+  isLoud: boolean;
+  context: AudioContext;
+  processor: Maybe<ScriptProcessorNode>;
 };
 
-export const initAudioSystem = (audioSystem: AudioSystemType) => {
-  audioSystem.audioContext = new AudioContext();
-  audioSystem.sampleRate = audioSystem.audioContext.sampleRate;
-
-  audioSystem.blockTime = Fastenings.blockLength / audioSystem.sampleRate;
+export const reckonBlockTime = (snail: Snail): number => {
+  return Fastenings.blockLength / snail.context.sampleRate;
 };
 
-export const mute = (audioSystem: AudioSystemType) => {
-  audioSystem.scriptProcessor.disconnect();
+export const makeSnail = (): Snail => {
+  const context = new AudioContext();
+  return {
+    isStarted: false,
+    isLoud: false,
+    context,
+    processor: undefined,
+  };
 };
 
-export const unmute = (audioSystem: AudioSystemType) => {
-  audioSystem.scriptProcessor.connect(audioSystem.audioContext.destination);
-};
+export const doScriptProcessor = (
+  audioSystem: Snail,
+  event: AudioProcessingEvent,
+): void => {
+  const inputArray1 = event.inputBuffer.getChannelData(0);
+  const inputArray2 = event.inputBuffer.getChannelData(1);
+  const outArray = event.outputBuffer.getChannelData(0);
+  for (let j = 0, N = outArray.length; j < N; j++) {
+    const lambda1 = j / N;
+    const lambda2 = (j + 0.5) / N;
+    const glottalOutput = runGlottisStep(
+      Glottis,
+      audioSystem,
+      lambda1,
+      inputArray1[j],
+    );
 
-export const doScriptProcessor = (event: AudioProcessingEvent) => {
-  var inputArray1 = event.inputBuffer.getChannelData(0);
-  var inputArray2 = event.inputBuffer.getChannelData(1);
-  var outArray = event.outputBuffer.getChannelData(0);
-  for (var j = 0, N = outArray.length; j < N; j++) {
-    var lambda1 = j / N;
-    var lambda2 = (j + 0.5) / N;
-    var glottalOutput = runGlottisStep(Glottis, lambda1, inputArray1[j]);
-
-    var vocalOutput = 0;
+    let vocalOutput = 0;
     //Tract runs at twice the sample rate
-    runTractStep(Tract, glottalOutput, inputArray2[j], lambda1);
+    runTractStep(Tract, audioSystem, glottalOutput, inputArray2[j], lambda1);
     vocalOutput += Tract.lipOutput + Tract.noseOutput;
-    runTractStep(Tract, glottalOutput, inputArray2[j], lambda2);
+    runTractStep(Tract, audioSystem, glottalOutput, inputArray2[j], lambda2);
     vocalOutput += Tract.lipOutput + Tract.noseOutput;
     outArray[j] = vocalOutput * 0.125;
   }
   finishGlottisBlock(Glottis);
-  finishTractBlock(Tract);
+  finishTractBlock(Tract, audioSystem);
 };
 
 export const createWhiteNoiseNode = (
-  audioSystem: AudioSystemType,
+  audioSystem: Snail,
   frameCount: number,
-) => {
-  const myArrayBuffer = audioSystem.audioContext.createBuffer(
+): AudioBufferSourceNode => {
+  const myArrayBuffer = audioSystem.context.createBuffer(
     1,
     frameCount,
-    audioSystem.sampleRate,
+    audioSystem.context.sampleRate,
   );
 
   const nowBuffering = myArrayBuffer.getChannelData(0);
@@ -62,41 +68,50 @@ export const createWhiteNoiseNode = (
     nowBuffering[i] = Math.random();
   }
 
-  const source = audioSystem.audioContext.createBufferSource();
+  const source = audioSystem.context.createBufferSource();
   source.buffer = myArrayBuffer;
   source.loop = true;
 
   return source;
 };
 
-export const startSound = (audioSystem: AudioSystemType) => {
+export const startSound = (audioSystem: Snail): void => {
   //scriptProcessor may need a dummy input channel on iOS
-  audioSystem.scriptProcessor = audioSystem.audioContext.createScriptProcessor(
+  audioSystem.processor = audioSystem.context.createScriptProcessor(
     Fastenings.blockLength,
     2,
     1,
   );
-  audioSystem.scriptProcessor.connect(audioSystem.audioContext.destination);
-  audioSystem.scriptProcessor.onaudioprocess = doScriptProcessor;
+  audioSystem.processor.connect(audioSystem.context.destination);
+  audioSystem.processor.onaudioprocess = (e: AudioProcessingEvent) =>
+    doScriptProcessor(audioSystem, e);
 
-  var whiteNoise = createWhiteNoiseNode(
+  const whiteNoise = createWhiteNoiseNode(
     audioSystem,
-    2 * audioSystem.sampleRate,
+    2 * audioSystem.context.sampleRate,
   ); // 2 seconds of noise
 
-  var aspirateFilter = audioSystem.audioContext.createBiquadFilter();
+  const aspirateFilter = audioSystem.context.createBiquadFilter();
   aspirateFilter.type = "bandpass";
   aspirateFilter.frequency.value = 500;
   aspirateFilter.Q.value = 0.5;
   whiteNoise.connect(aspirateFilter);
-  aspirateFilter.connect(audioSystem.scriptProcessor);
+  aspirateFilter.connect(audioSystem.processor);
 
-  var fricativeFilter = audioSystem.audioContext.createBiquadFilter();
+  const fricativeFilter = audioSystem.context.createBiquadFilter();
   fricativeFilter.type = "bandpass";
   fricativeFilter.frequency.value = 1000;
   fricativeFilter.Q.value = 0.5;
   whiteNoise.connect(fricativeFilter);
-  fricativeFilter.connect(audioSystem.scriptProcessor);
+  fricativeFilter.connect(audioSystem.processor);
 
   whiteNoise.start(0);
+};
+
+export const mute = (audioSystem: Snail): void => {
+  audioSystem.processor!.disconnect();
+};
+
+export const unmute = (audioSystem: Snail): void => {
+  audioSystem.processor!.connect(audioSystem.context.destination);
 };
