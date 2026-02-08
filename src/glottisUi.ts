@@ -28,31 +28,31 @@ export const drawBar = (
   backCtx.lineWidth = radius * 2;
   backCtx.beginPath();
   backCtx.moveTo(
-    Settings.ui.glottis.keyboardLeft + radius,
-    Settings.ui.glottis.keyboardTop +
-      topFactor * Settings.ui.glottis.keyboardHeight +
+    Settings.ui.throat.keyboardLeft + radius,
+    Settings.ui.throat.keyboardTop +
+      topFactor * Settings.ui.throat.keyboardHeight +
       radius,
   );
   backCtx.lineTo(
-    Settings.ui.glottis.keyboardLeft +
-      Settings.ui.glottis.keyboardWidth -
+    Settings.ui.throat.keyboardLeft +
+      Settings.ui.throat.keyboardWidth -
       radius,
-    Settings.ui.glottis.keyboardTop +
-      topFactor * Settings.ui.glottis.keyboardHeight +
-      radius,
-  );
-  backCtx.lineTo(
-    Settings.ui.glottis.keyboardLeft +
-      Settings.ui.glottis.keyboardWidth -
-      radius,
-    Settings.ui.glottis.keyboardTop +
-      bottomFactor * Settings.ui.glottis.keyboardHeight -
+    Settings.ui.throat.keyboardTop +
+      topFactor * Settings.ui.throat.keyboardHeight +
       radius,
   );
   backCtx.lineTo(
-    Settings.ui.glottis.keyboardLeft + radius,
-    Settings.ui.glottis.keyboardTop +
-      bottomFactor * Settings.ui.glottis.keyboardHeight -
+    Settings.ui.throat.keyboardLeft +
+      Settings.ui.throat.keyboardWidth -
+      radius,
+    Settings.ui.throat.keyboardTop +
+      bottomFactor * Settings.ui.throat.keyboardHeight -
+      radius,
+  );
+  backCtx.lineTo(
+    Settings.ui.throat.keyboardLeft + radius,
+    Settings.ui.throat.keyboardTop +
+      bottomFactor * Settings.ui.throat.keyboardHeight -
       radius,
   );
   backCtx.closePath();
@@ -73,12 +73,12 @@ export const drawKeyboard = (backCtx: CanvasRenderingContext2D) => {
 
   backCtx.strokeStyle = "orchid";
   backCtx.fillStyle = "orchid";
-  for (var i = 0; i < Settings.ui.glottis.semitones; i++) {
+  for (var i = 0; i < Settings.ui.throat.semitones; i++) {
     var keyWidth =
-      Settings.ui.glottis.keyboardWidth / Settings.ui.glottis.semitones;
-    var x = Settings.ui.glottis.keyboardLeft + (i + 1 / 2) * keyWidth;
-    var y = Settings.ui.glottis.keyboardTop;
-    if (Settings.ui.glottis.marks[(i + 3) % 12] == 1) {
+      Settings.ui.throat.keyboardWidth / Settings.ui.throat.semitones;
+    var x = Settings.ui.throat.keyboardLeft + (i + 1 / 2) * keyWidth;
+    var y = Settings.ui.throat.keyboardTop;
+    if (Settings.ui.throat.marks[(i + 3) % 12] == 1) {
       backCtx.lineWidth = 4;
       backCtx.globalAlpha = 0.4;
     } else {
@@ -87,15 +87,15 @@ export const drawKeyboard = (backCtx: CanvasRenderingContext2D) => {
     }
     backCtx.beginPath();
     backCtx.moveTo(x, y + 9);
-    backCtx.lineTo(x, y + Settings.ui.glottis.keyboardHeight * 0.4 - 9);
+    backCtx.lineTo(x, y + Settings.ui.throat.keyboardHeight * 0.4 - 9);
     backCtx.stroke();
 
     backCtx.lineWidth = 3;
     backCtx.globalAlpha = 0.15;
 
     backCtx.beginPath();
-    backCtx.moveTo(x, y + Settings.ui.glottis.keyboardHeight * 0.52 + 6);
-    backCtx.lineTo(x, y + Settings.ui.glottis.keyboardHeight * 0.72 - 6);
+    backCtx.moveTo(x, y + Settings.ui.throat.keyboardHeight * 0.52 + 6);
+    backCtx.lineTo(x, y + Settings.ui.throat.keyboardHeight * 0.72 - 6);
     backCtx.stroke();
   }
 
