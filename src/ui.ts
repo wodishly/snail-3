@@ -3,11 +3,11 @@ import {
   getIndex,
   handleTractUiTouches,
   type TractUiType,
-} from "./gractui";
-import { mute, startSound, unmute, type Snail } from "./grail";
-import { handleThroatTouches, type Throat } from "./grottis";
-import { drawButton, handleTouchStart, makeButton } from "./grutton";
-import { clamp, type Z } from "./math";
+} from "./tractUi";
+import { mute, startSound, unmute, type Snail } from "./snail";
+import { handleThroatTouches, type Throat } from "./throat";
+import { drawButton, handleTouchStart, makeButton } from "./button";
+import { clamp, type Z } from "./help/math";
 
 export type UiType = ReturnType<typeof makeUi>;
 

@@ -1,9 +1,9 @@
-import { type Snail } from "./grail";
-import { type Rine, type UiType } from "./grui";
-import { clamp, type Z } from "./math";
+import { type Snail } from "./snail";
+import { type Rine, type UiType } from "./ui";
+import { clamp, type Z } from "./help/math";
 import { Settings } from "./settings";
 import { createNoise2D } from "simplex-noise";
-import type { Maybe } from "./type";
+import type { Maybe } from "./help/type";
 import { normalizedLFWaveform, setupWaveform, type Wave } from "./wave";
 
 export type ThroatFrequency = Record<"old" | "niw" | "ui" | "smooth", number>;

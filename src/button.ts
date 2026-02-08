@@ -1,7 +1,7 @@
-import type { Rightnook } from "./math";
+import type { Rightnook } from "./help/math";
 import { palePink } from "./settings";
 
-type Grutton = Rightnook & {
+type Button = Rightnook & {
   text: string;
   isOn: boolean;
 };
@@ -13,7 +13,7 @@ export const makeButton = (
   h: number,
   text: string,
   isOn: boolean,
-): Grutton => {
+): Button => {
   return {
     x,
     y,
@@ -24,7 +24,7 @@ export const makeButton = (
   };
 };
 
-export const drawButton = (button: Grutton, context: CanvasRenderingContext2D) => {
+export const drawButton = (button: Button, context: CanvasRenderingContext2D) => {
   var radius = 10;
   context.strokeStyle = palePink;
   context.fillStyle = palePink;
@@ -54,7 +54,7 @@ export const drawButton = (button: Grutton, context: CanvasRenderingContext2D) =
   drawText(button, context);
 };
 export const drawText = (
-  button: Grutton,
+  button: Button,
   context: CanvasRenderingContext2D,
 ) => {
   context.fillText(
@@ -64,7 +64,7 @@ export const drawText = (
   );
 };
 
-export const handleTouchStart = (grutton: Grutton, touch: any) => {
+export const handleTouchStart = (grutton: Button, touch: any) => {
   if (
     touch.x >= grutton.x &&
     touch.x <= grutton.x + grutton.w &&

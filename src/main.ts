@@ -4,13 +4,13 @@ import {
   makeUi,
   shapeToFitScreen,
   updateTouches,
-} from "./grui";
-import { makeThroat } from "./grottis";
-import { Tract } from "./gract";
-import { drawTractUi, initTractUi, makeTractUi } from "./gractui";
-import type { Assert } from "./type";
-import { makeSnail } from "./grail";
-import { drawKeyboard } from "./glottisUi";
+} from "./ui";
+import { makeThroat } from "./throat";
+import { Tract } from "./tract";
+import { drawTractUi, initTractUi, makeTractUi } from "./tractUi";
+import type { Assert } from "./help/type";
+import { makeSnail } from "./snail";
+import { drawKeyboard } from "./throatUi";
 
 window.onload = () => {
   document.body.style.cursor = "pointer";

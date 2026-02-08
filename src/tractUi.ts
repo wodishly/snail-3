@@ -1,7 +1,7 @@
-import { Tract } from "./gract";
-import { type Throat } from "./grottis";
-import { type UiType } from "./grui";
-import { clamp, type Z } from "./math";
+import { Tract } from "./tract";
+import { type Throat } from "./throat";
+import { type UiType } from "./ui";
+import { clamp, type Z } from "./help/math";
 import { Mouthbook, palePink, Settings } from "./settings";
 
 export type TractUiType = ReturnType<typeof makeTractUi>;

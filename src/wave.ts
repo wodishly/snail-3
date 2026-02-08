@@ -1,4 +1,4 @@
-import type { Throat, ThroatFrequency, ThroatTenseness } from "./grottis";
+import type { Throat, ThroatFrequency, ThroatTenseness } from "./throat";
 
 export type Wave = {
   Rd: number;

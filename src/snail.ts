@@ -1,8 +1,8 @@
-import { finishTractBlock, runTractStep, Tract } from "./gract";
-import { finishGlottisBlock, runGlottisStep, type Throat } from "./grottis";
-import type { UiType } from "./grui";
+import { finishTractBlock, runTractStep, Tract } from "./tract";
+import { finishGlottisBlock, runGlottisStep, type Throat } from "./throat";
+import type { UiType } from "./ui";
 import { Fastenings } from "./settings";
-import type { Maybe } from "./type";
+import type { Maybe } from "./help/type";
 
 export type Snail = {
   isStarted: boolean;

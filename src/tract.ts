@@ -1,8 +1,8 @@
-import { reckonBlockTime, type Snail } from "./grail";
-import { getNoiseModulator, type Throat } from "./grottis";
-import { type UiType } from "./grui";
-import { nudge, clamp } from "./math";
-import type { Upto } from "./rime";
+import { reckonBlockTime, type Snail } from "./snail";
+import { getNoiseModulator, type Throat } from "./throat";
+import { type UiType } from "./ui";
+import { nudge, clamp } from "./help/math";
+import type { Upto } from "./help/rime";
 import { Fastenings, Mouthbook, Settings } from "./settings";
 
 export type TractType = typeof Tract;
