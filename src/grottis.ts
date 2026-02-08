@@ -1,5 +1,5 @@
 import { type Snail } from "./grail";
-import { type UiType } from "./grui";
+import { type Rine, type UiType } from "./grui";
 import { clamp, type Z } from "./math";
 import { Settings } from "./settings";
 import { createNoise2D } from "simplex-noise";
@@ -20,14 +20,12 @@ export interface Throat {
   loudness: number;
 
   isTouched: boolean;
-  touch: Maybe<Touche>;
+  touch: Maybe<Rine>;
   z: Z;
 
   wave: Wave;
   noise: (x: number) => number;
 }
-
-type Touche = Z & { isAlive: boolean };
 
 const makeNoise1D = () => {
   const noise = createNoise2D();
@@ -173,7 +171,7 @@ export const finishGlottisBlock = (glottis: Throat, ui: UiType) => {
   vibrato += 0.02 * glottis.noise(glottis.totalTime * 4.07);
   vibrato += 0.04 * glottis.noise(glottis.totalTime * 2.15);
 
-  if (ui.autoWobble) {
+  if (ui.isAutoWobbling) {
     vibrato += 0.2 * glottis.noise(glottis.totalTime * 0.98);
     vibrato += 0.4 * glottis.noise(glottis.totalTime * 0.5);
   }
@@ -200,12 +198,12 @@ export const finishGlottisBlock = (glottis: Throat, ui: UiType) => {
     0.1 * glottis.noise(glottis.totalTime * 0.46) +
     0.05 * glottis.noise(glottis.totalTime * 0.36);
 
-  if (!glottis.isTouched && ui.alwaysVoice) {
+  if (!glottis.isTouched && ui.isAlwaysVoicing) {
     glottis.tenseness.niw +=
       (3 - glottis.tenseness.ui) * (1 - glottis.intensity);
   }
 
-  if (glottis.isTouched || ui.alwaysVoice) {
+  if (glottis.isTouched || ui.isAlwaysVoicing) {
     glottis.intensity += 0.13;
   } else {
     glottis.intensity -= 0.05;

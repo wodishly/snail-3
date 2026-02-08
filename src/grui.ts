@@ -2,7 +2,7 @@ import { TractUI } from "./gractui";
 import { mute, startSound, unmute, type Snail } from "./grail";
 import { handleThroatTouches, type Throat } from "./grottis";
 import { drawButton, handleTouchStart, makeButton } from "./grutton";
-import { clamp } from "./math";
+import { clamp, type Z } from "./math";
 
 export type UiType = ReturnType<typeof makeUi>;
 
@@ -11,12 +11,18 @@ export const makeUi = () => {
     width: 600,
     top_margin: 5,
     left_margin: 5,
-    inAboutScreen: true,
-    inInstructionsScreen: false,
     instructionsLine: 0,
     debugText: "",
-    autoWobble: true,
-    alwaysVoice: true,
+    isInAboutScreen: true,
+    isInInstructionsScreen: false,
+    isAutoWobbling: true,
+    isAlwaysVoicing: true,
+    isMouseDown: false,
+    aboutButton: makeButton(460, 392, 140, 30, "about...", true),
+    alwaysVoiceButton: makeButton(460, 428, 140, 30, "always voice", true),
+    autoWobbleButton: makeButton(460, 464, 140, 30, "pitch wobble", true),
+    touchesWithMouse: [],
+    mouseTouch: { alive: false, endTime: 0 },
   };
 };
 
@@ -26,21 +32,15 @@ export const initUi = (
   glottis: Throat,
   tractCanvas: HTMLCanvasElement,
 ) => {
-  ui.touchesWithMouse = [];
-  ui.mouseTouch = { alive: false, endTime: 0 };
-  ui.mouseDown = false;
-
-  ui.aboutButton = makeButton(460, 392, 140, 30, "about...", true);
-  ui.alwaysVoiceButton = makeButton(460, 428, 140, 30, "always voice", true);
-  ui.autoWobbleButton = makeButton(460, 464, 140, 30, "pitch wobble", true);
+  ui.isMouseDown = false;
 
   document.addEventListener("pointerdown", (e) => {
-    ui.mouseDown = true;
+    ui.isMouseDown = true;
     e.preventDefault();
-    startMouse(audioSystem, glottis, ui, e);
+    startMouse(audioSystem, glottis, ui, tractCanvas, e);
   });
   document.addEventListener("pointerup", () => {
-    ui.mouseDown = false;
+    ui.isMouseDown = false;
     endMouse(glottis, ui);
   });
   document.addEventListener("pointermove", (e) =>
@@ -81,8 +81,8 @@ export const drawUi = (
   drawButton(ui.alwaysVoiceButton, tractCtx);
   drawButton(ui.autoWobbleButton, tractCtx);
   drawButton(ui.aboutButton, tractCtx);
-  if (ui.inAboutScreen) drawAboutScreen(tractCtx);
-  else if (ui.inInstructionsScreen)
+  if (ui.isInAboutScreen) drawAboutScreen(tractCtx);
+  else if (ui.isInInstructionsScreen)
     drawInstructionsScreen(ui, tractCtx, audioSystem);
 };
 
@@ -131,7 +131,7 @@ const instructionsScreenHandleTouch = (
   else if (x >= 370 && x <= 570 && y >= 505 && y <= 555) {
     location.reload();
   } else {
-    ui.inInstructionsScreen = false;
+    ui.isInInstructionsScreen = false;
     ui.aboutButton.isOn = true;
     unmute(audioSystem);
   }
@@ -139,9 +139,9 @@ const instructionsScreenHandleTouch = (
 
 const buttonsHandleTouchStart = (ui: UiType, touch) => {
   handleTouchStart(ui.alwaysVoiceButton, touch);
-  ui.alwaysVoice = ui.alwaysVoiceButton.isOn;
+  ui.isAlwaysVoicing = ui.alwaysVoiceButton.isOn;
   handleTouchStart(ui.autoWobbleButton, touch);
-  ui.autoWobble = ui.autoWobbleButton.isOn;
+  ui.isAutoWobbling = ui.autoWobbleButton.isOn;
   handleTouchStart(ui.aboutButton, touch);
 };
 
@@ -172,7 +172,7 @@ const endMouse = (glottis: Throat, ui: UiType) => {
   touch.endTime = performance.now() / 1000;
   handleUiTouches(glottis, ui);
 
-  if (!ui.aboutButton.isOn) ui.inInstructionsScreen = true;
+  if (!ui.aboutButton.isOn) ui.isInInstructionsScreen = true;
 };
 
 const write = (
@@ -214,17 +214,18 @@ export const startMouse = (
   audioSystem: Snail,
   glottis: Throat,
   ui: UiType,
+  tractCanvas: HTMLCanvasElement,
   event: PointerEvent,
 ) => {
   if (!audioSystem.isStarted) {
     audioSystem.isStarted = true;
     startSound(audioSystem, glottis, ui);
   }
-  if (ui.inAboutScreen) {
-    ui.inAboutScreen = false;
+  if (ui.isInAboutScreen) {
+    ui.isInAboutScreen = false;
     return;
   }
-  if (ui.inInstructionsScreen) {
+  if (ui.isInInstructionsScreen) {
     var x = ((event.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
     var y = ((event.pageY - tractCanvas.offsetTop) / ui.width) * 600;
     instructionsScreenHandleTouch(ui, audioSystem, x, y);
@@ -245,6 +246,20 @@ export const startMouse = (
   ui.touchesWithMouse.push(touch);
   buttonsHandleTouchStart(ui, touch);
   handleUiTouches(glottis, ui);
+};
+
+type RineId = `mouse${number}`;
+
+export type Rine = Z & {
+  id: RineId;
+
+  startTime: number;
+  endTime: number;
+  isAlive: boolean;
+
+  index: number;
+  diameter: number;
+  fricative_intensity: number;
 };
 
 export const drawInstructionsScreen = (
