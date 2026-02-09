@@ -4,10 +4,14 @@ import { type UiType } from "./ui";
 import { nudge, clamp } from "./help/math";
 import { Fastenings, Mouthbook, Settings } from "./settings";
 import { makeTransient, processTransients, type Transient } from "./transient";
-import type { Flight } from "./help/list";
-import type { After } from "./help/rime";
+import { row, type Flight } from "./help/list";
+import { after, type After, type Upto } from "./help/rime";
+import type { Assert, Maybe } from "./help/type";
 
 export type TractType = ReturnType<typeof makeTract>;
+
+export type Berth = Upto<(typeof Mouthbook)["n"]>;
+type Obstruction = Maybe<Berth>;
 
 type Handed<T = number> = Record<"left" | "right", T>;
 type Bend<T = number> = Record<"old" | "niw", T>;
@@ -15,34 +19,58 @@ type Width<T = number> = Record<"now" | "rest" | "goal" | "niw", T>;
 type Mouthful<T = number> = Flight<T, (typeof Mouthbook)["n"]>;
 type Overmouthful<T = number> = Flight<T, After<(typeof Mouthbook)["n"]>>;
 
+export const makeBend = <T>(x: T): Bend<T> => {
+  return { old: x, niw: x };
+};
+
+export const makeHanded = <T>(x: T): Handed<T> => {
+  return { left: x, right: x };
+};
+
+export const makeWidth = <T>(x: T): Width<T> => {
+  return { now: x, rest: x, goal: x, niw: x };
+};
+
 export type Mouth = {
   main: Mouthful<Handed>;
   junctionOutput: Overmouthful<Handed>;
+  reflection: Overmouthful<Bend>;
   maxAmplitude: Mouthful;
   width: Mouthful<Width>;
+  nose: Nose;
+
   area: Mouthful;
 };
 
+export type Nose = {};
+
 export const makeTract = () => {
   return {
-    R: [] as unknown as Float64Array, //component going right
-    L: [] as unknown as Float64Array, //component going left
+    main: row(Mouthbook.n, () => makeHanded(0)),
+    junctionOutput: row(after(Mouthbook.n), () => makeHanded(0)),
+    bend: row(after(Mouthbook.n), () => makeBend(0)),
+    area: row(Mouthbook.n, () => 0),
+    maxAmplitude: row(Mouthbook.n, () => 0),
+    width: row(Mouthbook.n, () => makeWidth(0)),
 
-    junctionOutputR: [] as unknown as Float64Array,
-    junctionOutputL: [] as unknown as Float64Array,
+    noseR: [] as unknown as Float64Array,
+    noseL: [] as unknown as Float64Array,
+    noseJunctionOutputR: [] as unknown as Float64Array,
+    noseJunctionOutputL: [] as unknown as Float64Array,
+    noseReflection: [] as unknown as Float64Array,
+    noseDiameter: [] as unknown as Float64Array,
+    noseA: [] as unknown as Float64Array,
+    noseMaxAmplitude: [] as unknown as Float64Array,
 
-    reflection: [] as unknown as Float64Array,
+    reflectionLeft: 0,
+    reflectionRight: 0,
+    reflectionNose: 0,
 
-    maxAmplitude: [] as unknown as Float64Array,
+    newReflectionLeft: 0,
+    newReflectionRight: 0,
+    newReflectionNose: 0,
 
-    diameter: [] as unknown as Float64Array,
-    restDiameter: [] as unknown as Float64Array,
-    targetDiameter: [] as unknown as Float64Array,
-    newDiameter: [] as unknown as Float64Array,
-
-    A: [] as unknown as Float64Array,
-
-    lastObstruction: -1,
+    lastObstruction: undefined as Maybe<Obstruction>,
     transients: [] as Transient[],
     lipOutput: 0,
     noseOutput: 0,
@@ -51,29 +79,13 @@ export const makeTract = () => {
 };
 
 export const initTract = (tract: TractType) => {
-  tract.diameter = new Float64Array(Mouthbook.n);
-  tract.restDiameter = new Float64Array(Mouthbook.n);
-  tract.targetDiameter = new Float64Array(Mouthbook.n);
-  tract.newDiameter = new Float64Array(Mouthbook.n);
   for (var i = 0; i < Mouthbook.n; i++) {
     var diameter = 0;
     if (i < (7 * Mouthbook.n) / 44 - 0.5) diameter = 0.6;
     else if (i < (12 * Mouthbook.n) / 44) diameter = 1.1;
     else diameter = 1.5;
-    tract.diameter[i] =
-      tract.restDiameter[i] =
-      tract.targetDiameter[i] =
-      tract.newDiameter[i] =
-        diameter;
+    tract.width[i] = makeWidth(diameter);
   }
-  tract.R = new Float64Array(Mouthbook.n);
-  tract.L = new Float64Array(Mouthbook.n);
-  tract.reflection = new Float64Array(Mouthbook.n + 1);
-  tract.newReflection = new Float64Array(Mouthbook.n + 1);
-  tract.junctionOutputR = new Float64Array(Mouthbook.n + 1);
-  tract.junctionOutputL = new Float64Array(Mouthbook.n + 1);
-  tract.A = new Float64Array(Mouthbook.n);
-  tract.maxAmplitude = new Float64Array(Mouthbook.n);
 
   tract.noseR = new Float64Array(Mouthbook.noseLength);
   tract.noseL = new Float64Array(Mouthbook.noseLength);
@@ -83,13 +95,12 @@ export const initTract = (tract: TractType) => {
   tract.noseDiameter = new Float64Array(Mouthbook.noseLength);
   tract.noseA = new Float64Array(Mouthbook.noseLength);
   tract.noseMaxAmplitude = new Float64Array(Mouthbook.noseLength);
-  for (var i = 0; i < Mouthbook.noseLength; i++) {
-    var diameter;
-    var d = 2 * (i / Mouthbook.noseLength);
-    if (d < 1) diameter = 0.4 + 1.6 * d;
-    else diameter = 0.5 + 1.5 * (2 - d);
-    diameter = Math.min(diameter, 1.9);
-    tract.noseDiameter[i] = diameter;
+  for (let i = 0; i < Mouthbook.noseLength; i++) {
+    const d = 2 * (i / Mouthbook.noseLength);
+    tract.noseDiameter[i] = Math.min(
+      1.9,
+      d < 1 ? 0.4 + 1.6 * d : 0.5 + 1.5 * (2 - d),
+    );
   }
   tract.newReflectionLeft =
     tract.newReflectionRight =
@@ -107,15 +118,16 @@ export const finishTractBlock = (tract: TractType, audioSystem: Snail) => {
 
 export const calculateReflections = (tract: TractType) => {
   for (var i = 0; i < Mouthbook.n; i++) {
-    tract.A[i] = tract.diameter[i] * tract.diameter[i]; //ignoring PI etc.
+    tract.area[i] = tract.width[i].now * tract.width[i].now; //ignoring PI etc.
   }
   for (var i = 1; i < Mouthbook.n; i++) {
-    tract.reflection[i] = tract.newReflection[i];
-    if (tract.A[i] == 0)
-      tract.newReflection[i] = 0.999; //to prevent some bad behaviour if 0
+    tract.bend[i].old = tract.bend[i].niw;
+    if (tract.area[i] == 0)
+      tract.bend[i].niw = 0.999; //to prevent some bad behaviour if 0
     else
-      tract.newReflection[i] =
-        (tract.A[i - 1] - tract.A[i]) / (tract.A[i - 1] + tract.A[i]);
+      tract.bend[i].niw =
+        (tract.area[i - 1] - tract.area[i]) /
+        (tract.area[i - 1] + tract.area[i]);
   }
 
   //now at junction with nose
@@ -124,11 +136,12 @@ export const calculateReflections = (tract: TractType) => {
   tract.reflectionRight = tract.newReflectionRight;
   tract.reflectionNose = tract.newReflectionNose;
   var sum =
-    tract.A[Mouthbook.noseStart] +
-    tract.A[Mouthbook.noseStart + 1] +
+    tract.area[Mouthbook.noseStart] +
+    tract.area[Mouthbook.noseStart + 1] +
     tract.noseA[0];
-  tract.newReflectionLeft = (2 * tract.A[Mouthbook.noseStart] - sum) / sum;
-  tract.newReflectionRight = (2 * tract.A[Mouthbook.noseStart + 1] - sum) / sum;
+  tract.newReflectionLeft = (2 * tract.area[Mouthbook.noseStart] - sum) / sum;
+  tract.newReflectionRight =
+    (2 * tract.area[Mouthbook.noseStart + 1] - sum) / sum;
   tract.newReflectionNose = (2 * tract.noseA[0] - sum) / sum;
 };
 
@@ -179,19 +192,25 @@ export const addTurbulenceNoiseAtIndex = (
   const openness = clamp(30 * (diameter - 0.3), 0, 1);
   const noise0 = turbulenceNoise * (1 - delta) * thinness0 * openness;
   const noise1 = turbulenceNoise * delta * thinness0 * openness;
-  tract.R[i + 1] += noise0 / 2;
-  tract.L[i + 1] += noise0 / 2;
-  tract.R[i + 2] += noise1 / 2;
-  tract.L[i + 2] += noise1 / 2;
+  if (i + 1 < tract.main.length) {
+    tract.main[i + 1].left += noise0 / 2;
+    tract.main[i + 1].right += noise0 / 2;
+  }
+  if (i + 2 < tract.main.length) {
+    tract.main[i + 2].left += noise1 / 2;
+    tract.main[i + 2].right += noise1 / 2;
+  }
 };
 
 export const reshapeTract = (tract: TractType, deltaTime: number) => {
   let amount = deltaTime * Settings.speed;
-  let newLastObstruction = -1;
+  let newLastObstruction: Maybe<Obstruction> = undefined;
   for (let i = 0; i < Mouthbook.n; i++) {
-    const diameter = tract.diameter[i];
-    const targetDiameter = tract.targetDiameter[i];
-    if (diameter <= 0) newLastObstruction = i;
+    const diameter = tract.width[i].now;
+    const targetDiameter = tract.width[i].goal;
+    if (diameter <= 0) {
+      newLastObstruction = i as Assert<Obstruction>;
+    }
     const slowReturn =
       i < Mouthbook.noseStart
         ? 0.6
@@ -200,7 +219,7 @@ export const reshapeTract = (tract: TractType, deltaTime: number) => {
           : 0.6 +
             (0.4 * (i - Mouthbook.noseStart)) /
               (Mouthbook.tipStart - Mouthbook.noseStart);
-    tract.diameter[i] = nudge(
+    tract.width[i].now = nudge(
       diameter,
       targetDiameter,
       slowReturn * amount,
@@ -208,8 +227,8 @@ export const reshapeTract = (tract: TractType, deltaTime: number) => {
     );
   }
   if (
-    tract.lastObstruction > -1 &&
-    newLastObstruction === -1 &&
+    tract.lastObstruction !== undefined &&
+    newLastObstruction === undefined &&
     tract.noseA[0] < 0.05
   ) {
     tract.transients.push(makeTransient(tract.lastObstruction));
@@ -241,44 +260,46 @@ export const runTractStep = (
   processTransients(tract, audioSystem);
   addTurbulenceNoise(tract, glottis, ui, turbulenceNoise);
 
-  tract.junctionOutputR[0] =
-    tract.L[0] * Fastenings.reflection.glottal + glottalOutput;
-  tract.junctionOutputL[Mouthbook.n] =
-    tract.R[Mouthbook.n - 1] * Fastenings.reflection.lip;
+  tract.junctionOutput[0].right =
+    tract.main[0].left * Fastenings.reflection.glottal + glottalOutput;
+  tract.junctionOutput[Mouthbook.n].left =
+    tract.main[Mouthbook.n - 1].right * Fastenings.reflection.lip;
 
   for (var i = 1; i < Mouthbook.n; i++) {
-    var r =
-      tract.reflection[i] * (1 - lambda) + tract.newReflection[i] * lambda;
-    var w = r * (tract.R[i - 1] + tract.L[i]);
-    tract.junctionOutputR[i] = tract.R[i - 1] - w;
-    tract.junctionOutputL[i] = tract.L[i] + w;
+    var r = tract.bend[i].old * (1 - lambda) + tract.bend[i].niw * lambda;
+    var w = r * (tract.main[i - 1].right + tract.main[i].left);
+    tract.junctionOutput[i].right = tract.main[i - 1].right - w;
+    tract.junctionOutput[i].left = tract.main[i].left + w;
   }
 
   //now at junction with nose
-  var i = Mouthbook.noseStart;
+  var j = Mouthbook.noseStart;
   var r =
     tract.newReflectionLeft * (1 - lambda) + tract.reflectionLeft * lambda;
-  tract.junctionOutputL[i] =
-    r * tract.R[i - 1] + (1 + r) * (tract.noseL[0] + tract.L[i]);
+  tract.junctionOutput[j].left =
+    r * tract.main[j - 1].right +
+    (1 + r) * (tract.noseL[0] + tract.main[j].left);
   r = tract.newReflectionRight * (1 - lambda) + tract.reflectionRight * lambda;
-  tract.junctionOutputR[i] =
-    r * tract.L[i] + (1 + r) * (tract.R[i - 1] + tract.noseL[0]);
+  tract.junctionOutput[j].right =
+    r * tract.main[j].left +
+    (1 + r) * (tract.main[j - 1].right + tract.noseL[0]);
   r = tract.newReflectionNose * (1 - lambda) + tract.reflectionNose * lambda;
   tract.noseJunctionOutputR[0] =
-    r * tract.noseL[0] + (1 + r) * (tract.L[i] + tract.R[i - 1]);
+    r * tract.noseL[0] +
+    (1 + r) * (tract.main[j].left + tract.main[j - 1].right);
 
   for (var i = 0; i < Mouthbook.n; i++) {
-    tract.R[i] = tract.junctionOutputR[i] * 0.999;
-    tract.L[i] = tract.junctionOutputL[i + 1] * 0.999;
+    tract.main[i].right = tract.junctionOutput[i].right * 0.999;
+    tract.main[i].left = tract.junctionOutput[i + 1].left * 0.999;
 
     if (updateAmplitudes) {
-      var amplitude = Math.abs(tract.R[i] + tract.L[i]);
+      var amplitude = Math.abs(tract.main[i].right + tract.main[i].left);
       if (amplitude > tract.maxAmplitude[i]) tract.maxAmplitude[i] = amplitude;
       else tract.maxAmplitude[i] *= 0.999;
     }
   }
 
-  tract.lipOutput = tract.R[Mouthbook.n - 1];
+  tract.lipOutput = tract.main[Mouthbook.n - 1].right;
 
   //nose
   tract.noseJunctionOutputL[Mouthbook.noseLength] =

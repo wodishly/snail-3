@@ -21,12 +21,16 @@ export const flight = <N extends number>(n: N) => {
 };
 
 export const sameshift = <N extends number, T extends Flight<T[number], N>, U>(
-  f: (x: T[number]) => U,
   xs: T,
+  f: (x: T[number]) => U,
 ) => {
   const ys = [];
   for (let i = 0; i < xs.length; i++) {
     ys.push(f(xs[i]));
   }
   return ys as Assert<{ [K in keyof T]: U }>;
+};
+
+export const row = <N extends number, T>(n: N, f: (x: number) => T) => {
+  return sameshift(flight(n), f);
 };

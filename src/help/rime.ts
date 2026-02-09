@@ -116,20 +116,22 @@ expectTypeOf<Wholly<1.0>>().toEqualTypeOf(1 as const);
 expectTypeOf<Wholly<1.1>>().toBeNever();
 
 /**
- * Union of the numbers `0` through `N`, inclusive.
+ * Union of the numbers `0` through `N`.
  *
  * @example
- * Upto<0> = 0
- * Upto<1> = 0 | 1
- * Upto<2> = 0 | 1 | 2
- * Upto<3> = 0 | 1 | 2 | 3
+ * Upto<0> = never
+ * Upto<1> = 0
+ * Upto<2> = 0 | 1
+ * Upto<3> = 0 | 1 | 2
  */
-export type Upto<N extends number> = N extends 0 ? 0 : N | Upto<Before<N>>;
+export type Upto<N extends number> = N extends 0
+  ? never
+  : Before<N> | Upto<Before<N>>;
 
-expectTypeOf<0>().toEqualTypeOf<Upto<0>>();
-expectTypeOf<0 | 1>().toEqualTypeOf<Upto<1>>();
-expectTypeOf<0 | 1 | 2>().toEqualTypeOf<Upto<2>>();
-expectTypeOf<0 | 1 | 2 | 3>().toEqualTypeOf<Upto<3>>();
+expectTypeOf<never>().toEqualTypeOf<Upto<0>>();
+expectTypeOf<0>().toEqualTypeOf<Upto<1>>();
+expectTypeOf<0 | 1>().toEqualTypeOf<Upto<2>>();
+expectTypeOf<0 | 1 | 2>().toEqualTypeOf<Upto<3>>();
 
 /**
  * Aperiodic number generation in [-1, 1].

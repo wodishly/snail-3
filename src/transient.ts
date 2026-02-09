@@ -1,19 +1,15 @@
-import type { Upto } from "./help/rime";
-import type { Mouthbook } from "./settings";
 import type { Snail } from "./snail";
-import type { TractType } from "./tract";
-
-type Dealtell = Upto<(typeof Mouthbook)["n"]>;
+import type { Berth, TractType } from "./tract";
 
 export type Transient = {
-  berth: Dealtell;
+  berth: Berth;
   timeAlive: number;
   lifeTime: number;
   strength: number;
   exponent: number;
 };
 
-export const makeTransient = (berth: Dealtell): Transient => {
+export const makeTransient = (berth: Berth): Transient => {
   return {
     berth,
     timeAlive: 0,
@@ -29,8 +25,8 @@ export const processTransients = (tract: TractType, snail: Snail) => {
     const amplitude =
       transient.strength *
       Math.pow(2, -transient.exponent * transient.timeAlive);
-    tract.R[transient.berth] += amplitude / 2;
-    tract.L[transient.berth] += amplitude / 2;
+    tract.main[transient.berth].right += amplitude / 2;
+    tract.main[transient.berth].left += amplitude / 2;
     transient.timeAlive += 1 / (snail.context.sampleRate * 2);
   }
 
