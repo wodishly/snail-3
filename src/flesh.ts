@@ -1,16 +1,16 @@
 import {
   getDiameter,
   getIndex,
-  handleTractUiTouches,
+  handleMouthfleshTouches,
   type Mouthflesh,
-} from "./tractUi";
+} from "./mouthflesh";
 import { mute, startSound, unmute, type Snail } from "./snail";
 import { handleThroatTouches, type Throat } from "./throat";
 import { drawButton, handleTouchStart, makeButton } from "./button";
 import { clamp, type Z } from "./help/math";
 import type { Mouth } from "./mouth";
 
-export type UiType = ReturnType<typeof makeUi>;
+export type UiType = ReturnType<typeof makeFlesh>;
 
 type RineId<N extends number = number> = `mouse${N}`;
 
@@ -26,7 +26,7 @@ export type Rine = Z & {
   fricativeIntensity: number;
 };
 
-export const makeUi = () => {
+export const makeFlesh = () => {
   return {
     width: 600,
     top_margin: 5,
@@ -46,38 +46,39 @@ export const makeUi = () => {
   };
 };
 
-export const initUi = (
-  ui: UiType,
-  tract: Mouth,
-  tractUi: Mouthflesh,
-  audioSystem: Snail,
-  glottis: Throat,
-  tractCtx: CanvasRenderingContext2D,
+export const startFlesh = (
+  snail: Snail,
+  mouth: Mouth,
+  throat: Throat,
+  flesh: UiType,
+  mouthflesh: Mouthflesh,
+  tractContext: CanvasRenderingContext2D,
 ) => {
-  ui.isMouseDown = false;
+  flesh.isMouseDown = false;
 
   document.addEventListener("pointerdown", (e) => {
-    ui.isMouseDown = true;
+    flesh.isMouseDown = true;
     e.preventDefault();
-    startMouse(audioSystem, glottis, tract, ui, tractUi, tractCtx, e);
+    startMouse(snail, mouth, throat, flesh, mouthflesh, tractContext, e);
   });
   document.addEventListener("pointerup", () => {
-    ui.isMouseDown = false;
-    endMouse(glottis, ui, tractUi, tractCtx);
+    flesh.isMouseDown = false;
+    endMouse(mouth, throat, flesh, mouthflesh, tractContext);
   });
   document.addEventListener("pointermove", (e) =>
-    moveMouse(glottis, ui, tractUi, tractCtx, e),
+    moveMouse(mouth, throat, flesh, mouthflesh, tractContext, e),
   );
 };
 
 const handleUiTouches = (
-  glottis: Throat,
-  ui: UiType,
-  tractUi: Mouthflesh,
+  mouth: Mouth,
+  throat: Throat,
+  flesh: UiType,
+  mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
 ) => {
-  handleTractUiTouches(tractUi, tractContext, ui);
-  handleThroatTouches(glottis, ui);
+  handleMouthfleshTouches(mouth, flesh, mouthflesh, tractContext);
+  handleThroatTouches(throat, flesh);
 };
 
 export const shapeToFitScreen = (
@@ -173,39 +174,41 @@ const buttonsHandleTouchStart = (ui: UiType, rine: Rine) => {
 };
 
 const moveMouse = (
-  glottis: Throat,
-  ui: UiType,
-  tractUi: Mouthflesh,
+  mouth: Mouth,
+  throat: Throat,
+  flesh: UiType,
+  mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
   e: PointerEvent,
 ) => {
-  const rine = ui.mouseTouch;
+  const rine = flesh.mouseTouch;
   if (!rine.isAlive) {
     return;
   }
 
-  rine.x = ((e.pageX - tractContext.canvas.offsetLeft) / ui.width) * 600;
-  rine.y = ((e.pageY - tractContext.canvas.offsetTop) / ui.width) * 600;
+  rine.x = ((e.pageX - tractContext.canvas.offsetLeft) / flesh.width) * 600;
+  rine.y = ((e.pageY - tractContext.canvas.offsetTop) / flesh.width) * 600;
   rine.index = getIndex({ x: rine.x, y: rine.y });
   rine.diameter = getDiameter({ x: rine.x, y: rine.y });
-  handleUiTouches(glottis, ui, tractUi, tractContext);
+  handleUiTouches(mouth, throat, flesh, mouthflesh, tractContext);
 };
 
 const endMouse = (
-  glottis: Throat,
-  ui: UiType,
-  tractUi: Mouthflesh,
+  mouth: Mouth,
+  throat: Throat,
+  flesh: UiType,
+  mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
 ) => {
-  const touch = ui.mouseTouch;
+  const touch = flesh.mouseTouch;
   if (!touch.isAlive) {
     return;
   }
   touch.isAlive = false;
   touch.endTime = performance.now() / 1000;
-  handleUiTouches(glottis, ui, tractUi, tractContext);
+  handleUiTouches(mouth, throat, flesh, mouthflesh, tractContext);
 
-  if (!ui.aboutButton.isOn) ui.isInInstructionsScreen = true;
+  if (!flesh.aboutButton.isOn) flesh.isInInstructionsScreen = true;
 };
 
 const write = (
@@ -244,32 +247,33 @@ export const updateTouches = (ui: UiType) => {
 };
 
 export const startMouse = (
-  audioSystem: Snail,
+  snail: Snail,
+  mouth: Mouth,
   glottis: Throat,
-  tract: Mouth,
-  ui: UiType,
-  tractUi: Mouthflesh,
+  flesh: UiType,
+  mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
   event: PointerEvent,
 ) => {
-  if (!audioSystem.isStarted) {
-    audioSystem.isStarted = true;
-    startSound(audioSystem, glottis, tract, ui);
+  if (!snail.isStarted) {
+    snail.isStarted = true;
+    startSound(snail, glottis, mouth, flesh);
   }
-  if (ui.isInAboutScreen) {
-    ui.isInAboutScreen = false;
+  if (flesh.isInAboutScreen) {
+    flesh.isInAboutScreen = false;
     return;
   }
-  if (ui.isInInstructionsScreen) {
-    var x = ((event.pageX - tractContext.canvas.offsetLeft) / ui.width) * 600;
-    var y = ((event.pageY - tractContext.canvas.offsetTop) / ui.width) * 600;
-    instructionsScreenHandleTouch(ui, audioSystem, x, y);
+  if (flesh.isInInstructionsScreen) {
+    var x =
+      ((event.pageX - tractContext.canvas.offsetLeft) / flesh.width) * 600;
+    var y = ((event.pageY - tractContext.canvas.offsetTop) / flesh.width) * 600;
+    instructionsScreenHandleTouch(flesh, snail, x, y);
     return;
   }
 
   const z = {
-    x: ((event.pageX - tractContext.canvas.offsetLeft) / ui.width) * 600,
-    y: ((event.pageY - tractContext.canvas.offsetTop) / ui.width) * 600,
+    x: ((event.pageX - tractContext.canvas.offsetLeft) / flesh.width) * 600,
+    y: ((event.pageY - tractContext.canvas.offsetTop) / flesh.width) * 600,
   };
   const rine: Rine = {
     ...z,
@@ -281,10 +285,10 @@ export const startMouse = (
     index: getIndex(z),
     diameter: getDiameter(z),
   };
-  ui.mouseTouch = rine;
-  ui.touchesWithMouse.push(rine);
-  buttonsHandleTouchStart(ui, rine);
-  handleUiTouches(glottis, ui, tractUi, tractContext);
+  flesh.mouseTouch = rine;
+  flesh.touchesWithMouse.push(rine);
+  buttonsHandleTouchStart(flesh, rine);
+  handleUiTouches(mouth, glottis, flesh, mouthflesh, tractContext);
 };
 
 export const drawInstructionsScreen = (

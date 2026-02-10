@@ -1,10 +1,16 @@
-import { drawUi, initUi, makeUi, shapeToFitScreen, updateTouches } from "./flesh";
+import {
+  drawUi,
+  startFlesh,
+  makeFlesh,
+  shapeToFitScreen,
+  updateTouches,
+} from "./flesh";
 import { makeThroat } from "./throat";
 import { initMouth, makeMouth } from "./mouth";
-import { drawTractUi, initTractUi, makeMouthflesh } from "./tractUi";
+import { drawMouthflesh, initTractUi, makeMouthflesh } from "./mouthflesh";
 import type { Assert } from "./help/type";
 import { makeSnail } from "./snail";
-import { drawKeyboard } from "./throatUi";
+import { drawKeyboard } from "./keyboard";
 
 window.onload = () => {
   document.body.style.cursor = "pointer";
@@ -20,17 +26,17 @@ window.onload = () => {
   const snail = makeSnail();
   const throat = makeThroat();
   const mouth = makeMouth();
-  const flesh = makeUi();
-  const mouthflesh = makeMouthflesh(mouth);
+  const flesh = makeFlesh();
+  const mouthflesh = makeMouthflesh();
 
   drawKeyboard(backcontext);
-  initUi(flesh, mouth, mouthflesh, snail, throat, forecontext);
+  startFlesh(snail, mouth, throat, flesh, mouthflesh, forecontext);
   initMouth(mouth);
-  initTractUi(mouthflesh, backcontext, forecontext);
+  initTractUi(mouth, mouthflesh, backcontext, forecontext);
 
   const redraw = () => {
     shapeToFitScreen(flesh, backcontext, forecontext);
-    drawTractUi(mouthflesh, forecontext, throat, flesh);
+    drawMouthflesh(mouthflesh, forecontext, mouth, throat, flesh);
     drawUi(flesh, forecontext, snail);
     requestAnimationFrame(redraw);
     updateTouches(flesh);
