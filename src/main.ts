@@ -1,6 +1,6 @@
 import { drawUi, initUi, makeUi, shapeToFitScreen, updateTouches } from "./ui";
 import { makeThroat } from "./throat";
-import { initMouth, makeMouth } from "./tract";
+import { initMouth, makeMouth } from "./mouth";
 import { drawTractUi, initTractUi, makeMouthflesh } from "./tractUi";
 import type { Assert } from "./help/type";
 import { makeSnail } from "./snail";
@@ -9,31 +9,31 @@ import { drawKeyboard } from "./throatUi";
 window.onload = () => {
   document.body.style.cursor = "pointer";
 
-  const backCtx = (
+  const backcontext = (
     document.getElementById("backCanvas") as Assert<HTMLCanvasElement>
   ).getContext("2d")!;
 
-  const tractCtx = (
+  const forecontext = (
     document.getElementById("tractCanvas") as Assert<HTMLCanvasElement>
   ).getContext("2d")!;
 
   const snail = makeSnail();
   const throat = makeThroat();
-  const ui = makeUi();
-  const tract = makeMouth();
-  const tractUi = makeMouthflesh(tract, tractCtx);
+  const mouth = makeMouth();
+  const flesh = makeUi();
+  const mouthflesh = makeMouthflesh(mouth);
 
-  drawKeyboard(backCtx);
-  initUi(ui, tract, tractUi, snail, throat, tractCtx);
-  initMouth(tract);
-  initTractUi(tractUi, backCtx);
+  drawKeyboard(backcontext);
+  initUi(flesh, mouth, mouthflesh, snail, throat, forecontext);
+  initMouth(mouth);
+  initTractUi(mouthflesh, backcontext, forecontext);
 
   const redraw = () => {
-    shapeToFitScreen(ui, backCtx, tractCtx);
-    drawTractUi(tractUi, throat, ui, tractCtx);
-    drawUi(ui, tractCtx, snail);
+    shapeToFitScreen(flesh, backcontext, forecontext);
+    drawTractUi(mouthflesh, forecontext, throat, flesh);
+    drawUi(flesh, forecontext, snail);
     requestAnimationFrame(redraw);
-    updateTouches(ui);
+    updateTouches(flesh);
   };
   requestAnimationFrame(redraw);
 };

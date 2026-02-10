@@ -1,4 +1,4 @@
-import { finishMouthBlock, runMouthStep, type Mouth } from "./tract";
+import { finishMouthBlock, runMouthStep, type Mouth } from "./mouth";
 import { finishGlottisBlock, runGlottisStep, type Throat } from "./throat";
 import type { UiType } from "./ui";
 import { Fastenings } from "./settings";

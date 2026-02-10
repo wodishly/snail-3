@@ -1,5 +1,5 @@
 import type { Snail } from "./snail";
-import type { Berth, Mouth } from "./tract";
+import type { Berth, Mouth } from "./mouth";
 
 export type Transient = {
   berth: Berth;

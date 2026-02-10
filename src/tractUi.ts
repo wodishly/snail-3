@@ -1,4 +1,4 @@
-import { type Mouth } from "./tract";
+import { type Mouth } from "./mouth";
 import { type Throat } from "./throat";
 import { type Rine, type UiType } from "./ui";
 import { clamp, type Z } from "./help/math";
@@ -17,32 +17,28 @@ export type Mouthflesh = {
   tongueWidth: number;
   tongueRine: Maybe<Rine>;
   mouth: Mouth;
-  context: CanvasRenderingContext2D;
 };
 
-export const makeMouthflesh = (
-  mouth: Mouth,
-  context: CanvasRenderingContext2D,
-): Mouthflesh => {
+export const makeMouthflesh = (mouth: Mouth): Mouthflesh => {
   return {
     tongueBerth: 12.9,
     tongueWidth: 2.43,
     tongueRine: undefined as Maybe<Rine>,
     mouth,
-    context,
   };
 };
 
 export const initTractUi = (
   tractUi: Mouthflesh,
   backContext: CanvasRenderingContext2D,
+  tractContext: CanvasRenderingContext2D,
 ) => {
-  setRestDiameter(tractUi);
+  setRestWidth(tractUi);
   for (var i = 0; i < Mouthbook.n; i++) {
     tractUi.mouth.width[i].now = tractUi.mouth.width[i].goal =
       tractUi.mouth.width[i].rest;
   }
-  drawBackground(tractUi, backContext, tractUi.context);
+  drawBackground(tractUi, backContext, tractContext);
 };
 
 export const getIndex = ({ x, y }: Z) => {
@@ -64,99 +60,113 @@ export const getIndex = ({ x, y }: Z) => {
 export const getDiameter = ({ x, y }: Z) => {
   const offsetX = x - Settings.ui.mouthUi.originX;
   const offsetY = y - Settings.ui.mouthUi.originY;
+
   const length = Math.sqrt(offsetX ** 2 + offsetY ** 2);
+
   return (Settings.ui.mouthUi.radius - length) / Settings.ui.mouthUi.scale;
 };
 
 export const drawCircle = (
-  tractUi: Mouthflesh,
+  context: CanvasRenderingContext2D,
   i: number,
   d: number,
-  radius: number,
+  halfwidth: number,
 ) => {
   const angle =
     Settings.ui.mouthUi.angleOffset +
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
   const r = Settings.ui.mouthUi.radius - Settings.ui.mouthUi.scale * d;
-  tractUi.context.beginPath();
-  tractUi.context.arc(
+  context.beginPath();
+  context.arc(
     Settings.ui.mouthUi.originX - r * Math.cos(angle),
     Settings.ui.mouthUi.originY - r * Math.sin(angle),
-    radius,
+    halfwidth,
     0,
     2 * Math.PI,
   );
-  tractUi.context.fill();
+  context.fill();
 };
 
-export const drawAmplitudes = (tractUi: Mouthflesh) => {
-  tractUi.context.strokeStyle = "orchid";
-  tractUi.context.lineCap = "butt";
-  tractUi.context.globalAlpha = 0.3;
-  for (var i = 2; i < Mouthbook.n - 1; i++) {
-    tractUi.context.beginPath();
-    tractUi.context.lineWidth = Math.sqrt(tractUi.mouth.maxAmplitude[i]) * 3;
-    moveTractUiTo(tractUi, i, 0);
-    lineTractUiTo(tractUi, i, tractUi.mouth.width[i].now);
-    tractUi.context.stroke();
+export const drawAmplitudes = (
+  mouthflesh: Mouthflesh,
+  context: CanvasRenderingContext2D,
+) => {
+  context.strokeStyle = "orchid";
+  context.lineCap = "butt";
+  context.globalAlpha = 0.3;
+  for (let i = 2; i < Mouthbook.n - 1; i++) {
+    context.beginPath();
+    context.lineWidth = Math.sqrt(mouthflesh.mouth.maxAmplitude[i]) * 3;
+    moveMouthfleshTo(mouthflesh, context, i, 0);
+    lineMouthfleshTo(mouthflesh, context, i, mouthflesh.mouth.width[i].now);
+    context.stroke();
   }
-  for (var i = 1; i < Mouthbook.noseLength - 1; i++) {
-    tractUi.context.beginPath();
-    tractUi.context.lineWidth =
-      Math.sqrt(tractUi.mouth.nose.maxAmplitude[i]) * 3;
-    moveTractUiTo(
-      tractUi,
+  for (let i = 1; i < Mouthbook.noseLength - 1; i++) {
+    context.beginPath();
+    context.lineWidth = Math.sqrt(mouthflesh.mouth.nose.maxAmplitude[i]) * 3;
+    moveMouthfleshTo(
+      mouthflesh,
+      context,
       i + Mouthbook.noseStart,
       -Settings.ui.mouthUi.noseOffset,
     );
-    lineTractUiTo(
-      tractUi,
+    lineMouthfleshTo(
+      mouthflesh,
+      context,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.mouth.nose.width[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - mouthflesh.mouth.nose.width[i] * 0.9,
     );
-    tractUi.context.stroke();
+    context.stroke();
   }
-  tractUi.context.globalAlpha = 1;
+  context.globalAlpha = 1;
 };
 
-export const setRestDiameter = (tractUi: Mouthflesh) => {
-  for (var i = Mouthbook.bladeStart; i < Mouthbook.lipStart; i++) {
-    var t =
-      (1.1 * Math.PI * (tractUi.tongueBerth - i)) /
+export const setRestWidth = (mouthflesh: Mouthflesh) => {
+  for (let i = Mouthbook.bladeStart; i < Mouthbook.lipStart; i++) {
+    const t =
+      (1.1 * Math.PI * (mouthflesh.tongueBerth - i)) /
       (Mouthbook.tipStart - Mouthbook.bladeStart);
-    var fixedTongueDiameter = 2 + (tractUi.tongueWidth - 2) / 1.5;
-    var curve =
+    const fixedTongueDiameter = 2 + (mouthflesh.tongueWidth - 2) / 1.5;
+    let curve =
       (1.5 - fixedTongueDiameter + Settings.ui.mouthUi.gridOffset) *
       Math.cos(t);
-    if (i == Mouthbook.bladeStart - 2 || i == Mouthbook.lipStart - 1)
+    if (i == Mouthbook.bladeStart - 2 || i == Mouthbook.lipStart - 1) {
       curve *= 0.8;
-    if (i == Mouthbook.bladeStart || i == Mouthbook.lipStart - 2) curve *= 0.94;
-    tractUi.mouth.width[i].rest = 1.5 - curve;
+    }
+    if (i == Mouthbook.bladeStart || i == Mouthbook.lipStart - 2) {
+      curve *= 0.94;
+    }
+    mouthflesh.mouth.width[i].rest = 1.5 - curve;
   }
 };
 
-export const drawPitchControl = (tractUi: Mouthflesh, glottis: Throat) => {
+export const drawPitchControl = (
+  context: CanvasRenderingContext2D,
+  throat: Throat,
+) => {
   const w = 9;
   const h = 15;
-  if (glottis.z.x) {
-    tractUi.context.lineWidth = 4;
-    tractUi.context.strokeStyle = "orchid";
-    tractUi.context.globalAlpha = 0.7;
-    tractUi.context.beginPath();
-    tractUi.context.moveTo(glottis.z.x - w, glottis.z.y - h);
-    tractUi.context.lineTo(glottis.z.x + w, glottis.z.y - h);
-    tractUi.context.lineTo(glottis.z.x + w, glottis.z.y + h);
-    tractUi.context.lineTo(glottis.z.x - w, glottis.z.y + h);
-    tractUi.context.closePath();
-    tractUi.context.stroke();
-    tractUi.context.globalAlpha = 0.15;
-    tractUi.context.fill();
-    tractUi.context.globalAlpha = 1.0;
-  }
+  context.lineWidth = 4;
+  context.strokeStyle = "orchid";
+  context.globalAlpha = 0.7;
+
+  context.beginPath();
+  context.moveTo(throat.z.x - w, throat.z.y - h);
+  context.lineTo(throat.z.x + w, throat.z.y - h);
+  context.lineTo(throat.z.x + w, throat.z.y + h);
+  context.lineTo(throat.z.x - w, throat.z.y + h);
+  context.closePath();
+
+  context.stroke();
+
+  context.globalAlpha = 0.15;
+  context.fill();
+
+  context.globalAlpha = 1.0;
 };
 
 export const drawTextStraight = (
-  tractUi: Mouthflesh,
+  context: CanvasRenderingContext2D,
   i: number,
   d: number,
   text: string,
@@ -165,348 +175,429 @@ export const drawTextStraight = (
     Settings.ui.mouthUi.angleOffset +
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
   const r = Settings.ui.mouthUi.radius - Settings.ui.mouthUi.scale * d;
-  tractUi.context.save();
-  tractUi.context.translate(
+  context.save();
+  context.translate(
     Settings.ui.mouthUi.originX - r * Math.cos(angle),
     Settings.ui.mouthUi.originY - r * Math.sin(angle) + 2,
   );
-  tractUi.context.fillText(text, 0, 0);
-  tractUi.context.restore();
+  context.fillText(text, 0, 0);
+  context.restore();
 };
 
 export const drawBackground = (
-  tractUi: Mouthflesh,
+  mouthflesh: Mouthflesh,
   backContext: CanvasRenderingContext2D,
   tractContext: CanvasRenderingContext2D,
 ) => {
-  tractUi.context = backContext;
+  tractContext = backContext;
 
   //text
-  tractUi.context.fillStyle = "orchid";
-  tractUi.context.font = "20px Arial";
-  tractUi.context.textAlign = "center";
-  tractUi.context.globalAlpha = 0.7;
-  drawText(tractUi, Mouthbook.n * 0.44, -0.28, "soft");
-  drawText(tractUi, Mouthbook.n * 0.51, -0.28, "palate");
-  drawText(tractUi, Mouthbook.n * 0.77, -0.28, "hard");
-  drawText(tractUi, Mouthbook.n * 0.84, -0.28, "palate");
-  drawText(tractUi, Mouthbook.n * 0.95, -0.28, " lip");
+  tractContext.fillStyle = "orchid";
+  tractContext.font = "20px Arial";
+  tractContext.textAlign = "center";
+  tractContext.globalAlpha = 0.7;
+  drawText(tractContext, Mouthbook.n * 0.44, -0.28, "soft");
+  drawText(tractContext, Mouthbook.n * 0.51, -0.28, "palate");
+  drawText(tractContext, Mouthbook.n * 0.77, -0.28, "hard");
+  drawText(tractContext, Mouthbook.n * 0.84, -0.28, "palate");
+  drawText(tractContext, Mouthbook.n * 0.95, -0.28, " lip");
 
-  tractUi.context.font = "17px Arial";
-  drawTextStraight(tractUi, Mouthbook.n * 0.18, 3, "  tongue control");
-  tractUi.context.textAlign = "left";
-  drawText(tractUi, Mouthbook.n * 1.03, -1.07, "nasals");
-  drawText(tractUi, Mouthbook.n * 1.03, -0.28, "stops");
-  drawText(tractUi, Mouthbook.n * 1.03, 0.51, "fricatives");
-  tractUi.context.strokeStyle = "orchid";
-  tractUi.context.lineWidth = 2;
-  tractUi.context.beginPath();
-  moveTractUiTo(tractUi, Mouthbook.n * 1.03, 0);
-  lineTractUiTo(tractUi, Mouthbook.n * 1.07, 0);
-  moveTractUiTo(tractUi, Mouthbook.n * 1.03, -Settings.ui.mouthUi.noseOffset);
-  lineTractUiTo(tractUi, Mouthbook.n * 1.07, -Settings.ui.mouthUi.noseOffset);
-  tractUi.context.stroke();
-  tractUi.context.globalAlpha = 0.9;
-  tractUi.context.globalAlpha = 1.0;
-  tractUi.context = tractContext;
+  tractContext.font = "17px Arial";
+  drawTextStraight(tractContext, Mouthbook.n * 0.18, 3, "  tongue control");
+  tractContext.textAlign = "left";
+  drawText(tractContext, Mouthbook.n * 1.03, -1.07, "nasals");
+  drawText(tractContext, Mouthbook.n * 1.03, -0.28, "stops");
+  drawText(tractContext, Mouthbook.n * 1.03, 0.51, "fricatives");
+  tractContext.strokeStyle = "orchid";
+  tractContext.lineWidth = 2;
+  tractContext.beginPath();
+  moveMouthfleshTo(mouthflesh, tractContext, Mouthbook.n * 1.03, 0);
+  lineMouthfleshTo(mouthflesh, tractContext, Mouthbook.n * 1.07, 0);
+  moveMouthfleshTo(
+    mouthflesh,
+    tractContext,
+    Mouthbook.n * 1.03,
+    -Settings.ui.mouthUi.noseOffset,
+  );
+  lineMouthfleshTo(
+    mouthflesh,
+    tractContext,
+    Mouthbook.n * 1.07,
+    -Settings.ui.mouthUi.noseOffset,
+  );
+  tractContext.stroke();
+  tractContext.globalAlpha = 0.9;
+  tractContext.globalAlpha = 1.0;
+  tractContext = tractContext;
 };
 
-export const moveTractUiTo = (tractUi: Mouthflesh, i: number, d: number) => {
+export const moveMouthfleshTo = (
+  mouthflesh: Mouthflesh,
+  context: CanvasRenderingContext2D,
+  i: number,
+  d: number,
+): void => {
   let angle =
     Settings.ui.mouthUi.angleOffset +
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
+
   let wobble =
-    tractUi.mouth.maxAmplitude[Mouthbook.n - 1] +
-    tractUi.mouth.nose.maxAmplitude[Mouthbook.noseLength - 1];
+    mouthflesh.mouth.maxAmplitude[Mouthbook.n - 1] +
+    mouthflesh.mouth.nose.maxAmplitude[Mouthbook.noseLength - 1];
+
   wobble *=
     (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
     Mouthbook.n;
   angle += wobble;
-  var r =
+
+  const r =
     Settings.ui.mouthUi.radius - Settings.ui.mouthUi.scale * d + 100 * wobble;
-  tractUi.context.moveTo(
+
+  context.moveTo(
     Settings.ui.mouthUi.originX - r * Math.cos(angle),
     Settings.ui.mouthUi.originY - r * Math.sin(angle),
   );
 };
 
-export const lineTractUiTo = (tractUi: Mouthflesh, i: number, d: number) => {
+export const lineMouthfleshTo = (
+  mouthflesh: Mouthflesh,
+  context: CanvasRenderingContext2D,
+  i: number,
+  d: number,
+): void => {
   let angle =
     Settings.ui.mouthUi.angleOffset +
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
+
   let wobble =
-    tractUi.mouth.maxAmplitude[Mouthbook.n - 1] +
-    tractUi.mouth.nose.maxAmplitude[Mouthbook.noseLength - 1];
+    mouthflesh.mouth.maxAmplitude[Mouthbook.n - 1] +
+    mouthflesh.mouth.nose.maxAmplitude[Mouthbook.noseLength - 1];
+
   wobble *=
     (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
     Mouthbook.n;
   angle += wobble;
+
   const r =
     Settings.ui.mouthUi.radius - Settings.ui.mouthUi.scale * d + 100 * wobble;
-  tractUi.context.lineTo(
+
+  context.lineTo(
     Settings.ui.mouthUi.originX - r * Math.cos(angle),
     Settings.ui.mouthUi.originY - r * Math.sin(angle),
   );
 };
 
 export const drawText = (
-  tractUi: Mouthflesh,
+  context: CanvasRenderingContext2D,
   i: number,
   d: number,
   text: string,
-) => {
+): void => {
   const angle =
     Settings.ui.mouthUi.angleOffset +
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
   const r = Settings.ui.mouthUi.radius - Settings.ui.mouthUi.scale * d;
-  tractUi.context.save();
-  tractUi.context.translate(
+
+  context.save();
+  context.translate(
     Settings.ui.mouthUi.originX - r * Math.cos(angle),
     Settings.ui.mouthUi.originY - r * Math.sin(angle) + 2,
   );
-  tractUi.context.rotate(angle - Math.PI / 2);
-  tractUi.context.fillText(text, 0, 0);
-  tractUi.context.restore();
+  context.rotate(angle - Math.PI / 2);
+  context.fillText(text, 0, 0);
+  context.restore();
 };
 
-export const drawTongueControl = (tractUi: Mouthflesh) => {
-  tractUi.context.lineCap = "round";
-  tractUi.context.lineJoin = "round";
-  tractUi.context.strokeStyle = palePink;
-  tractUi.context.fillStyle = palePink;
-  tractUi.context.globalAlpha = 1.0;
-  tractUi.context.beginPath();
-  tractUi.context.lineWidth = 45;
+export const drawTongueControl = (
+  mouthflesh: Mouthflesh,
+  context: CanvasRenderingContext2D,
+) => {
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.strokeStyle = palePink;
+  context.fillStyle = palePink;
+  context.globalAlpha = 1.0;
+  context.beginPath();
+  context.lineWidth = 45;
 
   //outline
-  moveTractUiTo(
-    tractUi,
+  moveMouthfleshTo(
+    mouthflesh,
+    context,
     tongueLowerBound(),
     Settings.ui.mouthUi.innerTongueControlRadius,
   );
   for (var i = tongueLowerBound() + 1; i <= tongueUpperBound(); i++)
-    lineTractUiTo(tractUi, i, Settings.ui.mouthUi.innerTongueControlRadius);
-  lineTractUiTo(
-    tractUi,
+    lineMouthfleshTo(
+      mouthflesh,
+      context,
+      i,
+      Settings.ui.mouthUi.innerTongueControlRadius,
+    );
+  lineMouthfleshTo(
+    mouthflesh,
+    context,
     tongueMiddle(),
     Settings.ui.mouthUi.outerTongueControlRadius,
   );
-  tractUi.context.closePath();
-  tractUi.context.stroke();
-  tractUi.context.fill();
+  context.closePath();
+  context.stroke();
+  context.fill();
 
   var a = Settings.ui.mouthUi.innerTongueControlRadius;
   var c = Settings.ui.mouthUi.outerTongueControlRadius;
   var b = 0.5 * (a + c);
   var r = 3;
-  tractUi.context.fillStyle = "orchid";
-  tractUi.context.globalAlpha = 0.3;
-  drawCircle(tractUi, tongueMiddle(), a, r);
-  drawCircle(tractUi, tongueMiddle() - 4.25, a, r);
-  drawCircle(tractUi, tongueMiddle() - 8.5, a, r);
-  drawCircle(tractUi, tongueMiddle() + 4.25, a, r);
-  drawCircle(tractUi, tongueMiddle() + 8.5, a, r);
-  drawCircle(tractUi, tongueMiddle() - 6.1, b, r);
-  drawCircle(tractUi, tongueMiddle() + 6.1, b, r);
-  drawCircle(tractUi, tongueMiddle(), b, r);
-  drawCircle(tractUi, tongueMiddle(), c, r);
+  context.fillStyle = "orchid";
+  context.globalAlpha = 0.3;
+  drawCircle(context, tongueMiddle(), a, r);
+  drawCircle(context, tongueMiddle() - 4.25, a, r);
+  drawCircle(context, tongueMiddle() - 8.5, a, r);
+  drawCircle(context, tongueMiddle() + 4.25, a, r);
+  drawCircle(context, tongueMiddle() + 8.5, a, r);
+  drawCircle(context, tongueMiddle() - 6.1, b, r);
+  drawCircle(context, tongueMiddle() + 6.1, b, r);
+  drawCircle(context, tongueMiddle(), b, r);
+  drawCircle(context, tongueMiddle(), c, r);
 
-  tractUi.context.globalAlpha = 1.0;
+  context.globalAlpha = 1.0;
 
   //circle for tongue position
   var angle =
     Settings.ui.mouthUi.angleOffset +
-    (tractUi.tongueBerth * Settings.ui.mouthUi.angleScale * Math.PI) /
+    (mouthflesh.tongueBerth * Settings.ui.mouthUi.angleScale * Math.PI) /
       (Mouthbook.lipStart - 1);
   var r =
     Settings.ui.mouthUi.radius -
-    Settings.ui.mouthUi.scale * tractUi.tongueWidth;
+    Settings.ui.mouthUi.scale * mouthflesh.tongueWidth;
   var x = Settings.ui.mouthUi.originX - r * Math.cos(angle);
   var y = Settings.ui.mouthUi.originY - r * Math.sin(angle);
-  tractUi.context.lineWidth = 4;
-  tractUi.context.strokeStyle = "orchid";
-  tractUi.context.globalAlpha = 0.7;
-  tractUi.context.beginPath();
-  tractUi.context.arc(x, y, 18, 0, 2 * Math.PI);
-  tractUi.context.stroke();
-  tractUi.context.globalAlpha = 0.15;
-  tractUi.context.fill();
-  tractUi.context.globalAlpha = 1.0;
+  context.lineWidth = 4;
+  context.strokeStyle = "orchid";
+  context.globalAlpha = 0.7;
+  context.beginPath();
+  context.arc(x, y, 18, 0, 2 * Math.PI);
+  context.stroke();
+  context.globalAlpha = 0.15;
+  context.fill();
+  context.globalAlpha = 1.0;
 
-  tractUi.context.fillStyle = "orchid";
+  context.fillStyle = "orchid";
 };
 
 export const drawTractUi = (
-  tractUi: Mouthflesh,
-  glottis: Throat,
+  mouthflesh: Mouthflesh,
+  context: CanvasRenderingContext2D,
+  throat: Throat,
   ui: UiType,
-  tractCtx: CanvasRenderingContext2D,
 ) => {
-  tractUi.context.clearRect(
-    0,
-    0,
-    tractCtx.canvas.width,
-    tractCtx.canvas.height,
-  );
-  tractUi.context.lineCap = "round";
-  tractUi.context.lineJoin = "round";
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  context.lineCap = "round";
+  context.lineJoin = "round";
 
-  drawTongueControl(tractUi);
-  drawPitchControl(tractUi, glottis);
+  drawTongueControl(mouthflesh, context);
+  drawPitchControl(context, throat);
 
-  var velum = tractUi.mouth.nose.width[0];
+  var velum = mouthflesh.mouth.nose.width[0];
   var velumAngle = velum * 4;
 
   //first draw fill
-  tractUi.context.beginPath();
-  tractUi.context.lineWidth = 2;
-  tractUi.context.strokeStyle = Settings.ui.mouthUi.fillColour;
-  tractUi.context.fillStyle = Settings.ui.mouthUi.fillColour;
-  moveTractUiTo(tractUi, 1, 0);
+  context.beginPath();
+  context.lineWidth = 2;
+  context.strokeStyle = Settings.ui.mouthUi.fillColour;
+  context.fillStyle = Settings.ui.mouthUi.fillColour;
+  moveMouthfleshTo(mouthflesh, context, 1, 0);
   for (var i = 1; i < Mouthbook.n; i++)
-    lineTractUiTo(tractUi, i, tractUi.mouth.width[i].now);
-  for (var i = Mouthbook.n - 1; i >= 2; i--) lineTractUiTo(tractUi, i, 0);
-  tractUi.context.closePath();
-  tractUi.context.stroke();
-  tractUi.context.fill();
+    lineMouthfleshTo(mouthflesh, context, i, mouthflesh.mouth.width[i].now);
+  for (var i = Mouthbook.n - 1; i >= 2; i--)
+    lineMouthfleshTo(mouthflesh, context, i, 0);
+  context.closePath();
+  context.stroke();
+  context.fill();
 
   //for nose
-  tractUi.context.beginPath();
-  tractUi.context.lineWidth = 2;
-  tractUi.context.strokeStyle = Settings.ui.mouthUi.fillColour;
-  tractUi.context.fillStyle = Settings.ui.mouthUi.fillColour;
-  moveTractUiTo(tractUi, Mouthbook.noseStart, -Settings.ui.mouthUi.noseOffset);
+  context.beginPath();
+  context.lineWidth = 2;
+  context.strokeStyle = Settings.ui.mouthUi.fillColour;
+  context.fillStyle = Settings.ui.mouthUi.fillColour;
+  moveMouthfleshTo(
+    mouthflesh,
+    context,
+    Mouthbook.noseStart,
+    -Settings.ui.mouthUi.noseOffset,
+  );
   for (var i = 1; i < Mouthbook.noseLength; i++)
-    lineTractUiTo(
-      tractUi,
+    lineMouthfleshTo(
+      mouthflesh,
+      context,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.mouth.nose.width[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - mouthflesh.mouth.nose.width[i] * 0.9,
     );
   for (var i = Mouthbook.noseLength - 1; i >= 1; i--)
-    lineTractUiTo(
-      tractUi,
+    lineMouthfleshTo(
+      mouthflesh,
+      context,
       i + Mouthbook.noseStart,
       -Settings.ui.mouthUi.noseOffset,
     );
-  tractUi.context.closePath();
+  context.closePath();
   //tractUi.ctx.stroke();
-  tractUi.context.fill();
+  context.fill();
 
   //velum
-  tractUi.context.beginPath();
-  tractUi.context.lineWidth = 2;
-  tractUi.context.strokeStyle = Settings.ui.mouthUi.fillColour;
-  tractUi.context.fillStyle = Settings.ui.mouthUi.fillColour;
-  moveTractUiTo(tractUi, Mouthbook.noseStart - 2, 0);
-  lineTractUiTo(tractUi, Mouthbook.noseStart, -Settings.ui.mouthUi.noseOffset);
-  lineTractUiTo(
-    tractUi,
+  context.beginPath();
+  context.lineWidth = 2;
+  context.strokeStyle = Settings.ui.mouthUi.fillColour;
+  context.fillStyle = Settings.ui.mouthUi.fillColour;
+  moveMouthfleshTo(mouthflesh, context, Mouthbook.noseStart - 2, 0);
+  lineMouthfleshTo(
+    mouthflesh,
+    context,
+    Mouthbook.noseStart,
+    -Settings.ui.mouthUi.noseOffset,
+  );
+  lineMouthfleshTo(
+    mouthflesh,
+    context,
     Mouthbook.noseStart + velumAngle,
     -Settings.ui.mouthUi.noseOffset,
   );
-  lineTractUiTo(tractUi, Mouthbook.noseStart + velumAngle - 2, 0);
-  tractUi.context.closePath();
-  tractUi.context.stroke();
-  tractUi.context.fill();
+  lineMouthfleshTo(
+    mouthflesh,
+    context,
+    Mouthbook.noseStart + velumAngle - 2,
+    0,
+  );
+  context.closePath();
+  context.stroke();
+  context.fill();
 
   //white text
-  tractUi.context.fillStyle = "white";
-  tractUi.context.font = "20px Arial";
-  tractUi.context.textAlign = "center";
-  tractUi.context.globalAlpha = 1.0;
-  drawText(tractUi, Mouthbook.n * 0.1, 0.425, "throat");
-  drawText(tractUi, Mouthbook.n * 0.71, -1.8, "nasal");
-  drawText(tractUi, Mouthbook.n * 0.71, -1.3, "cavity");
-  tractUi.context.font = "22px Arial";
-  drawText(tractUi, Mouthbook.n * 0.6, 0.9, "oral");
-  drawText(tractUi, Mouthbook.n * 0.7, 0.9, "cavity");
+  context.fillStyle = "white";
+  context.font = "20px Arial";
+  context.textAlign = "center";
+  context.globalAlpha = 1.0;
+  drawText(context, Mouthbook.n * 0.1, 0.425, "throat");
+  drawText(context, Mouthbook.n * 0.71, -1.8, "nasal");
+  drawText(context, Mouthbook.n * 0.71, -1.3, "cavity");
+  context.font = "22px Arial";
+  drawText(context, Mouthbook.n * 0.6, 0.9, "oral");
+  drawText(context, Mouthbook.n * 0.7, 0.9, "cavity");
 
-  drawAmplitudes(tractUi);
+  drawAmplitudes(mouthflesh, context);
 
   //then draw lines
-  tractUi.context.beginPath();
-  tractUi.context.lineWidth = 5;
-  tractUi.context.strokeStyle = Settings.ui.mouthUi.lineColour;
-  tractUi.context.lineJoin = "round";
-  tractUi.context.lineCap = "round";
-  moveTractUiTo(tractUi, 1, tractUi.mouth.width[0].now);
+  context.beginPath();
+  context.lineWidth = 5;
+  context.strokeStyle = Settings.ui.mouthUi.lineColour;
+  context.lineJoin = "round";
+  context.lineCap = "round";
+  moveMouthfleshTo(mouthflesh, context, 1, mouthflesh.mouth.width[0].now);
   for (let i = 2; i < Mouthbook.n; i++)
-    lineTractUiTo(tractUi, i, tractUi.mouth.width[i].now);
-  moveTractUiTo(tractUi, 1, 0);
+    lineMouthfleshTo(mouthflesh, context, i, mouthflesh.mouth.width[i].now);
+  moveMouthfleshTo(mouthflesh, context, 1, 0);
   for (let i = 2; i <= Mouthbook.noseStart - 2; i++)
-    lineTractUiTo(tractUi, i, 0);
-  moveTractUiTo(tractUi, Mouthbook.noseStart + velumAngle - 2, 0);
+    lineMouthfleshTo(mouthflesh, context, i, 0);
+  moveMouthfleshTo(
+    mouthflesh,
+    context,
+    Mouthbook.noseStart + velumAngle - 2,
+    0,
+  );
   for (
     let i = Mouthbook.noseStart + Math.ceil(velumAngle) - 2;
     i < Mouthbook.n;
     i++
   )
-    lineTractUiTo(tractUi, i, 0);
-  tractUi.context.stroke();
+    lineMouthfleshTo(mouthflesh, context, i, 0);
+  context.stroke();
 
   //for nose
-  tractUi.context.beginPath();
-  tractUi.context.lineWidth = 5;
-  tractUi.context.strokeStyle = Settings.ui.mouthUi.lineColour;
-  tractUi.context.lineJoin = "round";
-  moveTractUiTo(tractUi, Mouthbook.noseStart, -Settings.ui.mouthUi.noseOffset);
+  context.beginPath();
+  context.lineWidth = 5;
+  context.strokeStyle = Settings.ui.mouthUi.lineColour;
+  context.lineJoin = "round";
+  moveMouthfleshTo(
+    mouthflesh,
+    context,
+    Mouthbook.noseStart,
+    -Settings.ui.mouthUi.noseOffset,
+  );
   for (var i = 1; i < Mouthbook.noseLength; i++)
-    lineTractUiTo(
-      tractUi,
+    lineMouthfleshTo(
+      mouthflesh,
+      context,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.mouth.nose.width[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - mouthflesh.mouth.nose.width[i] * 0.9,
     );
-  moveTractUiTo(
-    tractUi,
+  moveMouthfleshTo(
+    mouthflesh,
+    context,
     Mouthbook.noseStart + velumAngle,
     -Settings.ui.mouthUi.noseOffset,
   );
   for (let i = Math.ceil(velumAngle); i < Mouthbook.noseLength; i++)
-    lineTractUiTo(
-      tractUi,
+    lineMouthfleshTo(
+      mouthflesh,
+      context,
       i + Mouthbook.noseStart,
       -Settings.ui.mouthUi.noseOffset,
     );
-  tractUi.context.stroke();
+  context.stroke();
 
   //velum
-  tractUi.context.globalAlpha = velum * 5;
-  tractUi.context.beginPath();
-  moveTractUiTo(tractUi, Mouthbook.noseStart - 2, 0);
-  lineTractUiTo(tractUi, Mouthbook.noseStart, -Settings.ui.mouthUi.noseOffset);
-  moveTractUiTo(tractUi, Mouthbook.noseStart + velumAngle - 2, 0);
-  lineTractUiTo(
-    tractUi,
+  context.globalAlpha = velum * 5;
+  context.beginPath();
+  moveMouthfleshTo(mouthflesh, context, Mouthbook.noseStart - 2, 0);
+  lineMouthfleshTo(
+    mouthflesh,
+    context,
+    Mouthbook.noseStart,
+    -Settings.ui.mouthUi.noseOffset,
+  );
+  moveMouthfleshTo(
+    mouthflesh,
+    context,
+    Mouthbook.noseStart + velumAngle - 2,
+    0,
+  );
+  lineMouthfleshTo(
+    mouthflesh,
+    context,
     Mouthbook.noseStart + velumAngle,
     -Settings.ui.mouthUi.noseOffset,
   );
-  tractUi.context.stroke();
+  context.stroke();
 
-  tractUi.context.fillStyle = "orchid";
-  tractUi.context.font = "20px Arial";
-  tractUi.context.textAlign = "center";
-  tractUi.context.globalAlpha = 0.7;
+  context.fillStyle = "orchid";
+  context.font = "20px Arial";
+  context.textAlign = "center";
+  context.globalAlpha = 0.7;
   drawText(
-    tractUi,
+    context,
     Mouthbook.n * 0.95,
-    0.8 + 0.8 * tractUi.mouth.width[Mouthbook.n - 1].now,
+    0.8 + 0.8 * mouthflesh.mouth.width[Mouthbook.n - 1].now,
     " lip",
   );
 
-  tractUi.context.globalAlpha = 1.0;
-  tractUi.context.fillStyle = "black";
-  tractUi.context.textAlign = "left";
-  tractUi.context.fillText(ui.debugText, 20, 20);
+  context.globalAlpha = 1.0;
+  context.fillStyle = "black";
+  context.textAlign = "left";
+  context.fillText(ui.debugText, 20, 20);
 };
 
-export const handleTractUiTouches = (tractUi: Mouthflesh, ui: UiType) => {
-  if (tractUi.tongueRine !== undefined && !tractUi.tongueRine.isAlive) {
-    tractUi.tongueRine = undefined;
+export const handleTractUiTouches = (
+  mouthflesh: Mouthflesh,
+  context: CanvasRenderingContext2D,
+  flesh: UiType,
+) => {
+  if (mouthflesh.tongueRine !== undefined && !mouthflesh.tongueRine.isAlive) {
+    mouthflesh.tongueRine = undefined;
   }
 
-  if (tractUi.tongueRine === undefined) {
-    for (let j = 0; j < ui.touchesWithMouse.length; j++) {
-      const touch = ui.touchesWithMouse[j];
+  if (mouthflesh.tongueRine === undefined) {
+    for (let j = 0; j < flesh.touchesWithMouse.length; j++) {
+      const touch = flesh.touchesWithMouse[j];
 
       if (!touch.isAlive) {
         continue;
@@ -526,14 +617,14 @@ export const handleTractUiTouches = (tractUi: Mouthflesh, ui: UiType) => {
         diameter >= Settings.ui.mouthUi.innerTongueControlRadius - 0.5 &&
         diameter <= Settings.ui.mouthUi.outerTongueControlRadius + 0.5
       ) {
-        tractUi.tongueRine = touch;
+        mouthflesh.tongueRine = touch;
       }
     }
   }
 
-  if (tractUi.tongueRine !== undefined) {
-    const x = tractUi.tongueRine.x;
-    const y = tractUi.tongueRine.y;
+  if (mouthflesh.tongueRine !== undefined) {
+    const x = mouthflesh.tongueRine.x;
+    const y = mouthflesh.tongueRine.y;
     const index = getIndex({ x, y });
     const diameter = getDiameter({ x, y });
     let fromPoint =
@@ -543,27 +634,27 @@ export const handleTractUiTouches = (tractUi: Mouthflesh, ui: UiType) => {
     fromPoint = clamp(fromPoint, 0, 1);
     fromPoint =
       Math.pow(fromPoint, 0.58) - 0.2 * (fromPoint * fromPoint - fromPoint); //horrible kludge to fit curve to straight line
-    tractUi.tongueWidth = clamp(
+    mouthflesh.tongueWidth = clamp(
       diameter,
       Settings.ui.mouthUi.innerTongueControlRadius,
       Settings.ui.mouthUi.outerTongueControlRadius,
     );
     const out = fromPoint * 0.5 * (tongueUpperBound() - tongueLowerBound());
-    tractUi.tongueBerth = clamp(
+    mouthflesh.tongueBerth = clamp(
       index,
       tongueMiddle() - out,
       tongueMiddle() + out,
     );
   }
 
-  setRestDiameter(tractUi);
+  setRestWidth(mouthflesh);
   for (let i = 0; i < Mouthbook.n; i++)
-    tractUi.mouth.width[i].goal = tractUi.mouth.width[i].rest;
+    mouthflesh.mouth.width[i].goal = mouthflesh.mouth.width[i].rest;
 
   //other constrictions and nose
-  tractUi.mouth.velumTarget = 0.01;
-  for (let j = 0; j < ui.touchesWithMouse.length; j++) {
-    const touch = ui.touchesWithMouse[j];
+  mouthflesh.mouth.velumTarget = 0.01;
+  for (let j = 0; j < flesh.touchesWithMouse.length; j++) {
+    const touch = flesh.touchesWithMouse[j];
     if (!touch.isAlive) {
       continue;
     }
@@ -575,7 +666,7 @@ export const handleTractUiTouches = (tractUi: Mouthflesh, ui: UiType) => {
       index > Mouthbook.noseStart &&
       diameter < -Settings.ui.mouthUi.noseOffset
     ) {
-      tractUi.mouth.velumTarget = 0.4;
+      mouthflesh.mouth.velumTarget = 0.4;
     }
     if (diameter < -0.85 - Settings.ui.mouthUi.noseOffset) {
       continue;
@@ -595,7 +686,7 @@ export const handleTractUiTouches = (tractUi: Mouthflesh, ui: UiType) => {
     if (
       index >= 2 &&
       index < Mouthbook.n &&
-      y < tractUi.context.canvas.height &&
+      y < context.canvas.height &&
       diameter < 3
     ) {
       let intIndex = Math.round(index);
@@ -613,10 +704,10 @@ export const handleTractUiTouches = (tractUi: Mouthflesh, ui: UiType) => {
         } else {
           shrink = 0.5 * (1 - Math.cos((Math.PI * relpos) / width));
         }
-        if (diameter < tractUi.mouth.width[intIndex + i].goal) {
-          tractUi.mouth.width[intIndex + i].goal =
+        if (diameter < mouthflesh.mouth.width[intIndex + i].goal) {
+          mouthflesh.mouth.width[intIndex + i].goal =
             diameter +
-            (tractUi.mouth.width[intIndex + i].goal - diameter) * shrink;
+            (mouthflesh.mouth.width[intIndex + i].goal - diameter) * shrink;
         }
       }
     }
