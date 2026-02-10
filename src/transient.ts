@@ -1,5 +1,5 @@
 import type { Snail } from "./snail";
-import type { Berth, TractType } from "./tract";
+import type { Berth, Mouth } from "./tract";
 
 export type Transient = {
   berth: Berth;
@@ -19,7 +19,7 @@ export const makeTransient = (berth: Berth): Transient => {
   };
 };
 
-export const processTransients = (tract: TractType, snail: Snail) => {
+export const processTransients = (tract: Mouth, snail: Snail) => {
   for (let i = 0; i < tract.transients.length; i++) {
     const transient = tract.transients[i];
     const amplitude =

@@ -2,13 +2,13 @@ import {
   getDiameter,
   getIndex,
   handleTractUiTouches,
-  type TractUiType,
+  type Mouthflesh,
 } from "./tractUi";
 import { mute, startSound, unmute, type Snail } from "./snail";
 import { handleThroatTouches, type Throat } from "./throat";
 import { drawButton, handleTouchStart, makeButton } from "./button";
 import { clamp, type Z } from "./help/math";
-import type { TractType } from "./tract";
+import type { Mouth } from "./tract";
 
 export type UiType = ReturnType<typeof makeUi>;
 
@@ -48,8 +48,8 @@ export const makeUi = () => {
 
 export const initUi = (
   ui: UiType,
-  tract: TractType,
-  tractUi: TractUiType,
+  tract: Mouth,
+  tractUi: Mouthflesh,
   audioSystem: Snail,
   glottis: Throat,
   tractCtx: CanvasRenderingContext2D,
@@ -70,7 +70,7 @@ export const initUi = (
   );
 };
 
-const handleUiTouches = (glottis: Throat, ui: UiType, tractUi: TractUiType) => {
+const handleUiTouches = (glottis: Throat, ui: UiType, tractUi: Mouthflesh) => {
   handleTractUiTouches(tractUi, ui);
   handleThroatTouches(glottis, ui);
 };
@@ -170,7 +170,7 @@ const buttonsHandleTouchStart = (ui: UiType, rine: Rine) => {
 const moveMouse = (
   glottis: Throat,
   ui: UiType,
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   tractCanvas: HTMLCanvasElement,
   e: PointerEvent,
 ) => {
@@ -181,12 +181,12 @@ const moveMouse = (
 
   rine.x = ((e.pageX - tractCanvas.offsetLeft) / ui.width) * 600;
   rine.y = ((e.pageY - tractCanvas.offsetTop) / ui.width) * 600;
-  rine.index = getIndex(rine.x, rine.y);
-  rine.diameter = getDiameter(rine.x, rine.y);
+  rine.index = getIndex({ x: rine.x, y: rine.y });
+  rine.diameter = getDiameter({ x: rine.x, y: rine.y });
   handleUiTouches(glottis, ui, tractUi);
 };
 
-const endMouse = (glottis: Throat, ui: UiType, tractUi: TractUiType) => {
+const endMouse = (glottis: Throat, ui: UiType, tractUi: Mouthflesh) => {
   const touch = ui.mouseTouch;
   if (!touch.isAlive) {
     return;
@@ -236,9 +236,9 @@ export const updateTouches = (ui: UiType) => {
 export const startMouse = (
   audioSystem: Snail,
   glottis: Throat,
-  tract: TractType,
+  tract: Mouth,
   ui: UiType,
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   tractCanvas: HTMLCanvasElement,
   event: PointerEvent,
 ) => {
@@ -268,8 +268,8 @@ export const startMouse = (
     endTime: 0,
     isAlive: true,
     id: `mouse${Math.random()}`,
-    index: getIndex(z.x, z.y),
-    diameter: getDiameter(z.x, z.y),
+    index: getIndex(z),
+    diameter: getDiameter(z),
   };
   ui.mouseTouch = rine;
   ui.touchesWithMouse.push(rine);

@@ -1,4 +1,4 @@
-import { finishTractBlock, runTractStep, type TractType } from "./tract";
+import { finishMouthBlock, runMouthStep, type Mouth } from "./tract";
 import { finishGlottisBlock, runGlottisStep, type Throat } from "./throat";
 import type { UiType } from "./ui";
 import { Fastenings } from "./settings";
@@ -28,7 +28,7 @@ export const makeSnail = (): Snail => {
 export const doScriptProcessor = (
   audioSystem: Snail,
   glottis: Throat,
-  tract: TractType,
+  tract: Mouth,
   ui: UiType,
   event: AudioProcessingEvent,
 ): void => {
@@ -47,7 +47,7 @@ export const doScriptProcessor = (
 
     let vocalOutput = 0;
     //Tract runs at twice the sample rate
-    runTractStep(
+    runMouthStep(
       tract,
       glottis,
       audioSystem,
@@ -57,7 +57,7 @@ export const doScriptProcessor = (
       lambda1,
     );
     vocalOutput += tract.lipOutput + tract.noseOutput;
-    runTractStep(
+    runMouthStep(
       tract,
       glottis,
       audioSystem,
@@ -70,7 +70,7 @@ export const doScriptProcessor = (
     outArray[j] = vocalOutput * 0.125;
   }
   finishGlottisBlock(glottis, ui);
-  finishTractBlock(tract, audioSystem);
+  finishMouthBlock(tract, audioSystem);
 };
 
 export const createWhiteNoiseNode = (
@@ -98,7 +98,7 @@ export const createWhiteNoiseNode = (
 export const startSound = (
   audioSystem: Snail,
   glottis: Throat,
-  tract: TractType,
+  tract: Mouth,
   ui: UiType,
 ): void => {
   //scriptProcessor may need a dummy input channel on iOS

@@ -1,7 +1,7 @@
 import { drawUi, initUi, makeUi, shapeToFitScreen, updateTouches } from "./ui";
 import { makeThroat } from "./throat";
-import { initTract, makeTract } from "./tract";
-import { drawTractUi, initTractUi, makeTractUi } from "./tractUi";
+import { initMouth, makeMouth } from "./tract";
+import { drawTractUi, initTractUi, makeMouthflesh } from "./tractUi";
 import type { Assert } from "./help/type";
 import { makeSnail } from "./snail";
 import { drawKeyboard } from "./throatUi";
@@ -20,12 +20,12 @@ window.onload = () => {
   const snail = makeSnail();
   const throat = makeThroat();
   const ui = makeUi();
-  const tract = makeTract();
-  const tractUi = makeTractUi(tract, tractCtx);
+  const tract = makeMouth();
+  const tractUi = makeMouthflesh(tract, tractCtx);
 
   drawKeyboard(backCtx);
   initUi(ui, tract, tractUi, snail, throat, tractCtx);
-  initTract(tract);
+  initMouth(tract);
   initTractUi(tractUi, backCtx);
 
   const redraw = () => {

@@ -1,7 +1,7 @@
-import { type TractType } from "./tract";
+import { type Mouth } from "./tract";
 import { type Throat } from "./throat";
 import { type Rine, type UiType } from "./ui";
-import { clamp } from "./help/math";
+import { clamp, type Z } from "./help/math";
 import {
   Mouthbook,
   palePink,
@@ -12,69 +12,64 @@ import {
 } from "./settings";
 import type { Maybe } from "./help/type";
 
-export type TractUiType = ReturnType<typeof makeTractUi>;
-
 export type Mouthflesh = {
   tongueBerth: number;
   tongueWidth: number;
   tongueRine: Maybe<Rine>;
-  tract: TractType;
+  mouth: Mouth;
   context: CanvasRenderingContext2D;
 };
 
-export const makeTractUi = (
-  tract: TractType,
+export const makeMouthflesh = (
+  mouth: Mouth,
   context: CanvasRenderingContext2D,
-) => {
+): Mouthflesh => {
   return {
-    tongueIndex: 12.9,
-    tongueDiameter: 2.43,
-    tongueTouch: undefined as Maybe<Rine>,
-    tract,
+    tongueBerth: 12.9,
+    tongueWidth: 2.43,
+    tongueRine: undefined as Maybe<Rine>,
+    mouth,
     context,
   };
 };
 
 export const initTractUi = (
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   backContext: CanvasRenderingContext2D,
 ) => {
   setRestDiameter(tractUi);
   for (var i = 0; i < Mouthbook.n; i++) {
-    tractUi.tract.width[i].now = tractUi.tract.width[i].goal =
-      tractUi.tract.width[i].rest;
+    tractUi.mouth.width[i].now = tractUi.mouth.width[i].goal =
+      tractUi.mouth.width[i].rest;
   }
   drawBackground(tractUi, backContext, tractUi.context);
 };
 
-export const getIndex = (x: number, y: number) => {
-  const xx = x - Settings.ui.mouthUi.originX;
-  const yy = y - Settings.ui.mouthUi.originY;
-
-  let angle = Math.atan2(yy, xx);
-  while (angle > 0) {
-    angle -= 2 * Math.PI;
+export const getIndex = ({ x, y }: Z) => {
+  let winkle = Math.atan2(
+    y - Settings.ui.mouthUi.originY,
+    x - Settings.ui.mouthUi.originX,
+  );
+  while (winkle > 0) {
+    winkle -= 2 * Math.PI;
   }
 
   return (
-    ((Math.PI + angle - Settings.ui.mouthUi.angleOffset) *
+    ((Math.PI + winkle - Settings.ui.mouthUi.angleOffset) *
       (Mouthbook.lipStart - 1)) /
     (Settings.ui.mouthUi.angleScale * Math.PI)
   );
 };
 
-export const getDiameter = (x: number, y: number) => {
-  const xx = x - Settings.ui.mouthUi.originX;
-  const yy = y - Settings.ui.mouthUi.originY;
-
-  return (
-    (Settings.ui.mouthUi.radius - Math.sqrt(xx * xx + yy * yy)) /
-    Settings.ui.mouthUi.scale
-  );
+export const getDiameter = ({ x, y }: Z) => {
+  const offsetX = x - Settings.ui.mouthUi.originX;
+  const offsetY = y - Settings.ui.mouthUi.originY;
+  const length = Math.sqrt(offsetX ** 2 + offsetY ** 2);
+  return (Settings.ui.mouthUi.radius - length) / Settings.ui.mouthUi.scale;
 };
 
 export const drawCircle = (
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   i: number,
   d: number,
   radius: number,
@@ -94,21 +89,21 @@ export const drawCircle = (
   tractUi.context.fill();
 };
 
-export const drawAmplitudes = (tractUi: TractUiType) => {
+export const drawAmplitudes = (tractUi: Mouthflesh) => {
   tractUi.context.strokeStyle = "orchid";
   tractUi.context.lineCap = "butt";
   tractUi.context.globalAlpha = 0.3;
   for (var i = 2; i < Mouthbook.n - 1; i++) {
     tractUi.context.beginPath();
-    tractUi.context.lineWidth = Math.sqrt(tractUi.tract.maxAmplitude[i]) * 3;
+    tractUi.context.lineWidth = Math.sqrt(tractUi.mouth.maxAmplitude[i]) * 3;
     moveTractUiTo(tractUi, i, 0);
-    lineTractUiTo(tractUi, i, tractUi.tract.width[i].now);
+    lineTractUiTo(tractUi, i, tractUi.mouth.width[i].now);
     tractUi.context.stroke();
   }
   for (var i = 1; i < Mouthbook.noseLength - 1; i++) {
     tractUi.context.beginPath();
     tractUi.context.lineWidth =
-      Math.sqrt(tractUi.tract.nose.maxAmplitude[i]) * 3;
+      Math.sqrt(tractUi.mouth.nose.maxAmplitude[i]) * 3;
     moveTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
@@ -117,30 +112,30 @@ export const drawAmplitudes = (tractUi: TractUiType) => {
     lineTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.tract.nose.width[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - tractUi.mouth.nose.width[i] * 0.9,
     );
     tractUi.context.stroke();
   }
   tractUi.context.globalAlpha = 1;
 };
 
-export const setRestDiameter = (tractUi: TractUiType) => {
+export const setRestDiameter = (tractUi: Mouthflesh) => {
   for (var i = Mouthbook.bladeStart; i < Mouthbook.lipStart; i++) {
     var t =
-      (1.1 * Math.PI * (tractUi.tongueIndex - i)) /
+      (1.1 * Math.PI * (tractUi.tongueBerth - i)) /
       (Mouthbook.tipStart - Mouthbook.bladeStart);
-    var fixedTongueDiameter = 2 + (tractUi.tongueDiameter - 2) / 1.5;
+    var fixedTongueDiameter = 2 + (tractUi.tongueWidth - 2) / 1.5;
     var curve =
       (1.5 - fixedTongueDiameter + Settings.ui.mouthUi.gridOffset) *
       Math.cos(t);
     if (i == Mouthbook.bladeStart - 2 || i == Mouthbook.lipStart - 1)
       curve *= 0.8;
     if (i == Mouthbook.bladeStart || i == Mouthbook.lipStart - 2) curve *= 0.94;
-    tractUi.tract.width[i].rest = 1.5 - curve;
+    tractUi.mouth.width[i].rest = 1.5 - curve;
   }
 };
 
-export const drawPitchControl = (tractUi: TractUiType, glottis: Throat) => {
+export const drawPitchControl = (tractUi: Mouthflesh, glottis: Throat) => {
   const w = 9;
   const h = 15;
   if (glottis.z.x) {
@@ -161,7 +156,7 @@ export const drawPitchControl = (tractUi: TractUiType, glottis: Throat) => {
 };
 
 export const drawTextStraight = (
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   i: number,
   d: number,
   text: string,
@@ -180,7 +175,7 @@ export const drawTextStraight = (
 };
 
 export const drawBackground = (
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   backContext: CanvasRenderingContext2D,
   tractContext: CanvasRenderingContext2D,
 ) => {
@@ -216,13 +211,13 @@ export const drawBackground = (
   tractUi.context = tractContext;
 };
 
-export const moveTractUiTo = (tractUi: TractUiType, i: number, d: number) => {
+export const moveTractUiTo = (tractUi: Mouthflesh, i: number, d: number) => {
   let angle =
     Settings.ui.mouthUi.angleOffset +
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
   let wobble =
-    tractUi.tract.maxAmplitude[Mouthbook.n - 1] +
-    tractUi.tract.nose.maxAmplitude[Mouthbook.noseLength - 1];
+    tractUi.mouth.maxAmplitude[Mouthbook.n - 1] +
+    tractUi.mouth.nose.maxAmplitude[Mouthbook.noseLength - 1];
   wobble *=
     (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
     Mouthbook.n;
@@ -235,13 +230,13 @@ export const moveTractUiTo = (tractUi: TractUiType, i: number, d: number) => {
   );
 };
 
-export const lineTractUiTo = (tractUi: TractUiType, i: number, d: number) => {
+export const lineTractUiTo = (tractUi: Mouthflesh, i: number, d: number) => {
   let angle =
     Settings.ui.mouthUi.angleOffset +
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
   let wobble =
-    tractUi.tract.maxAmplitude[Mouthbook.n - 1] +
-    tractUi.tract.nose.maxAmplitude[Mouthbook.noseLength - 1];
+    tractUi.mouth.maxAmplitude[Mouthbook.n - 1] +
+    tractUi.mouth.nose.maxAmplitude[Mouthbook.noseLength - 1];
   wobble *=
     (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
     Mouthbook.n;
@@ -255,7 +250,7 @@ export const lineTractUiTo = (tractUi: TractUiType, i: number, d: number) => {
 };
 
 export const drawText = (
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   i: number,
   d: number,
   text: string,
@@ -274,7 +269,7 @@ export const drawText = (
   tractUi.context.restore();
 };
 
-export const drawTongueControl = (tractUi: TractUiType) => {
+export const drawTongueControl = (tractUi: Mouthflesh) => {
   tractUi.context.lineCap = "round";
   tractUi.context.lineJoin = "round";
   tractUi.context.strokeStyle = palePink;
@@ -321,11 +316,11 @@ export const drawTongueControl = (tractUi: TractUiType) => {
   //circle for tongue position
   var angle =
     Settings.ui.mouthUi.angleOffset +
-    (tractUi.tongueIndex * Settings.ui.mouthUi.angleScale * Math.PI) /
+    (tractUi.tongueBerth * Settings.ui.mouthUi.angleScale * Math.PI) /
       (Mouthbook.lipStart - 1);
   var r =
     Settings.ui.mouthUi.radius -
-    Settings.ui.mouthUi.scale * tractUi.tongueDiameter;
+    Settings.ui.mouthUi.scale * tractUi.tongueWidth;
   var x = Settings.ui.mouthUi.originX - r * Math.cos(angle);
   var y = Settings.ui.mouthUi.originY - r * Math.sin(angle);
   tractUi.context.lineWidth = 4;
@@ -342,7 +337,7 @@ export const drawTongueControl = (tractUi: TractUiType) => {
 };
 
 export const drawTractUi = (
-  tractUi: TractUiType,
+  tractUi: Mouthflesh,
   glottis: Throat,
   ui: UiType,
   tractCtx: CanvasRenderingContext2D,
@@ -359,7 +354,7 @@ export const drawTractUi = (
   drawTongueControl(tractUi);
   drawPitchControl(tractUi, glottis);
 
-  var velum = tractUi.tract.nose.width[0];
+  var velum = tractUi.mouth.nose.width[0];
   var velumAngle = velum * 4;
 
   //first draw fill
@@ -369,7 +364,7 @@ export const drawTractUi = (
   tractUi.context.fillStyle = Settings.ui.mouthUi.fillColour;
   moveTractUiTo(tractUi, 1, 0);
   for (var i = 1; i < Mouthbook.n; i++)
-    lineTractUiTo(tractUi, i, tractUi.tract.width[i].now);
+    lineTractUiTo(tractUi, i, tractUi.mouth.width[i].now);
   for (var i = Mouthbook.n - 1; i >= 2; i--) lineTractUiTo(tractUi, i, 0);
   tractUi.context.closePath();
   tractUi.context.stroke();
@@ -385,7 +380,7 @@ export const drawTractUi = (
     lineTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.tract.nose.width[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - tractUi.mouth.nose.width[i] * 0.9,
     );
   for (var i = Mouthbook.noseLength - 1; i >= 1; i--)
     lineTractUiTo(
@@ -434,9 +429,9 @@ export const drawTractUi = (
   tractUi.context.strokeStyle = Settings.ui.mouthUi.lineColour;
   tractUi.context.lineJoin = "round";
   tractUi.context.lineCap = "round";
-  moveTractUiTo(tractUi, 1, tractUi.tract.width[0].now);
+  moveTractUiTo(tractUi, 1, tractUi.mouth.width[0].now);
   for (let i = 2; i < Mouthbook.n; i++)
-    lineTractUiTo(tractUi, i, tractUi.tract.width[i].now);
+    lineTractUiTo(tractUi, i, tractUi.mouth.width[i].now);
   moveTractUiTo(tractUi, 1, 0);
   for (let i = 2; i <= Mouthbook.noseStart - 2; i++)
     lineTractUiTo(tractUi, i, 0);
@@ -459,7 +454,7 @@ export const drawTractUi = (
     lineTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.tract.nose.width[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - tractUi.mouth.nose.width[i] * 0.9,
     );
   moveTractUiTo(
     tractUi,
@@ -494,7 +489,7 @@ export const drawTractUi = (
   drawText(
     tractUi,
     Mouthbook.n * 0.95,
-    0.8 + 0.8 * tractUi.tract.width[Mouthbook.n - 1].now,
+    0.8 + 0.8 * tractUi.mouth.width[Mouthbook.n - 1].now,
     " lip",
   );
 
@@ -504,12 +499,12 @@ export const drawTractUi = (
   tractUi.context.fillText(ui.debugText, 20, 20);
 };
 
-export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
-  if (tractUi.tongueTouch !== undefined && !tractUi.tongueTouch.isAlive) {
-    tractUi.tongueTouch = undefined;
+export const handleTractUiTouches = (tractUi: Mouthflesh, ui: UiType) => {
+  if (tractUi.tongueRine !== undefined && !tractUi.tongueRine.isAlive) {
+    tractUi.tongueRine = undefined;
   }
 
-  if (tractUi.tongueTouch === undefined) {
+  if (tractUi.tongueRine === undefined) {
     for (let j = 0; j < ui.touchesWithMouse.length; j++) {
       const touch = ui.touchesWithMouse[j];
 
@@ -522,8 +517,8 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
 
       const x = touch.x;
       const y = touch.y;
-      const index = getIndex(x, y);
-      const diameter = getDiameter(x, y);
+      const index = getIndex({ x, y });
+      const diameter = getDiameter({ x, y });
 
       if (
         index >= tongueLowerBound() - 4 &&
@@ -531,16 +526,16 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
         diameter >= Settings.ui.mouthUi.innerTongueControlRadius - 0.5 &&
         diameter <= Settings.ui.mouthUi.outerTongueControlRadius + 0.5
       ) {
-        tractUi.tongueTouch = touch;
+        tractUi.tongueRine = touch;
       }
     }
   }
 
-  if (tractUi.tongueTouch !== undefined) {
-    const x = tractUi.tongueTouch.x;
-    const y = tractUi.tongueTouch.y;
-    const index = getIndex(x, y);
-    const diameter = getDiameter(x, y);
+  if (tractUi.tongueRine !== undefined) {
+    const x = tractUi.tongueRine.x;
+    const y = tractUi.tongueRine.y;
+    const index = getIndex({ x, y });
+    const diameter = getDiameter({ x, y });
     let fromPoint =
       (Settings.ui.mouthUi.outerTongueControlRadius - diameter) /
       (Settings.ui.mouthUi.outerTongueControlRadius -
@@ -548,13 +543,13 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
     fromPoint = clamp(fromPoint, 0, 1);
     fromPoint =
       Math.pow(fromPoint, 0.58) - 0.2 * (fromPoint * fromPoint - fromPoint); //horrible kludge to fit curve to straight line
-    tractUi.tongueDiameter = clamp(
+    tractUi.tongueWidth = clamp(
       diameter,
       Settings.ui.mouthUi.innerTongueControlRadius,
       Settings.ui.mouthUi.outerTongueControlRadius,
     );
     const out = fromPoint * 0.5 * (tongueUpperBound() - tongueLowerBound());
-    tractUi.tongueIndex = clamp(
+    tractUi.tongueBerth = clamp(
       index,
       tongueMiddle() - out,
       tongueMiddle() + out,
@@ -563,10 +558,10 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
 
   setRestDiameter(tractUi);
   for (let i = 0; i < Mouthbook.n; i++)
-    tractUi.tract.width[i].goal = tractUi.tract.width[i].rest;
+    tractUi.mouth.width[i].goal = tractUi.mouth.width[i].rest;
 
   //other constrictions and nose
-  tractUi.tract.velumTarget = 0.01;
+  tractUi.mouth.velumTarget = 0.01;
   for (let j = 0; j < ui.touchesWithMouse.length; j++) {
     const touch = ui.touchesWithMouse[j];
     if (!touch.isAlive) {
@@ -574,13 +569,13 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
     }
     const x = touch.x;
     const y = touch.y;
-    const index = getIndex(x, y);
-    let diameter = getDiameter(x, y);
+    const index = getIndex({ x, y });
+    let diameter = getDiameter({ x, y });
     if (
       index > Mouthbook.noseStart &&
       diameter < -Settings.ui.mouthUi.noseOffset
     ) {
-      tractUi.tract.velumTarget = 0.4;
+      tractUi.mouth.velumTarget = 0.4;
     }
     if (diameter < -0.85 - Settings.ui.mouthUi.noseOffset) {
       continue;
@@ -618,10 +613,10 @@ export const handleTractUiTouches = (tractUi: TractUiType, ui: UiType) => {
         } else {
           shrink = 0.5 * (1 - Math.cos((Math.PI * relpos) / width));
         }
-        if (diameter < tractUi.tract.width[intIndex + i].goal) {
-          tractUi.tract.width[intIndex + i].goal =
+        if (diameter < tractUi.mouth.width[intIndex + i].goal) {
+          tractUi.mouth.width[intIndex + i].goal =
             diameter +
-            (tractUi.tract.width[intIndex + i].goal - diameter) * shrink;
+            (tractUi.mouth.width[intIndex + i].goal - diameter) * shrink;
         }
       }
     }
