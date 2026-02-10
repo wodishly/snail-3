@@ -1,6 +1,6 @@
 import { reckonBlockTime, type Snail } from "./snail";
 import { getNoiseModulator, type Throat } from "./throat";
-import { type UiType } from "./ui";
+import { type UiType } from "./flesh";
 import { nudge, clamp } from "./help/math";
 import { Fastenings, Mouthbook, Settings } from "./settings";
 import { makeTransient, processTransients, type Transient } from "./transient";

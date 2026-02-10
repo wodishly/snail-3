@@ -1,6 +1,6 @@
 import { finishMouthBlock, runMouthStep, type Mouth } from "./mouth";
 import { finishGlottisBlock, runGlottisStep, type Throat } from "./throat";
-import type { UiType } from "./ui";
+import type { UiType } from "./flesh";
 import { Fastenings } from "./settings";
 import type { Maybe } from "./help/type";
 

@@ -1,4 +1,4 @@
-import { drawUi, initUi, makeUi, shapeToFitScreen, updateTouches } from "./ui";
+import { drawUi, initUi, makeUi, shapeToFitScreen, updateTouches } from "./flesh";
 import { makeThroat } from "./throat";
 import { initMouth, makeMouth } from "./mouth";
 import { drawTractUi, initTractUi, makeMouthflesh } from "./tractUi";

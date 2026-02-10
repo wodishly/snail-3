@@ -1,5 +1,5 @@
 import { type Snail } from "./snail";
-import { type Rine, type UiType } from "./ui";
+import { type Rine, type UiType } from "./flesh";
 import { clamp, type Z } from "./help/math";
 import { Settings } from "./settings";
 import { createNoise2D } from "simplex-noise";

@@ -1,6 +1,6 @@
 import { type Mouth } from "./mouth";
 import { type Throat } from "./throat";
-import { type Rine, type UiType } from "./ui";
+import { type Rine, type UiType } from "./flesh";
 import { clamp, type Z } from "./help/math";
 import {
   Mouthbook,
