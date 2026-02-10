@@ -53,14 +53,14 @@ export const makeTract = () => {
     maxAmplitude: row(Mouthbook.n, () => 0),
     width: row(Mouthbook.n, () => makeWidth(0)),
 
-    noseR: [] as unknown as Float64Array,
-    noseL: [] as unknown as Float64Array,
-    noseJunctionOutputR: [] as unknown as Float64Array,
-    noseJunctionOutputL: [] as unknown as Float64Array,
-    noseReflection: [] as unknown as Float64Array,
-    noseDiameter: [] as unknown as Float64Array,
-    noseA: [] as unknown as Float64Array,
-    noseMaxAmplitude: [] as unknown as Float64Array,
+    nose: {
+      main: row(Mouthbook.noseLength, () => makeHanded(0)),
+      junctionOutput: row(after(Mouthbook.noseLength), () => makeHanded(0)),
+      area: row(Mouthbook.noseLength, () => 0),
+      maxAmplitude: row(Mouthbook.noseLength, () => 0),
+      width: row(Mouthbook.noseLength, () => 0),
+      bend: row(after(Mouthbook.noseLength), () => 0),
+    },
 
     reflectionLeft: 0,
     reflectionRight: 0,
@@ -87,17 +87,9 @@ export const initTract = (tract: TractType) => {
     tract.width[i] = makeWidth(diameter);
   }
 
-  tract.noseR = new Float64Array(Mouthbook.noseLength);
-  tract.noseL = new Float64Array(Mouthbook.noseLength);
-  tract.noseJunctionOutputR = new Float64Array(Mouthbook.noseLength + 1);
-  tract.noseJunctionOutputL = new Float64Array(Mouthbook.noseLength + 1);
-  tract.noseReflection = new Float64Array(Mouthbook.noseLength + 1);
-  tract.noseDiameter = new Float64Array(Mouthbook.noseLength);
-  tract.noseA = new Float64Array(Mouthbook.noseLength);
-  tract.noseMaxAmplitude = new Float64Array(Mouthbook.noseLength);
   for (let i = 0; i < Mouthbook.noseLength; i++) {
     const d = 2 * (i / Mouthbook.noseLength);
-    tract.noseDiameter[i] = Math.min(
+    tract.nose.width[i] = Math.min(
       1.9,
       d < 1 ? 0.4 + 1.6 * d : 0.5 + 1.5 * (2 - d),
     );
@@ -108,7 +100,7 @@ export const initTract = (tract: TractType) => {
       0;
   calculateReflections(tract);
   calculateNoseReflections(tract);
-  tract.noseDiameter[0] = tract.velumTarget;
+  tract.nose.width[0] = tract.velumTarget;
 };
 
 export const finishTractBlock = (tract: TractType, audioSystem: Snail) => {
@@ -138,21 +130,21 @@ export const calculateReflections = (tract: TractType) => {
   var sum =
     tract.area[Mouthbook.noseStart] +
     tract.area[Mouthbook.noseStart + 1] +
-    tract.noseA[0];
+    tract.nose.area[0];
   tract.newReflectionLeft = (2 * tract.area[Mouthbook.noseStart] - sum) / sum;
   tract.newReflectionRight =
     (2 * tract.area[Mouthbook.noseStart + 1] - sum) / sum;
-  tract.newReflectionNose = (2 * tract.noseA[0] - sum) / sum;
+  tract.newReflectionNose = (2 * tract.nose.area[0] - sum) / sum;
 };
 
 export const calculateNoseReflections = (tract: TractType) => {
   for (var i = 0; i < Mouthbook.noseLength; i++) {
-    tract.noseA[i] = tract.noseDiameter[i] * tract.noseDiameter[i];
+    tract.nose.area[i] = tract.nose.width[i] * tract.nose.width[i];
   }
   for (var i = 1; i < Mouthbook.noseLength; i++) {
-    tract.noseReflection[i] =
-      (tract.noseA[i - 1] - tract.noseA[i]) /
-      (tract.noseA[i - 1] + tract.noseA[i]);
+    tract.nose.bend[i] =
+      (tract.nose.area[i - 1] - tract.nose.area[i]) /
+      (tract.nose.area[i - 1] + tract.nose.area[i]);
   }
 };
 
@@ -229,20 +221,20 @@ export const reshapeTract = (tract: TractType, deltaTime: number) => {
   if (
     tract.lastObstruction !== undefined &&
     newLastObstruction === undefined &&
-    tract.noseA[0] < 0.05
+    tract.nose.area[0] < 0.05
   ) {
     tract.transients.push(makeTransient(tract.lastObstruction));
   }
   tract.lastObstruction = newLastObstruction;
 
   amount = deltaTime * Settings.speed;
-  tract.noseDiameter[0] = nudge(
-    tract.noseDiameter[0],
+  tract.nose.width[0] = nudge(
+    tract.nose.width[0],
     tract.velumTarget,
     amount * 0.25,
     amount * 0.1,
   );
-  tract.noseA[0] = tract.noseDiameter[0] ** 2;
+  tract.nose.area[0] = tract.nose.width[0] ** 2;
 };
 
 export const runTractStep = (
@@ -278,14 +270,14 @@ export const runTractStep = (
     tract.newReflectionLeft * (1 - lambda) + tract.reflectionLeft * lambda;
   tract.junctionOutput[j].left =
     r * tract.main[j - 1].right +
-    (1 + r) * (tract.noseL[0] + tract.main[j].left);
+    (1 + r) * (tract.nose.main[0].left + tract.main[j].left);
   r = tract.newReflectionRight * (1 - lambda) + tract.reflectionRight * lambda;
   tract.junctionOutput[j].right =
     r * tract.main[j].left +
-    (1 + r) * (tract.main[j - 1].right + tract.noseL[0]);
+    (1 + r) * (tract.main[j - 1].right + tract.nose.main[0].left);
   r = tract.newReflectionNose * (1 - lambda) + tract.reflectionNose * lambda;
-  tract.noseJunctionOutputR[0] =
-    r * tract.noseL[0] +
+  tract.nose.junctionOutput[0].right =
+    r * tract.nose.main[0].left +
     (1 + r) * (tract.main[j].left + tract.main[j - 1].right);
 
   for (var i = 0; i < Mouthbook.n; i++) {
@@ -302,26 +294,32 @@ export const runTractStep = (
   tract.lipOutput = tract.main[Mouthbook.n - 1].right;
 
   //nose
-  tract.noseJunctionOutputL[Mouthbook.noseLength] =
-    tract.noseR[Mouthbook.noseLength - 1] * Fastenings.reflection.lip;
+  tract.nose.junctionOutput[Mouthbook.noseLength].left =
+    tract.nose.main[Mouthbook.noseLength - 1].right * Fastenings.reflection.lip;
 
   for (var i = 1; i < Mouthbook.noseLength; i++) {
-    var w = tract.noseReflection[i] * (tract.noseR[i - 1] + tract.noseL[i]);
-    tract.noseJunctionOutputR[i] = tract.noseR[i - 1] - w;
-    tract.noseJunctionOutputL[i] = tract.noseL[i] + w;
+    var w =
+      tract.nose.bend[i] *
+      (tract.nose.main[i - 1].right + tract.nose.main[i].left);
+    tract.nose.junctionOutput[i].right = tract.nose.main[i - 1].right - w;
+    tract.nose.junctionOutput[i].left = tract.nose.main[i].left + w;
   }
 
   for (var i = 0; i < Mouthbook.noseLength; i++) {
-    tract.noseR[i] = tract.noseJunctionOutputR[i] * Settings.fade;
-    tract.noseL[i] = tract.noseJunctionOutputL[i + 1] * Settings.fade;
+    tract.nose.main[i].right =
+      tract.nose.junctionOutput[i].right * Settings.fade;
+    tract.nose.main[i].left =
+      tract.nose.junctionOutput[i + 1].left * Settings.fade;
 
     if (updateAmplitudes) {
-      var amplitude = Math.abs(tract.noseR[i] + tract.noseL[i]);
-      if (amplitude > tract.noseMaxAmplitude[i])
-        tract.noseMaxAmplitude[i] = amplitude;
-      else tract.noseMaxAmplitude[i] *= 0.999;
+      var amplitude = Math.abs(
+        tract.nose.main[i].right + tract.nose.main[i].left,
+      );
+      if (amplitude > tract.nose.maxAmplitude[i])
+        tract.nose.maxAmplitude[i] = amplitude;
+      else tract.nose.maxAmplitude[i] *= 0.999;
     }
   }
 
-  tract.noseOutput = tract.noseR[Mouthbook.noseLength - 1];
+  tract.noseOutput = tract.nose.main[Mouthbook.noseLength - 1].right;
 };

@@ -108,7 +108,7 @@ export const drawAmplitudes = (tractUi: TractUiType) => {
   for (var i = 1; i < Mouthbook.noseLength - 1; i++) {
     tractUi.context.beginPath();
     tractUi.context.lineWidth =
-      Math.sqrt(tractUi.tract.noseMaxAmplitude[i]) * 3;
+      Math.sqrt(tractUi.tract.nose.maxAmplitude[i]) * 3;
     moveTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
@@ -117,7 +117,7 @@ export const drawAmplitudes = (tractUi: TractUiType) => {
     lineTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.tract.noseDiameter[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - tractUi.tract.nose.width[i] * 0.9,
     );
     tractUi.context.stroke();
   }
@@ -222,7 +222,7 @@ export const moveTractUiTo = (tractUi: TractUiType, i: number, d: number) => {
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
   let wobble =
     tractUi.tract.maxAmplitude[Mouthbook.n - 1] +
-    tractUi.tract.noseMaxAmplitude[Mouthbook.noseLength - 1];
+    tractUi.tract.nose.maxAmplitude[Mouthbook.noseLength - 1];
   wobble *=
     (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
     Mouthbook.n;
@@ -241,7 +241,7 @@ export const lineTractUiTo = (tractUi: TractUiType, i: number, d: number) => {
     (i * Settings.ui.mouthUi.angleScale * Math.PI) / (Mouthbook.lipStart - 1);
   let wobble =
     tractUi.tract.maxAmplitude[Mouthbook.n - 1] +
-    tractUi.tract.noseMaxAmplitude[Mouthbook.noseLength - 1];
+    tractUi.tract.nose.maxAmplitude[Mouthbook.noseLength - 1];
   wobble *=
     (0.03 * Math.sin(2 * i - 50 * (performance.now() / 1000)) * i) /
     Mouthbook.n;
@@ -359,7 +359,7 @@ export const drawTractUi = (
   drawTongueControl(tractUi);
   drawPitchControl(tractUi, glottis);
 
-  var velum = tractUi.tract.noseDiameter[0];
+  var velum = tractUi.tract.nose.width[0];
   var velumAngle = velum * 4;
 
   //first draw fill
@@ -385,7 +385,7 @@ export const drawTractUi = (
     lineTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.tract.noseDiameter[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - tractUi.tract.nose.width[i] * 0.9,
     );
   for (var i = Mouthbook.noseLength - 1; i >= 1; i--)
     lineTractUiTo(
@@ -459,7 +459,7 @@ export const drawTractUi = (
     lineTractUiTo(
       tractUi,
       i + Mouthbook.noseStart,
-      -Settings.ui.mouthUi.noseOffset - tractUi.tract.noseDiameter[i] * 0.9,
+      -Settings.ui.mouthUi.noseOffset - tractUi.tract.nose.width[i] * 0.9,
     );
   moveTractUiTo(
     tractUi,

@@ -34,3 +34,14 @@ export const sameshift = <N extends number, T extends Flight<T[number], N>, U>(
 export const row = <N extends number, T>(n: N, f: (x: number) => T) => {
   return sameshift(flight(n), f);
 };
+
+export const f64row = <N extends number, T extends number>(
+  n: N,
+  f: (x: number) => T,
+) => {
+  const row = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    row[i] = f(n);
+  }
+  return row;
+};
