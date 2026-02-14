@@ -13,12 +13,12 @@ export const drawKeyboard = (backcontext: CanvasRenderingContext2D) => {
 
   backcontext.strokeStyle = "orchid";
   backcontext.fillStyle = "orchid";
-  for (var i = 0; i < Settings.ui.throat.semitones; i++) {
+  for (var i = 0; i < Settings.keyboard.semitones; i++) {
     var keyWidth =
-      Settings.ui.throat.keyboardWidth / Settings.ui.throat.semitones;
-    var x = Settings.ui.throat.keyboardLeft + (i + 1 / 2) * keyWidth;
-    var y = Settings.ui.throat.keyboardTop;
-    if (Settings.ui.throat.marks[(i + 3) % 12] == 1) {
+      Settings.keyboard.keyboardWidth / Settings.keyboard.semitones;
+    var x = Settings.keyboard.keyboardLeft + (i + 1 / 2) * keyWidth;
+    var y = Settings.keyboard.keyboardTop;
+    if (Settings.keyboard.marks[(i + 3) % 12] == 1) {
       backcontext.lineWidth = 4;
       backcontext.globalAlpha = 0.4;
     } else {
@@ -27,15 +27,15 @@ export const drawKeyboard = (backcontext: CanvasRenderingContext2D) => {
     }
     backcontext.beginPath();
     backcontext.moveTo(x, y + 9);
-    backcontext.lineTo(x, y + Settings.ui.throat.keyboardHeight * 0.4 - 9);
+    backcontext.lineTo(x, y + Settings.keyboard.keyboardHeight * 0.4 - 9);
     backcontext.stroke();
 
     backcontext.lineWidth = 3;
     backcontext.globalAlpha = 0.15;
 
     backcontext.beginPath();
-    backcontext.moveTo(x, y + Settings.ui.throat.keyboardHeight * 0.52 + 6);
-    backcontext.lineTo(x, y + Settings.ui.throat.keyboardHeight * 0.72 - 6);
+    backcontext.moveTo(x, y + Settings.keyboard.keyboardHeight * 0.52 + 6);
+    backcontext.lineTo(x, y + Settings.keyboard.keyboardHeight * 0.72 - 6);
     backcontext.stroke();
   }
 
@@ -91,27 +91,27 @@ const drawBar = (
   backcontext.lineWidth = radius * 2;
   backcontext.beginPath();
   backcontext.moveTo(
-    Settings.ui.throat.keyboardLeft + radius,
-    Settings.ui.throat.keyboardTop +
-      topFactor * Settings.ui.throat.keyboardHeight +
+    Settings.keyboard.keyboardLeft + radius,
+    Settings.keyboard.keyboardTop +
+      topFactor * Settings.keyboard.keyboardHeight +
       radius,
   );
   backcontext.lineTo(
-    Settings.ui.throat.keyboardLeft + Settings.ui.throat.keyboardWidth - radius,
-    Settings.ui.throat.keyboardTop +
-      topFactor * Settings.ui.throat.keyboardHeight +
+    Settings.keyboard.keyboardLeft + Settings.keyboard.keyboardWidth - radius,
+    Settings.keyboard.keyboardTop +
+      topFactor * Settings.keyboard.keyboardHeight +
       radius,
   );
   backcontext.lineTo(
-    Settings.ui.throat.keyboardLeft + Settings.ui.throat.keyboardWidth - radius,
-    Settings.ui.throat.keyboardTop +
-      bottomFactor * Settings.ui.throat.keyboardHeight -
+    Settings.keyboard.keyboardLeft + Settings.keyboard.keyboardWidth - radius,
+    Settings.keyboard.keyboardTop +
+      bottomFactor * Settings.keyboard.keyboardHeight -
       radius,
   );
   backcontext.lineTo(
-    Settings.ui.throat.keyboardLeft + radius,
-    Settings.ui.throat.keyboardTop +
-      bottomFactor * Settings.ui.throat.keyboardHeight -
+    Settings.keyboard.keyboardLeft + radius,
+    Settings.keyboard.keyboardTop +
+      bottomFactor * Settings.keyboard.keyboardHeight -
       radius,
   );
   backcontext.closePath();

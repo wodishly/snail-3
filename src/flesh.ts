@@ -1,6 +1,6 @@
 import {
-  getDiameter,
-  getIndex,
+  canvasToTongueWidth,
+  canvasToTongueBerth,
   handleMouthfleshTouches,
   type Mouthflesh,
 } from "./mouthflesh";
@@ -65,9 +65,9 @@ export const startFlesh = (
     flesh.isMouseDown = false;
     endMouse(mouth, throat, flesh, mouthflesh, tractContext);
   });
-  document.addEventListener("pointermove", (e) =>
-    moveMouse(mouth, throat, flesh, mouthflesh, tractContext, e),
-  );
+  document.addEventListener("pointermove", (e) => {
+    moveMouse(mouth, throat, flesh, mouthflesh, tractContext, e);
+  });
 };
 
 const handleUiTouches = (
@@ -149,19 +149,18 @@ const drawAboutText = (tractCtx: CanvasRenderingContext2D) => {
 };
 
 const instructionsScreenHandleTouch = (
-  ui: UiType,
-  audioSystem: Snail,
-  x: number,
-  y: number,
+  flesh: UiType,
+  snail: Snail,
+  { x, y }: Z,
 ) => {
   if (x >= 35 && x <= 265 && y >= 535 && y <= 570)
     window.location.href = "http://venuspatrol.nfshost.com";
   else if (x >= 370 && x <= 570 && y >= 505 && y <= 555) {
     location.reload();
   } else {
-    ui.isInInstructionsScreen = false;
-    ui.aboutButton.isOn = true;
-    unmute(audioSystem);
+    flesh.isInInstructionsScreen = false;
+    flesh.aboutButton.isOn = true;
+    unmute(snail);
   }
 };
 
@@ -173,12 +172,58 @@ const buttonsHandleTouchStart = (ui: UiType, rine: Rine) => {
   handleTouchStart(ui.aboutButton, rine);
 };
 
-const moveMouse = (
+const startMouse = (
+  snail: Snail,
+  mouth: Mouth,
+  glottis: Throat,
+  flesh: UiType,
+  mouthflesh: Mouthflesh,
+  forecontext: CanvasRenderingContext2D,
+  e: PointerEvent,
+) => {
+  if (!snail.isStarted) {
+    snail.isStarted = true;
+    startSound(snail, glottis, mouth, flesh);
+  }
+  if (flesh.isInAboutScreen) {
+    flesh.isInAboutScreen = false;
+    return;
+  }
+  const z = {
+    x: e.clientX - forecontext.canvas.offsetLeft,
+    y: e.clientY - forecontext.canvas.offsetTop,
+  };
+  if (flesh.isInInstructionsScreen) {
+    instructionsScreenHandleTouch(flesh, snail, z);
+    return;
+  }
+
+  const rine = makeRine(z);
+  flesh.mouseTouch = rine;
+  flesh.touchesWithMouse.push(rine);
+  buttonsHandleTouchStart(flesh, rine);
+  handleUiTouches(mouth, glottis, flesh, mouthflesh, forecontext);
+};
+
+const makeRine = (z: Z): Rine => {
+  return {
+    ...z,
+    startTime: performance.now() / 1000,
+    fricativeIntensity: 0,
+    endTime: 0,
+    isAlive: true,
+    id: `mouse${Math.random()}`,
+    index: canvasToTongueBerth(z),
+    diameter: canvasToTongueWidth(z),
+  };
+};
+
+export const moveMouse = (
   mouth: Mouth,
   throat: Throat,
   flesh: UiType,
   mouthflesh: Mouthflesh,
-  tractContext: CanvasRenderingContext2D,
+  forecontext: CanvasRenderingContext2D,
   e: PointerEvent,
 ) => {
   const rine = flesh.mouseTouch;
@@ -186,11 +231,11 @@ const moveMouse = (
     return;
   }
 
-  rine.x = ((e.pageX - tractContext.canvas.offsetLeft) / flesh.width) * 600;
-  rine.y = ((e.pageY - tractContext.canvas.offsetTop) / flesh.width) * 600;
-  rine.index = getIndex({ x: rine.x, y: rine.y });
-  rine.diameter = getDiameter({ x: rine.x, y: rine.y });
-  handleUiTouches(mouth, throat, flesh, mouthflesh, tractContext);
+  rine.x = e.clientX - forecontext.canvas.offsetLeft;
+  rine.y = e.clientY - forecontext.canvas.offsetTop;
+  rine.index = canvasToTongueBerth({ x: rine.x, y: rine.y });
+  rine.diameter = canvasToTongueWidth({ x: rine.x, y: rine.y });
+  handleUiTouches(mouth, throat, flesh, mouthflesh, forecontext);
 };
 
 const endMouse = (
@@ -223,75 +268,7 @@ const write = (
   }
 };
 
-export const updateTouches = (ui: UiType) => {
-  const fricativeAttackTime = 0.1;
-  for (let j = ui.touchesWithMouse.length - 1; j >= 0; j--) {
-    const touch = ui.touchesWithMouse[j];
-    const time = performance.now() / 1000;
-    if (!touch.isAlive && time > touch.endTime + 1) {
-      ui.touchesWithMouse.splice(j, 1);
-    } else if (touch.isAlive) {
-      touch.fricativeIntensity = clamp(
-        (time - touch.startTime) / fricativeAttackTime,
-        0,
-        1,
-      );
-    } else {
-      touch.fricativeIntensity = clamp(
-        1 - (time - touch.endTime) / fricativeAttackTime,
-        0,
-        1,
-      );
-    }
-  }
-};
-
-export const startMouse = (
-  snail: Snail,
-  mouth: Mouth,
-  glottis: Throat,
-  flesh: UiType,
-  mouthflesh: Mouthflesh,
-  tractContext: CanvasRenderingContext2D,
-  event: PointerEvent,
-) => {
-  if (!snail.isStarted) {
-    snail.isStarted = true;
-    startSound(snail, glottis, mouth, flesh);
-  }
-  if (flesh.isInAboutScreen) {
-    flesh.isInAboutScreen = false;
-    return;
-  }
-  if (flesh.isInInstructionsScreen) {
-    var x =
-      ((event.pageX - tractContext.canvas.offsetLeft) / flesh.width) * 600;
-    var y = ((event.pageY - tractContext.canvas.offsetTop) / flesh.width) * 600;
-    instructionsScreenHandleTouch(flesh, snail, x, y);
-    return;
-  }
-
-  const z = {
-    x: ((event.pageX - tractContext.canvas.offsetLeft) / flesh.width) * 600,
-    y: ((event.pageY - tractContext.canvas.offsetTop) / flesh.width) * 600,
-  };
-  const rine: Rine = {
-    ...z,
-    startTime: performance.now() / 1000,
-    fricativeIntensity: 0,
-    endTime: 0,
-    isAlive: true,
-    id: `mouse${Math.random()}`,
-    index: getIndex(z),
-    diameter: getDiameter(z),
-  };
-  flesh.mouseTouch = rine;
-  flesh.touchesWithMouse.push(rine);
-  buttonsHandleTouchStart(flesh, rine);
-  handleUiTouches(mouth, glottis, flesh, mouthflesh, tractContext);
-};
-
-export const drawInstructionsScreen = (
+const drawInstructionsScreen = (
   ui: UiType,
   tractCtx: CanvasRenderingContext2D,
   audioSystem: Snail,
@@ -363,4 +340,27 @@ export const drawInstructionsScreen = (
   write(ui, tractCtx, "venuspatrol.nfshost.com");
 
   ctx.globalAlpha = 1.0;
+};
+
+export const updateTouches = (ui: UiType) => {
+  const fricativeAttackTime = 0.1;
+  for (let j = ui.touchesWithMouse.length - 1; j >= 0; j--) {
+    const touch = ui.touchesWithMouse[j];
+    const time = performance.now() / 1000;
+    if (!touch.isAlive && time > touch.endTime + 1) {
+      ui.touchesWithMouse.splice(j, 1);
+    } else if (touch.isAlive) {
+      touch.fricativeIntensity = clamp(
+        (time - touch.startTime) / fricativeAttackTime,
+        0,
+        1,
+      );
+    } else {
+      touch.fricativeIntensity = clamp(
+        1 - (time - touch.endTime) / fricativeAttackTime,
+        0,
+        1,
+      );
+    }
+  }
 };

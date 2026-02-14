@@ -94,7 +94,7 @@ export const handleThroatTouches = (throat: Throat, ui: UiType) => {
       if (!touch.isAlive) {
         continue;
       }
-      if (touch.y < Settings.ui.throat.keyboardTop) {
+      if (touch.y < Settings.keyboard.keyboardTop) {
         continue;
       }
       throat.touch = touch;
@@ -102,23 +102,23 @@ export const handleThroatTouches = (throat: Throat, ui: UiType) => {
   }
 
   if (throat.touch !== undefined) {
-    let local_y = throat.touch.y - Settings.ui.throat.keyboardTop - 10;
-    let local_x = throat.touch.x - Settings.ui.throat.keyboardLeft;
+    let local_y = throat.touch.y - Settings.keyboard.keyboardTop - 10;
+    let local_x = throat.touch.x - Settings.keyboard.keyboardLeft;
 
-    local_y = clamp(local_y, 0, Settings.ui.throat.keyboardHeight - 26);
+    local_y = clamp(local_y, 0, Settings.keyboard.keyboardHeight - 26);
 
     const semitone =
-      (Settings.ui.throat.semitones * local_x) /
-        Settings.ui.throat.keyboardWidth +
+      (Settings.keyboard.semitones * local_x) /
+        Settings.keyboard.keyboardWidth +
       0.5;
 
     throat.frequency.ui =
-      Settings.ui.throat.baseNote * Math.pow(2, semitone / 12);
+      Settings.keyboard.baseNote * Math.pow(2, semitone / 12);
 
     if (throat.intensity == 0) throat.frequency.smooth = throat.frequency.ui;
 
     const t = clamp(
-      1 - local_y / (Settings.ui.throat.keyboardHeight - 28),
+      1 - local_y / (Settings.keyboard.keyboardHeight - 28),
       0,
       1,
     );
@@ -127,7 +127,7 @@ export const handleThroatTouches = (throat: Throat, ui: UiType) => {
     throat.loudness = Math.pow(throat.tenseness.ui, 0.25);
 
     throat.z.x = throat.touch.x;
-    throat.z.y = local_y + Settings.ui.throat.keyboardTop + 10;
+    throat.z.y = local_y + Settings.keyboard.keyboardTop + 10;
   }
 
   throat.isTouched = throat.touch !== undefined;

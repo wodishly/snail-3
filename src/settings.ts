@@ -45,30 +45,28 @@ export const Settings = {
       Q: 0.5,
     } satisfies SieveSetting,
   },
-  ui: {
-    throat: {
-      keyboardTop: 500,
-      keyboardLeft: 0,
-      keyboardWidth: 600,
-      keyboardHeight: 100,
-      semitones: 20,
-      marks: [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
-      baseNote: 87.3071, //F
-    },
-    mouthUi: {
-      originX: 340,
-      originY: 449,
-      radius: 298,
-      scale: 60,
-      fillColour: "pink",
-      lineColour: "#C070C6",
-      angleScale: 0.64,
-      angleOffset: -0.24,
-      noseOffset: 0.8,
-      gridOffset: 1.7,
-      innerTongueControlRadius: 2.05,
-      outerTongueControlRadius: 3.5,
-    },
+  keyboard: {
+    keyboardTop: 500,
+    keyboardLeft: 0,
+    keyboardWidth: 600,
+    keyboardHeight: 100,
+    semitones: 20,
+    marks: [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+    baseNote: 87.3071, //F
+  },
+  mouthflesh: {
+    originX: 340,
+    originY: 449,
+    radius: 298,
+    scale: 60,
+    fillColour: "pink",
+    lineColour: "#C070C6",
+    angleScale: 0.64,
+    angleOffset: -0.24,
+    noseOffset: 0.8,
+    gridOffset: 1.7,
+    innerTongueControlRadius: 2.05,
+    outerTongueControlRadius: 3.5,
   },
 } as const;
 
