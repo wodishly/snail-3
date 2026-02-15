@@ -196,12 +196,16 @@ const keyframes = [
   "Two frogs were sitting",
   "Two frogs were sitting on",
   "Two frogs were sitting on a",
-  "Two frogs were sitting on a log",
+  "Two frogs were sitting on a log.",
+  "~ the end ~",
 ] as const;
 
 type Story = Reel<"", Write<typeof keyframes>>;
-type Reel<_S extends string, K extends string[]> = K extends []
-  ? "~ the end ~"
-  : K extends [infer F extends string, ...infer R extends string[]]
-    ? Reel<F, R>
-    : never;
+type Reel<_S extends string, K extends string[]> = K extends [
+  infer F extends string,
+  ...infer R extends string[],
+]
+  ? R extends []
+    ? F
+    : Reel<F, R>
+  : never;
