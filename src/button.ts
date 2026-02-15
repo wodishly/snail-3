@@ -1,7 +1,7 @@
 import type { Rightnook } from "./help/math";
 import { palePink } from "./settings";
 
-type Button = Rightnook & {
+export type Button = Rightnook & {
   text: string;
   isOn: boolean;
 };
@@ -24,7 +24,10 @@ export const makeButton = (
   };
 };
 
-export const drawButton = (button: Button, context: CanvasRenderingContext2D) => {
+export const drawButton = (
+  button: Button,
+  context: CanvasRenderingContext2D,
+) => {
   var radius = 10;
   context.strokeStyle = palePink;
   context.fillStyle = palePink;
@@ -53,10 +56,7 @@ export const drawButton = (button: Button, context: CanvasRenderingContext2D) =>
   }
   drawText(button, context);
 };
-export const drawText = (
-  button: Button,
-  context: CanvasRenderingContext2D,
-) => {
+export const drawText = (button: Button, context: CanvasRenderingContext2D) => {
   context.fillText(
     button.text,
     button.x + button.w / 2,

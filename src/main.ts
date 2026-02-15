@@ -3,9 +3,8 @@ import {
   drawUi,
   startFlesh,
   makeFlesh,
-  shapeToFitScreen,
   updateTouches,
-  moveMouse,
+  type Flesh,
 } from "./flesh";
 import { makeThroat } from "./throat";
 import { initMouth, makeMouth } from "./mouth";
@@ -13,13 +12,12 @@ import {
   drawMouthflesh,
   startMouthflesh,
   makeMouthflesh,
-  tongueToCanvas,
+  type Mouthflesh,
 } from "./mouthflesh";
 import { makeSnail } from "./snail";
 import { drawKeyboard } from "./keyboard";
-import { Settings, tongueLowerBound, tongueUpperBound } from "./settings";
 import type { Assert } from "./help/type";
-import { ly } from "./help/mean";
+import type { Floor } from "./help/rime";
 
 window.onload = () => {
   const backcontext = (
@@ -41,11 +39,13 @@ window.onload = () => {
   startMouthflesh(mouth, mouthflesh, backcontext, forecontext);
 
   const redraw = () => {
-    shapeToFitScreen(flesh, backcontext, forecontext);
+    // shapeToFitScreen(flesh, backcontext, forecontext);
     drawMouthflesh(mouthflesh, forecontext, mouth, throat, flesh);
     drawUi(flesh, forecontext, snail);
     requestAnimationFrame(redraw);
     updateTouches(flesh);
+
+    updateDebugger(flesh, mouthflesh);
 
     // mouthflesh.tongueBerth += 0.1;
     // if (mouthflesh.tongueBerth > tongueUpperBound()) {
@@ -68,4 +68,39 @@ window.onload = () => {
     // );
   };
   requestAnimationFrame(redraw);
+};
+
+type DeepRound<T extends object, N extends number = 0> = {
+  [K in keyof T]: T[K] extends object
+    ? DeepRound<T[K], N>
+    : T[K] extends number
+      ? Floor<T[K]>
+      : T[K];
+};
+
+const deepRound = <T extends object>(x: T, n = 0) => {
+  const y = {};
+  for (const [k, v] of Object.entries(x)) {
+    Object.assign(y, {
+      [k]:
+        typeof v === "object"
+          ? deepRound(v, n)
+          : typeof v === "number"
+            ? v.toFixed(n)
+            : v,
+    });
+  }
+  return y as Assert<DeepRound<T>>;
+};
+
+const updateDebugger = (flesh: Flesh, mouthflesh: Mouthflesh) => {
+  flesh.html.mouseTouch.innerHTML = JSON.stringify(flesh.mouseTouch);
+  flesh.html.mouserines.innerHTML = flesh.mouserines
+    .map((rine) => {
+      const li = document.createElement("li");
+      li.innerHTML = JSON.stringify(deepRound(rine));
+      return li.outerHTML;
+    })
+    .join("");
+  mouthflesh.html.tongueRine.innerHTML = JSON.stringify(mouthflesh.tongueRine);
 };

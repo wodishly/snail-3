@@ -1,5 +1,5 @@
 import { type Snail } from "./snail";
-import { type Rine, type UiType } from "./flesh";
+import { type Rine, type Flesh } from "./flesh";
 import { clamp, type Z } from "./help/math";
 import { Settings } from "./settings";
 import { createNoise2D } from "simplex-noise";
@@ -83,14 +83,14 @@ export const getNoiseModulator = (throat: Throat) => {
   );
 };
 
-export const handleThroatTouches = (throat: Throat, ui: UiType) => {
+export const handleThroatTouches = (throat: Throat, ui: Flesh) => {
   if (throat.touch !== undefined && !throat.touch.isAlive) {
     throat.touch = undefined;
   }
 
   if (throat.touch === undefined) {
-    for (let j = 0; j < ui.touchesWithMouse.length; j++) {
-      const touch = ui.touchesWithMouse[j];
+    for (let j = 0; j < ui.mouserines.length; j++) {
+      const touch = ui.mouserines[j];
       if (!touch.isAlive) {
         continue;
       }
@@ -163,7 +163,7 @@ export const runGlottisStep = (
   return out;
 };
 
-export const finishGlottisBlock = (glottis: Throat, ui: UiType) => {
+export const finishGlottisBlock = (glottis: Throat, ui: Flesh) => {
   let vibrato = 0;
   vibrato +=
     Settings.vibrato.amount *

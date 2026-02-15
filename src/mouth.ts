@@ -1,6 +1,6 @@
 import { reckonBlockTime, type Snail } from "./snail";
 import { getNoiseModulator, type Throat } from "./throat";
-import { type UiType } from "./flesh";
+import { type Flesh } from "./flesh";
 import { nudge, clamp } from "./help/math";
 import { Fastenings, Mouthbook, Settings } from "./settings";
 import { makeTransient, processTransients, type Transient } from "./transient";
@@ -168,15 +168,15 @@ export const calculateNoseReflections = (mouth: Mouth) => {
 export const addTurbulenceNoise = (
   mouth: Mouth,
   throat: Throat,
-  flesh: UiType,
+  flesh: Flesh,
   turbulenceNoise: number,
 ) => {
-  for (let j = 0; j < flesh.touchesWithMouse.length; j++) {
-    const touch = flesh.touchesWithMouse[j];
-    if (touch.index < 2 || touch.index > Mouthbook.n) {
+  for (let j = 0; j < flesh.mouserines.length; j++) {
+    const touch = flesh.mouserines[j];
+    if (touch.berth < 2 || touch.berth > Mouthbook.n) {
       continue;
     }
-    if (touch.diameter <= 0) {
+    if (touch.width <= 0) {
       continue;
     }
 
@@ -189,8 +189,8 @@ export const addTurbulenceNoise = (
       mouth,
       throat,
       0.66 * turbulenceNoise * intensity,
-      touch.index,
-      touch.diameter,
+      touch.berth,
+      touch.width,
     );
   }
 };
@@ -266,7 +266,7 @@ export const runMouthStep = (
   mouth: Mouth,
   throat: Throat,
   snail: Snail,
-  flesh: UiType,
+  flesh: Flesh,
   glottalOutput: number,
   turbulenceNoise: number,
   lambda: number,

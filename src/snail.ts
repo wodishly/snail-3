@@ -1,6 +1,6 @@
 import { finishMouthBlock, runMouthStep, type Mouth } from "./mouth";
 import { finishGlottisBlock, runGlottisStep, type Throat } from "./throat";
-import type { UiType } from "./flesh";
+import type { Flesh } from "./flesh";
 import { Fastenings } from "./settings";
 import type { Maybe } from "./help/type";
 
@@ -29,7 +29,7 @@ export const doScriptProcessor = (
   audioSystem: Snail,
   glottis: Throat,
   tract: Mouth,
-  ui: UiType,
+  ui: Flesh,
   event: AudioProcessingEvent,
 ): void => {
   const inputArray1 = event.inputBuffer.getChannelData(0);
@@ -99,7 +99,7 @@ export const startSound = (
   audioSystem: Snail,
   glottis: Throat,
   tract: Mouth,
-  ui: UiType,
+  ui: Flesh,
 ): void => {
   //scriptProcessor may need a dummy input channel on iOS
   audioSystem.processor = audioSystem.context.createScriptProcessor(

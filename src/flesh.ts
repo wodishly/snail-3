@@ -1,16 +1,19 @@
 import {
-  canvasToTongueWidth,
-  canvasToTongueBerth,
+  canvasToTongue,
   handleMouthfleshTouches,
   type Mouthflesh,
 } from "./mouthflesh";
 import { mute, startSound, unmute, type Snail } from "./snail";
 import { handleThroatTouches, type Throat } from "./throat";
-import { drawButton, handleTouchStart, makeButton } from "./button";
+import {
+  drawButton,
+  handleTouchStart,
+  makeButton,
+  type Button,
+} from "./button";
 import { clamp, type Z } from "./help/math";
 import type { Mouth } from "./mouth";
-
-export type UiType = ReturnType<typeof makeFlesh>;
+import type { Assert } from "./help/type";
 
 type RineId<N extends number = number> = `mouse${N}`;
 
@@ -21,18 +24,32 @@ export type Rine = Z & {
   endTime: number;
   isAlive: boolean;
 
-  index: number;
-  diameter: number;
+  berth: number;
+  width: number;
   fricativeIntensity: number;
 };
 
-export const makeFlesh = () => {
+export type Flesh = {
+  instructionsLine: number;
+  isInAboutScreen: boolean;
+  isInInstructionsScreen: boolean;
+  isAutoWobbling: boolean;
+  isAlwaysVoicing: boolean;
+  isMouseDown: boolean;
+  aboutButton: Button;
+  alwaysVoiceButton: Button;
+  autoWobbleButton: Button;
+  mouserines: Rine[];
+  mouseTouch: Partial<Rine>;
+  html: {
+    mouserines: HTMLUListElement;
+    mouseTouch: HTMLSpanElement;
+  };
+};
+
+export const makeFlesh = (): Flesh => {
   return {
-    width: 600,
-    top_margin: 5,
-    left_margin: 5,
     instructionsLine: 0,
-    debugText: "",
     isInAboutScreen: true,
     isInInstructionsScreen: false,
     isAutoWobbling: true,
@@ -41,8 +58,16 @@ export const makeFlesh = () => {
     aboutButton: makeButton(460, 392, 140, 30, "about...", true),
     alwaysVoiceButton: makeButton(460, 428, 140, 30, "always voice", true),
     autoWobbleButton: makeButton(460, 464, 140, 30, "pitch wobble", true),
-    touchesWithMouse: [] as Rine[],
-    mouseTouch: { isAlive: false, endTime: 0 } as Partial<Rine>,
+    mouserines: [],
+    mouseTouch: { isAlive: false, endTime: 0 },
+    html: {
+      mouserines: document.querySelector(
+        "#mouserines",
+      ) as Assert<HTMLUListElement>,
+      mouseTouch: document.querySelector(
+        "#mouseTouch",
+      ) as Assert<HTMLSpanElement>,
+    },
   };
 };
 
@@ -50,7 +75,7 @@ export const startFlesh = (
   snail: Snail,
   mouth: Mouth,
   throat: Throat,
-  flesh: UiType,
+  flesh: Flesh,
   mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
 ) => {
@@ -60,6 +85,7 @@ export const startFlesh = (
     flesh.isMouseDown = true;
     e.preventDefault();
     startMouse(snail, mouth, throat, flesh, mouthflesh, tractContext, e);
+    moveMouse(mouth, throat, flesh, mouthflesh, tractContext, e);
   });
   document.addEventListener("pointerup", () => {
     flesh.isMouseDown = false;
@@ -73,7 +99,7 @@ export const startFlesh = (
 const handleUiTouches = (
   mouth: Mouth,
   throat: Throat,
-  flesh: UiType,
+  flesh: Flesh,
   mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
 ) => {
@@ -81,28 +107,28 @@ const handleUiTouches = (
   handleThroatTouches(throat, flesh);
 };
 
-export const shapeToFitScreen = (
-  ui: UiType,
-  backCtx: CanvasRenderingContext2D,
-  tractCtx: CanvasRenderingContext2D,
-) => {
-  if (window.innerWidth <= window.innerHeight) {
-    ui.width = window.innerWidth - 10;
-    ui.left_margin = 5;
-    ui.top_margin = 0.5 * (window.innerHeight - ui.width);
-  } else {
-    ui.width = window.innerHeight - 10;
-    ui.left_margin = 0.5 * (window.innerWidth - ui.width);
-    ui.top_margin = 5;
-  }
-  document.body.style.marginLeft = ui.left_margin.toString();
-  document.body.style.marginTop = ui.top_margin.toString();
-  backCtx.canvas.style.width = ui.width.toString();
-  tractCtx.canvas.style.width = ui.width.toString();
-};
+// export const shapeToFitScreen = (
+//   ui: UiType,
+//   backCtx: CanvasRenderingContext2D,
+//   tractCtx: CanvasRenderingContext2D,
+// ) => {
+//   if (window.innerWidth <= window.innerHeight) {
+//     ui.width = window.innerWidth - 10;
+//     ui.left_margin = 5;
+//     ui.top_margin = 0.5 * (window.innerHeight - ui.width);
+//   } else {
+//     ui.width = window.innerHeight - 10;
+//     ui.left_margin = 0.5 * (window.innerWidth - ui.width);
+//     ui.top_margin = 5;
+//   }
+//   document.body.style.marginLeft = ui.left_margin.toString();
+//   document.body.style.marginTop = ui.top_margin.toString();
+//   backCtx.canvas.style.width = ui.width.toString();
+//   tractCtx.canvas.style.width = ui.width.toString();
+// };
 
 export const drawUi = (
-  ui: UiType,
+  ui: Flesh,
   tractCtx: CanvasRenderingContext2D,
   audioSystem: Snail,
 ) => {
@@ -149,7 +175,7 @@ const drawAboutText = (tractCtx: CanvasRenderingContext2D) => {
 };
 
 const instructionsScreenHandleTouch = (
-  flesh: UiType,
+  flesh: Flesh,
   snail: Snail,
   { x, y }: Z,
 ) => {
@@ -164,7 +190,7 @@ const instructionsScreenHandleTouch = (
   }
 };
 
-const buttonsHandleTouchStart = (ui: UiType, rine: Rine) => {
+const buttonsHandleTouchStart = (ui: Flesh, rine: Rine) => {
   handleTouchStart(ui.alwaysVoiceButton, rine);
   ui.isAlwaysVoicing = ui.alwaysVoiceButton.isOn;
   handleTouchStart(ui.autoWobbleButton, rine);
@@ -176,7 +202,7 @@ const startMouse = (
   snail: Snail,
   mouth: Mouth,
   glottis: Throat,
-  flesh: UiType,
+  flesh: Flesh,
   mouthflesh: Mouthflesh,
   forecontext: CanvasRenderingContext2D,
   e: PointerEvent,
@@ -200,12 +226,13 @@ const startMouse = (
 
   const rine = makeRine(z);
   flesh.mouseTouch = rine;
-  flesh.touchesWithMouse.push(rine);
+  flesh.mouserines.push(rine);
   buttonsHandleTouchStart(flesh, rine);
   handleUiTouches(mouth, glottis, flesh, mouthflesh, forecontext);
 };
 
 const makeRine = (z: Z): Rine => {
+  const { berth, width } = canvasToTongue(z);
   return {
     ...z,
     startTime: performance.now() / 1000,
@@ -213,15 +240,15 @@ const makeRine = (z: Z): Rine => {
     endTime: 0,
     isAlive: true,
     id: `mouse${Math.random()}`,
-    index: canvasToTongueBerth(z),
-    diameter: canvasToTongueWidth(z),
+    berth: berth,
+    width: width,
   };
 };
 
 export const moveMouse = (
   mouth: Mouth,
   throat: Throat,
-  flesh: UiType,
+  flesh: Flesh,
   mouthflesh: Mouthflesh,
   forecontext: CanvasRenderingContext2D,
   e: PointerEvent,
@@ -233,15 +260,17 @@ export const moveMouse = (
 
   rine.x = e.clientX - forecontext.canvas.offsetLeft;
   rine.y = e.clientY - forecontext.canvas.offsetTop;
-  rine.index = canvasToTongueBerth({ x: rine.x, y: rine.y });
-  rine.diameter = canvasToTongueWidth({ x: rine.x, y: rine.y });
+
+  const { berth, width } = canvasToTongue({ x: rine.x, y: rine.y });
+  rine.berth = berth;
+  rine.width = width;
   handleUiTouches(mouth, throat, flesh, mouthflesh, forecontext);
 };
 
 const endMouse = (
   mouth: Mouth,
   throat: Throat,
-  flesh: UiType,
+  flesh: Flesh,
   mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
 ) => {
@@ -256,11 +285,7 @@ const endMouse = (
   if (!flesh.aboutButton.isOn) flesh.isInInstructionsScreen = true;
 };
 
-const write = (
-  ui: UiType,
-  tractCtx: CanvasRenderingContext2D,
-  text: string,
-) => {
+const write = (ui: Flesh, tractCtx: CanvasRenderingContext2D, text: string) => {
   tractCtx.fillText(text, 50, 100 + ui.instructionsLine * 22);
   ui.instructionsLine += 1;
   if (text === "") {
@@ -269,7 +294,7 @@ const write = (
 };
 
 const drawInstructionsScreen = (
-  ui: UiType,
+  ui: Flesh,
   tractCtx: CanvasRenderingContext2D,
   audioSystem: Snail,
 ) => {
@@ -342,13 +367,13 @@ const drawInstructionsScreen = (
   ctx.globalAlpha = 1.0;
 };
 
-export const updateTouches = (ui: UiType) => {
+export const updateTouches = (ui: Flesh) => {
   const fricativeAttackTime = 0.1;
-  for (let j = ui.touchesWithMouse.length - 1; j >= 0; j--) {
-    const touch = ui.touchesWithMouse[j];
+  for (let j = ui.mouserines.length - 1; j >= 0; j--) {
+    const touch = ui.mouserines[j];
     const time = performance.now() / 1000;
     if (!touch.isAlive && time > touch.endTime + 1) {
-      ui.touchesWithMouse.splice(j, 1);
+      ui.mouserines.splice(j, 1);
     } else if (touch.isAlive) {
       touch.fricativeIntensity = clamp(
         (time - touch.startTime) / fricativeAttackTime,

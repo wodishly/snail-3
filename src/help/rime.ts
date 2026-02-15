@@ -1,6 +1,6 @@
 import { expectTypeOf } from "vitest";
 import type { Flight } from "./list";
-import type { Assert } from "./type";
+import type { Assert, Write } from "./type";
 
 /**
  * @param N <= 998
@@ -102,9 +102,17 @@ expectTypeOf<Oddly<5>>().toEqualTypeOf(5 as const);
 expectTypeOf<Oddly<6>>().toBeNever();
 expectTypeOf<Oddly<7>>().toEqualTypeOf(7 as const);
 
-export type Wholly<N extends number> = `${N}` extends `${number}.${number}`
-  ? never
-  : N;
+export type Wholly<N extends number> = N extends Floor<N> ? N : never;
+
+export type Floor<N extends number> =
+  `${N}` extends `${infer F extends number}.${number}` ? F : N;
+
+expectTypeOf(1 as const).toEqualTypeOf<Floor<1>>();
+expectTypeOf(1 as const).toEqualTypeOf<Floor<1.0>>();
+expectTypeOf(1.0 as const).toEqualTypeOf<Floor<1>>();
+expectTypeOf(1.0 as const).toEqualTypeOf<Floor<1.0>>();
+expectTypeOf(1 as const).toEqualTypeOf<Floor<1.1>>();
+expectTypeOf(1 as const).toEqualTypeOf<Floor<1.9>>();
 
 export type ParseInt<S extends string> = S extends `${infer T extends number}`
   ? T
@@ -175,3 +183,25 @@ export const rspan = (edge: number = 1) => edge * (2 * Math.random() - 1);
 export const rtell = (n: number) => Math.floor(n * Math.random());
 export const rchoose = <T>(xs: T[]): T =>
   xs[Math.floor(xs.length * Math.random())];
+
+const keyframes = [
+  "It",
+  "It was",
+  "It was a",
+  "It was a cloudy",
+  "It was a cloudy day.",
+  "Two",
+  "Two frogs",
+  "Two frogs were",
+  "Two frogs were sitting",
+  "Two frogs were sitting on",
+  "Two frogs were sitting on a",
+  "Two frogs were sitting on a log",
+] as const;
+
+type Story = Reel<"", Write<typeof keyframes>>;
+type Reel<_S extends string, K extends string[]> = K extends []
+  ? "~ the end ~"
+  : K extends [infer F extends string, ...infer R extends string[]]
+    ? Reel<F, R>
+    : never;

@@ -60,7 +60,7 @@ export const Settings = {
     radius: 298,
     scale: 60,
     fillColour: "pink",
-    lineColour: "#C070C6",
+    lineColour: "#c070c6",
     angleScale: 0.64,
     angleOffset: -0.24,
     noseOffset: 0.8,

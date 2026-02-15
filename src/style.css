@@ -66,8 +66,5 @@ canvas {
 
 #knobboard {
   border: 0.1rem solid black;
-}
-
-input[type="range"] {
-  display: block;
+  padding: 0.5rem;
 }
