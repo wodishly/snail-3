@@ -180,7 +180,7 @@ export const addTurbulenceNoise = (
       continue;
     }
 
-    const intensity = touch.fricativeIntensity;
+    const intensity = touch.fi;
     if (intensity === 0) {
       continue;
     }

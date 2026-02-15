@@ -17,7 +17,7 @@ import {
 import { makeSnail } from "./snail";
 import { drawKeyboard } from "./keyboard";
 import type { Assert } from "./help/type";
-import type { Floor } from "./help/rime";
+import { deepRound } from "./help/rime";
 
 window.onload = () => {
   const backcontext = (
@@ -70,35 +70,16 @@ window.onload = () => {
   requestAnimationFrame(redraw);
 };
 
-type DeepRound<T extends object, N extends number = 0> = {
-  [K in keyof T]: T[K] extends object
-    ? DeepRound<T[K], N>
-    : T[K] extends number
-      ? Floor<T[K]>
-      : T[K];
-};
-
-const deepRound = <T extends object>(x: T, n = 0) => {
-  const y = {};
-  for (const [k, v] of Object.entries(x)) {
-    Object.assign(y, {
-      [k]:
-        typeof v === "object"
-          ? deepRound(v, n)
-          : typeof v === "number"
-            ? v.toFixed(n)
-            : v,
-    });
-  }
-  return y as Assert<DeepRound<T>>;
-};
-
 const updateDebugger = (flesh: Flesh, mouthflesh: Mouthflesh) => {
-  flesh.html.mouseTouch.innerHTML = JSON.stringify(deepRound(flesh.mouseTouch));
+  flesh.html.mouseTouch.innerHTML = JSON.stringify(
+    deepRound(flesh.mouseTouch),
+    null,
+    1,
+  );
   flesh.html.mouserines.innerHTML = flesh.mouserines
     .map((rine) => {
       const li = document.createElement("li");
-      li.innerHTML = JSON.stringify(deepRound(rine));
+      li.innerHTML = JSON.stringify(deepRound(rine), null, 1);
       return li.outerHTML;
     })
     .join("");
@@ -106,5 +87,7 @@ const updateDebugger = (flesh: Flesh, mouthflesh: Mouthflesh) => {
     mouthflesh.tongueRine
       ? deepRound(mouthflesh.tongueRine)
       : mouthflesh.tongueRine,
+    null,
+    1,
   );
 };

@@ -16,17 +16,21 @@ import type { Mouth } from "./mouth";
 import type { Assert } from "./help/type";
 
 type RineId<N extends number = number> = `mouse${N}`;
+type Span<T = number> = {
+  start: T;
+  end: T;
+};
 
 export type Rine = Z & {
   id: RineId;
-
-  startTime: number;
-  endTime: number;
+  time: Span;
   isAlive: boolean;
 
   berth: number;
   width: number;
-  fricativeIntensity: number;
+
+  /** fricativeIntensity */
+  fi: number;
 };
 
 export type Flesh = {
@@ -41,7 +45,7 @@ export type Flesh = {
   autoWobbleButton: Button;
   mouserines: Rine[];
   mouseTouch: Partial<Rine>;
-  rinemake: (z: Z) => Rine;
+  rinemake: Rinemake;
   html: {
     mouserines: HTMLUListElement;
     mouseTouch: HTMLSpanElement;
@@ -60,7 +64,7 @@ export const makeFlesh = (): Flesh => {
     alwaysVoiceButton: makeButton(460, 428, 140, 30, "always voice", true),
     autoWobbleButton: makeButton(460, 464, 140, 30, "pitch wobble", true),
     mouserines: [],
-    mouseTouch: { isAlive: false, endTime: 0 },
+    mouseTouch: { isAlive: false, time: { start: -1, end: 0 } },
     rinemake: makeMakeRine(),
     html: {
       mouserines: document.querySelector(
@@ -73,19 +77,24 @@ export const makeFlesh = (): Flesh => {
   };
 };
 
-const makeMakeRine = () => {
+const unrine = (id: RineId): Omit<Rine, keyof Z | "berth" | "width"> => {
+  return {
+    id,
+    time: { start: performance.now() / 1000, end: 0 },
+    fi: 0,
+    isAlive: true,
+  };
+};
+
+type Rinemake = (z: Z) => Rine;
+
+const makeMakeRine = (): Rinemake => {
   let rineId = 0;
   return (z: Z): Rine => {
-    const { berth, width } = canvasToTongue(z);
     return {
       ...z,
-      startTime: performance.now() / 1000,
-      fricativeIntensity: 0,
-      endTime: 0,
-      isAlive: true,
-      id: `mouse${++rineId}`,
-      berth: berth,
-      width: width,
+      ...canvasToTongue(z),
+      ...unrine(`mouse${++rineId}`),
     };
   };
 };
@@ -284,7 +293,7 @@ const endMouse = (
     return;
   }
   touch.isAlive = false;
-  touch.endTime = performance.now() / 1000;
+  touch.time!.end = performance.now() / 1000;
   handleUiTouches(mouth, throat, flesh, mouthflesh, tractContext);
 
   if (!flesh.aboutButton.isOn) flesh.isInInstructionsScreen = true;
@@ -377,20 +386,12 @@ export const updateTouches = (ui: Flesh) => {
   for (let j = ui.mouserines.length - 1; j >= 0; j--) {
     const touch = ui.mouserines[j];
     const time = performance.now() / 1000;
-    if (!touch.isAlive && time > touch.endTime + 1) {
+    if (!touch.isAlive && time > touch.time.end + 1) {
       ui.mouserines.splice(j, 1);
     } else if (touch.isAlive) {
-      touch.fricativeIntensity = clamp(
-        (time - touch.startTime) / fricativeAttackTime,
-        0,
-        1,
-      );
+      touch.fi = clamp((time - touch.time.start) / fricativeAttackTime, 0, 1);
     } else {
-      touch.fricativeIntensity = clamp(
-        1 - (time - touch.endTime) / fricativeAttackTime,
-        0,
-        1,
-      );
+      touch.fi = clamp(1 - (time - touch.time.end) / fricativeAttackTime, 0, 1);
     }
   }
 };

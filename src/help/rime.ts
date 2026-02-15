@@ -183,3 +183,26 @@ export const rspan = (edge: number = 1) => edge * (2 * Math.random() - 1);
 export const rtell = (n: number) => Math.floor(n * Math.random());
 export const rchoose = <T>(xs: T[]): T =>
   xs[Math.floor(xs.length * Math.random())];
+
+export type DeepRound<T extends object, N extends number = 0> = {
+  [K in keyof T]: T[K] extends object
+    ? DeepRound<T[K], N>
+    : T[K] extends number
+      ? Floor<T[K]>
+      : T[K];
+};
+
+export const deepRound = <T extends object>(x: T, n = 0) => {
+  const y = {};
+  for (const [k, v] of Object.entries(x)) {
+    Object.assign(y, {
+      [k]:
+        typeof v === "object"
+          ? deepRound(v, n)
+          : typeof v === "number"
+            ? v.toFixed(n)
+            : v,
+    });
+  }
+  return y as Assert<DeepRound<T>>;
+};

@@ -662,7 +662,7 @@ export const handleMouthfleshTouches = (
       if (!rine.isAlive) {
         continue;
       }
-      if (rine.fricativeIntensity == 1) {
+      if (rine.fi == 1) {
         continue; //only new touches will pass tractUi
       }
 
