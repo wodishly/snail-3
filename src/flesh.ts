@@ -41,6 +41,7 @@ export type Flesh = {
   autoWobbleButton: Button;
   mouserines: Rine[];
   mouseTouch: Partial<Rine>;
+  rinemake: (z: Z) => Rine;
   html: {
     mouserines: HTMLUListElement;
     mouseTouch: HTMLSpanElement;
@@ -60,6 +61,7 @@ export const makeFlesh = (): Flesh => {
     autoWobbleButton: makeButton(460, 464, 140, 30, "pitch wobble", true),
     mouserines: [],
     mouseTouch: { isAlive: false, endTime: 0 },
+    rinemake: makeMakeRine(),
     html: {
       mouserines: document.querySelector(
         "#mouserines",
@@ -68,6 +70,23 @@ export const makeFlesh = (): Flesh => {
         "#mouseTouch",
       ) as Assert<HTMLSpanElement>,
     },
+  };
+};
+
+const makeMakeRine = () => {
+  let rineId = 0;
+  return (z: Z): Rine => {
+    const { berth, width } = canvasToTongue(z);
+    return {
+      ...z,
+      startTime: performance.now() / 1000,
+      fricativeIntensity: 0,
+      endTime: 0,
+      isAlive: true,
+      id: `mouse${++rineId}`,
+      berth: berth,
+      width: width,
+    };
   };
 };
 
@@ -224,25 +243,11 @@ const startMouse = (
     return;
   }
 
-  const rine = makeRine(z);
+  const rine = flesh.rinemake(z);
   flesh.mouseTouch = rine;
   flesh.mouserines.push(rine);
   buttonsHandleTouchStart(flesh, rine);
   handleUiTouches(mouth, glottis, flesh, mouthflesh, forecontext);
-};
-
-const makeRine = (z: Z): Rine => {
-  const { berth, width } = canvasToTongue(z);
-  return {
-    ...z,
-    startTime: performance.now() / 1000,
-    fricativeIntensity: 0,
-    endTime: 0,
-    isAlive: true,
-    id: `mouse${Math.random()}`,
-    berth: berth,
-    width: width,
-  };
 };
 
 export const moveMouse = (

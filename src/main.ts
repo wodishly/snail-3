@@ -94,7 +94,7 @@ const deepRound = <T extends object>(x: T, n = 0) => {
 };
 
 const updateDebugger = (flesh: Flesh, mouthflesh: Mouthflesh) => {
-  flesh.html.mouseTouch.innerHTML = JSON.stringify(flesh.mouseTouch);
+  flesh.html.mouseTouch.innerHTML = JSON.stringify(deepRound(flesh.mouseTouch));
   flesh.html.mouserines.innerHTML = flesh.mouserines
     .map((rine) => {
       const li = document.createElement("li");
@@ -102,5 +102,9 @@ const updateDebugger = (flesh: Flesh, mouthflesh: Mouthflesh) => {
       return li.outerHTML;
     })
     .join("");
-  mouthflesh.html.tongueRine.innerHTML = JSON.stringify(mouthflesh.tongueRine);
+  mouthflesh.html.tongueRine.innerHTML = JSON.stringify(
+    mouthflesh.tongueRine
+      ? deepRound(mouthflesh.tongueRine)
+      : mouthflesh.tongueRine,
+  );
 };
