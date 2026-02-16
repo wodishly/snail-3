@@ -9,19 +9,17 @@ export const updateLeech = (
   mouthflesh: Mouthflesh,
 ) => {
   flesh.html.time.innerHTML = (performance.now() / 1000).toString();
-  if (song.loud) {
-    flesh.html.loudlist.innerHTML = toLi(
-      song.loud,
-      (l) => `Now: ${l}`,
-    ).outerHTML;
-  }
-  flesh.html.loudlist.innerHTML += song.staves
-    .map((staff) => toLi(staff).outerHTML)
-    .join("");
+
+  const first = song.loud ? toLi(song.loud, (l) => `Now: ${l}`).outerHTML : "";
+  const rest = song.staves.map((staff) => toLi(staff).outerHTML).join("");
+  flesh.html.loudlist.innerHTML = first + rest;
+
   flesh.html.rine.innerHTML = JSON.stringify(flesh.rine);
+
   flesh.html.mouserines.innerHTML = flesh.mouserines
     .map((rine) => toLi(rine).outerHTML)
     .join("");
+
   mouthflesh.html.rine.innerHTML = JSON.stringify(mouthflesh.rine);
 };
 

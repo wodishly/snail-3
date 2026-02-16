@@ -55,7 +55,7 @@ export const startMouthflesh = (
   ) as Assert<HTMLButtonElement>;
   speakKnob.addEventListener("click", () => {
     startSound(snail, throat, mouth, flesh);
-    pushSpell(song, speech, speakKnob);
+    pushSpell(song, speech);
   });
 
   const aSlider = document.querySelector("#a") as Assert<HTMLInputElement>;
