@@ -17,7 +17,7 @@ export type Rightnook<
   h: H;
 };
 
-export const clamp = (n: number, lower: number, upper: number) => {
+export const clamp = (n: number, lower = 0, upper = 1) => {
   if (n <= lower) {
     return lower;
   } else if (n >= upper) {

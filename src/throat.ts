@@ -1,33 +1,34 @@
 import { type Snail } from "./snail";
-import { type Rine, type Flesh } from "./flesh";
 import { clamp, type Z } from "./help/math";
 import { Settings } from "./settings";
 import { createNoise2D } from "simplex-noise";
 import type { Maybe } from "./help/type";
 import { normalizedLFWaveform, setupWaveform, type Wave } from "./wave";
+import type { Flesh } from "./flesh";
+import type { Rine } from "./rine";
 
-export type ThroatFrequency = Record<"old" | "niw" | "ui" | "smooth", number>;
-export type ThroatTenseness = Record<"old" | "niw" | "ui", number>;
+export type Frequency = Record<"old" | "niw" | "ui" | "smooth", number>;
+export type Tenseness = Record<"old" | "niw" | "ui", number>;
 
 export interface Throat {
   timeInWaveform: number;
   totalTime: number;
 
-  frequency: ThroatFrequency;
-  tenseness: ThroatTenseness;
+  frequency: Frequency;
+  tenseness: Tenseness;
 
   intensity: number;
   loudness: number;
 
   isTouched: boolean;
-  touch: Maybe<Rine>;
-  z: Z;
+  rine: Maybe<Rine>;
+  pitchZ: Z;
 
   wave: Wave;
-  noise: (x: number) => number;
+  hiss: (x: number) => number;
 }
 
-const makeNoise1D = () => {
+const makeHiss = () => {
   const noise = createNoise2D();
   return (x: number) => {
     return noise(x * 1.2, -x * 0.7);
@@ -59,11 +60,11 @@ export const makeThroat = (): Throat => {
     loudness: 1,
 
     isTouched: false,
-    touch: undefined,
-    z: { x: 240, y: 530 },
+    rine: undefined,
+    pitchZ: { x: 240, y: 530 },
 
     wave: setupWaveform(frequency, tenseness, 0),
-    noise: makeNoise1D(),
+    hiss: makeHiss(),
   };
 };
 
@@ -83,54 +84,49 @@ export const getNoiseModulator = (throat: Throat) => {
   );
 };
 
-export const handleThroatTouches = (throat: Throat, ui: Flesh) => {
-  if (throat.touch !== undefined && !throat.touch.isAlive) {
-    throat.touch = undefined;
+// export const handleThroatTouches = (throat: Throat, ui: Flesh) => {
+//   if (throat.rine !== undefined && !throat.rine.isDown) {
+//     throat.rine = undefined;
+//   }
+//
+//   if (throat.rine === undefined) {
+//     for (let j = 0; j < ui.mouserines.length; j++) {
+//       const touch = ui.mouserines[j];
+//       if (!touch.isDown) {
+//         continue;
+//       }
+//       if (touch.y < Settings.keyboard.keyboardTop) {
+//         continue;
+//       }
+//       throat.rine = touch;
+//     }
+//   }
+//
+//   if (throat.rine !== undefined) {
+//     let local_y = throat.rine.y - Settings.keyboard.keyboardTop - 10;
+//     let local_x = throat.rine.x - Settings.keyboard.keyboardLeft;
+//
+//     const semitone =
+//       (Settings.keyboard.semitones * local_x) /
+//         Settings.keyboard.keyboardWidth +
+//       0.5;
+//     setPitch(throat, Settings.keyboard.baseNote * Math.pow(2, semitone / 12));
+//     // throat.pitchZ.x = throat.rine.x;
+//     // throat.pitchZ.y = local_y + Settings.keyboard.keyboardTop + 10;
+//   }
+//
+//   throat.isTouched = throat.rine !== undefined;
+// };
+
+export const setPitch = (throat: Throat, pitch: number, volume = 1) => {
+  throat.frequency.ui = pitch;
+
+  if (throat.intensity === 0) {
+    throat.frequency.smooth = throat.frequency.ui;
   }
 
-  if (throat.touch === undefined) {
-    for (let j = 0; j < ui.mouserines.length; j++) {
-      const touch = ui.mouserines[j];
-      if (!touch.isAlive) {
-        continue;
-      }
-      if (touch.y < Settings.keyboard.keyboardTop) {
-        continue;
-      }
-      throat.touch = touch;
-    }
-  }
-
-  if (throat.touch !== undefined) {
-    let local_y = throat.touch.y - Settings.keyboard.keyboardTop - 10;
-    let local_x = throat.touch.x - Settings.keyboard.keyboardLeft;
-
-    local_y = clamp(local_y, 0, Settings.keyboard.keyboardHeight - 26);
-
-    const semitone =
-      (Settings.keyboard.semitones * local_x) /
-        Settings.keyboard.keyboardWidth +
-      0.5;
-
-    throat.frequency.ui =
-      Settings.keyboard.baseNote * Math.pow(2, semitone / 12);
-
-    if (throat.intensity == 0) throat.frequency.smooth = throat.frequency.ui;
-
-    const t = clamp(
-      1 - local_y / (Settings.keyboard.keyboardHeight - 28),
-      0,
-      1,
-    );
-
-    throat.tenseness.ui = 1 - Math.cos(t * Math.PI * 0.5);
-    throat.loudness = Math.pow(throat.tenseness.ui, 0.25);
-
-    throat.z.x = throat.touch.x;
-    throat.z.y = local_y + Settings.keyboard.keyboardTop + 10;
-  }
-
-  throat.isTouched = throat.touch !== undefined;
+  throat.tenseness.ui = 1 - Math.cos((Math.PI / 2) * volume);
+  throat.loudness = Math.pow(throat.tenseness.ui, 0.25);
 };
 
 export const runGlottisStep = (
@@ -157,7 +153,7 @@ export const runGlottisStep = (
     (1 - Math.sqrt(throat.tenseness.ui)) *
     getNoiseModulator(throat) *
     noiseSource;
-  aspiration *= 0.2 + 0.02 * throat.noise(throat.totalTime * 1.99);
+  aspiration *= 0.2 + 0.02 * throat.hiss(throat.totalTime * 1.99);
   out += aspiration;
 
   return out;
@@ -168,12 +164,12 @@ export const finishGlottisBlock = (glottis: Throat, ui: Flesh) => {
   vibrato +=
     Settings.vibrato.amount *
     Math.sin(2 * Math.PI * glottis.totalTime * Settings.vibrato.frequency);
-  vibrato += 0.02 * glottis.noise(glottis.totalTime * 4.07);
-  vibrato += 0.04 * glottis.noise(glottis.totalTime * 2.15);
+  vibrato += 0.02 * glottis.hiss(glottis.totalTime * 4.07);
+  vibrato += 0.04 * glottis.hiss(glottis.totalTime * 2.15);
 
   if (ui.isAutoWobbling) {
-    vibrato += 0.2 * glottis.noise(glottis.totalTime * 0.98);
-    vibrato += 0.4 * glottis.noise(glottis.totalTime * 0.5);
+    vibrato += 0.2 * glottis.hiss(glottis.totalTime * 0.98);
+    vibrato += 0.4 * glottis.hiss(glottis.totalTime * 0.5);
   }
 
   if (glottis.frequency.ui > glottis.frequency.smooth) {
@@ -195,8 +191,8 @@ export const finishGlottisBlock = (glottis: Throat, ui: Flesh) => {
   glottis.tenseness.old = glottis.tenseness.niw;
   glottis.tenseness.niw =
     glottis.tenseness.ui +
-    0.1 * glottis.noise(glottis.totalTime * 0.46) +
-    0.05 * glottis.noise(glottis.totalTime * 0.36);
+    0.1 * glottis.hiss(glottis.totalTime * 0.46) +
+    0.05 * glottis.hiss(glottis.totalTime * 0.36);
 
   if (!glottis.isTouched && ui.isAlwaysVoicing) {
     glottis.tenseness.niw +=

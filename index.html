@@ -42,16 +42,61 @@
         </div>
         <div id="knobboard">
           <div>
-            <input type="range" id="f1" name="f1" min="200" max="900" />
+            <input
+              type="range"
+              id="a"
+              name="a"
+              max="1"
+              step="0.01"
+              value="0.6"
+            />
+            <label for="a">\( A \)</label>
+          </div>
+          <div>
+            <input
+              type="range"
+              id="f0"
+              name="f0"
+              min="80"
+              max="300"
+              value="140"
+            />
+            <label for="f0">\( f_0 \)</label>
+          </div>
+          <div>
+            <input
+              type="range"
+              id="f1"
+              name="f1"
+              min="12"
+              max="29"
+              step="0.1"
+            />
             <label for="f1">\( f_1 \)</label>
           </div>
           <div>
-            <input type="range" id="f2" name="f2" min="600" max="2400" />
+            <input type="range" id="f2" name="f2" min="2" max="4" step="0.1" />
             <label for="f2">\( f_2 \)</label>
           </div>
-          <div id="tongueRine"></div>
-          <div id="mouseTouch"></div>
-          <ul id="mouserines"></ul>
+          <div>
+            <button id="say-a">a</button>
+            <button id="say-e">e</button>
+            <button id="say-i">i</button>
+            <button id="say-o">o</button>
+            <button id="say-u">u</button>
+          </div>
+          <div>
+            <span>tongueRine:</span>
+            <span id="tongueRine"></span>
+          </div>
+          <div>
+            <span>mouseTouch:</span>
+            <span id="mouseTouch"></span>
+          </div>
+          <div>
+            <span>mouserines:</span>
+            <ul id="mouserines"></ul>
+          </div>
         </div>
       </div>
     </div>

@@ -18,7 +18,7 @@ export const drawKeyboard = (backcontext: CanvasRenderingContext2D) => {
       Settings.keyboard.keyboardWidth / Settings.keyboard.semitones;
     var x = Settings.keyboard.keyboardLeft + (i + 1 / 2) * keyWidth;
     var y = Settings.keyboard.keyboardTop;
-    if (Settings.keyboard.marks[(i + 3) % 12] == 1) {
+    if (Settings.keyboard.marks[(i + 3) % 12] === 1) {
       backcontext.lineWidth = 4;
       backcontext.globalAlpha = 0.4;
     } else {

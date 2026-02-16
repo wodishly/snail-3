@@ -48,6 +48,8 @@ body,
 #main {
   flex-direction: row;
   gap: 1rem;
+  justify-content: center;
+  padding: 0 8rem;
 }
 
 canvas {
@@ -67,4 +69,5 @@ canvas {
 #knobboard {
   border: 0.1rem solid black;
   padding: 0.5rem;
+  flex-grow: 1;
 }

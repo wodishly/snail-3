@@ -1,101 +1,35 @@
-import {
-  canvasToTongue,
-  handleMouthfleshTouches,
-  type Mouthflesh,
-} from "./mouthflesh";
-import { mute, startSound, unmute, type Snail } from "./snail";
-import { handleThroatTouches, type Throat } from "./throat";
-import {
-  drawButton,
-  handleTouchStart,
-  makeButton,
-  type Button,
-} from "./button";
-import { clamp, type Z } from "./help/math";
+import { handleMouthfleshTouches, type Mouthflesh } from "./mouthflesh";
+import { startSound, type Snail } from "./snail";
+import { type Throat } from "./throat";
+import { clamp } from "./help/math";
 import type { Mouth } from "./mouth";
-import type { Assert } from "./help/type";
+import { makeRinemake, type Rine, type Rineful, type Rinemake } from "./rine";
+import { canvasToTongue } from "./canvas";
 
-type RineId<N extends number = number> = `mouse${N}`;
-type Span<T = number> = {
-  start: T;
-  end: T;
-};
-
-export type Rine = Z & {
-  id: RineId;
-  time: Span;
-  isAlive: boolean;
-
-  berth: number;
-  width: number;
-
-  /** fricativeIntensity */
-  fi: number;
-};
-
-export type Flesh = {
-  instructionsLine: number;
-  isInAboutScreen: boolean;
-  isInInstructionsScreen: boolean;
+export interface Flesh extends Rineful {
   isAutoWobbling: boolean;
   isAlwaysVoicing: boolean;
   isMouseDown: boolean;
-  aboutButton: Button;
-  alwaysVoiceButton: Button;
-  autoWobbleButton: Button;
   mouserines: Rine[];
-  mouseTouch: Partial<Rine>;
   rinemake: Rinemake;
   html: {
     mouserines: HTMLUListElement;
     mouseTouch: HTMLSpanElement;
   };
-};
+}
 
 export const makeFlesh = (): Flesh => {
   return {
-    instructionsLine: 0,
-    isInAboutScreen: true,
-    isInInstructionsScreen: false,
     isAutoWobbling: true,
     isAlwaysVoicing: true,
     isMouseDown: false,
-    aboutButton: makeButton(460, 392, 140, 30, "about...", true),
-    alwaysVoiceButton: makeButton(460, 428, 140, 30, "always voice", true),
-    autoWobbleButton: makeButton(460, 464, 140, 30, "pitch wobble", true),
     mouserines: [],
-    mouseTouch: { isAlive: false, time: { start: -1, end: 0 } },
-    rinemake: makeMakeRine(),
+    rine: undefined,
+    rinemake: makeRinemake(),
     html: {
-      mouserines: document.querySelector(
-        "#mouserines",
-      ) as Assert<HTMLUListElement>,
-      mouseTouch: document.querySelector(
-        "#mouseTouch",
-      ) as Assert<HTMLSpanElement>,
+      mouserines: document.querySelector("#mouserines")!,
+      mouseTouch: document.querySelector("#mouseTouch")!,
     },
-  };
-};
-
-const unrine = (id: RineId): Omit<Rine, keyof Z | "berth" | "width"> => {
-  return {
-    id,
-    time: { start: performance.now() / 1000, end: 0 },
-    fi: 0,
-    isAlive: true,
-  };
-};
-
-type Rinemake = (z: Z) => Rine;
-
-const makeMakeRine = (): Rinemake => {
-  let rineId = 0;
-  return (z: Z): Rine => {
-    return {
-      ...z,
-      ...canvasToTongue(z),
-      ...unrine(`mouse${++rineId}`),
-    };
   };
 };
 
@@ -105,125 +39,22 @@ export const startFlesh = (
   throat: Throat,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
-  tractContext: CanvasRenderingContext2D,
+  forecontext: CanvasRenderingContext2D,
 ) => {
   flesh.isMouseDown = false;
 
-  document.addEventListener("pointerdown", (e) => {
+  forecontext.canvas.addEventListener("pointerdown", (e) => {
     flesh.isMouseDown = true;
     e.preventDefault();
-    startMouse(snail, mouth, throat, flesh, mouthflesh, tractContext, e);
-    moveMouse(mouth, throat, flesh, mouthflesh, tractContext, e);
+    startMouse(snail, mouth, throat, flesh, mouthflesh, forecontext, e);
   });
-  document.addEventListener("pointerup", () => {
+  forecontext.canvas.addEventListener("pointerup", () => {
     flesh.isMouseDown = false;
-    endMouse(mouth, throat, flesh, mouthflesh, tractContext);
+    endMouse(mouth, flesh, mouthflesh, forecontext);
   });
-  document.addEventListener("pointermove", (e) => {
-    moveMouse(mouth, throat, flesh, mouthflesh, tractContext, e);
+  forecontext.canvas.addEventListener("pointermove", (e) => {
+    moveMouse(mouth, flesh, mouthflesh, forecontext, e);
   });
-};
-
-const handleUiTouches = (
-  mouth: Mouth,
-  throat: Throat,
-  flesh: Flesh,
-  mouthflesh: Mouthflesh,
-  tractContext: CanvasRenderingContext2D,
-) => {
-  handleMouthfleshTouches(mouth, flesh, mouthflesh, tractContext);
-  handleThroatTouches(throat, flesh);
-};
-
-// export const shapeToFitScreen = (
-//   ui: UiType,
-//   backCtx: CanvasRenderingContext2D,
-//   tractCtx: CanvasRenderingContext2D,
-// ) => {
-//   if (window.innerWidth <= window.innerHeight) {
-//     ui.width = window.innerWidth - 10;
-//     ui.left_margin = 5;
-//     ui.top_margin = 0.5 * (window.innerHeight - ui.width);
-//   } else {
-//     ui.width = window.innerHeight - 10;
-//     ui.left_margin = 0.5 * (window.innerWidth - ui.width);
-//     ui.top_margin = 5;
-//   }
-//   document.body.style.marginLeft = ui.left_margin.toString();
-//   document.body.style.marginTop = ui.top_margin.toString();
-//   backCtx.canvas.style.width = ui.width.toString();
-//   tractCtx.canvas.style.width = ui.width.toString();
-// };
-
-export const drawUi = (
-  ui: Flesh,
-  tractCtx: CanvasRenderingContext2D,
-  audioSystem: Snail,
-) => {
-  drawButton(ui.alwaysVoiceButton, tractCtx);
-  drawButton(ui.autoWobbleButton, tractCtx);
-  drawButton(ui.aboutButton, tractCtx);
-  if (ui.isInAboutScreen) drawAboutScreen(tractCtx);
-  else if (ui.isInInstructionsScreen)
-    drawInstructionsScreen(ui, tractCtx, audioSystem);
-};
-
-const drawAboutScreen = (tractCtx: CanvasRenderingContext2D) => {
-  tractCtx.globalAlpha = 0.8;
-  tractCtx.fillStyle = "white";
-  tractCtx.rect(0, 0, 600, 600);
-  tractCtx.fill();
-
-  drawAboutText(tractCtx);
-};
-
-const drawAboutText = (tractCtx: CanvasRenderingContext2D) => {
-  tractCtx.globalAlpha = 1.0;
-  tractCtx.fillStyle = "#C070C6";
-  tractCtx.strokeStyle = "#C070C6";
-  tractCtx.font = "50px Arial";
-  tractCtx.lineWidth = 3;
-  tractCtx.textAlign = "center";
-  tractCtx.strokeText("P i n k   T r o m b o n e", 300, 230);
-  tractCtx.fillText("P i n k   T r o m b o n e", 300, 230);
-
-  tractCtx.font = "28px Arial";
-  tractCtx.fillText("bare-handed  speech synthesis", 300, 330);
-
-  tractCtx.font = "20px Arial";
-
-  if (navigator.userAgent.toLowerCase().indexOf("firefox") > -1) {
-    tractCtx.font = "20px Arial";
-    tractCtx.fillText(
-      "(sorry - may work poorly with the Firefox browser)",
-      300,
-      430,
-    );
-  }
-};
-
-const instructionsScreenHandleTouch = (
-  flesh: Flesh,
-  snail: Snail,
-  { x, y }: Z,
-) => {
-  if (x >= 35 && x <= 265 && y >= 535 && y <= 570)
-    window.location.href = "http://venuspatrol.nfshost.com";
-  else if (x >= 370 && x <= 570 && y >= 505 && y <= 555) {
-    location.reload();
-  } else {
-    flesh.isInInstructionsScreen = false;
-    flesh.aboutButton.isOn = true;
-    unmute(snail);
-  }
-};
-
-const buttonsHandleTouchStart = (ui: Flesh, rine: Rine) => {
-  handleTouchStart(ui.alwaysVoiceButton, rine);
-  ui.isAlwaysVoicing = ui.alwaysVoiceButton.isOn;
-  handleTouchStart(ui.autoWobbleButton, rine);
-  ui.isAutoWobbling = ui.autoWobbleButton.isOn;
-  handleTouchStart(ui.aboutButton, rine);
 };
 
 const startMouse = (
@@ -239,146 +70,50 @@ const startMouse = (
     snail.isStarted = true;
     startSound(snail, glottis, mouth, flesh);
   }
-  if (flesh.isInAboutScreen) {
-    flesh.isInAboutScreen = false;
-    return;
-  }
+
   const z = {
     x: e.clientX - forecontext.canvas.offsetLeft,
     y: e.clientY - forecontext.canvas.offsetTop,
   };
-  if (flesh.isInInstructionsScreen) {
-    instructionsScreenHandleTouch(flesh, snail, z);
-    return;
-  }
 
   const rine = flesh.rinemake(z);
-  flesh.mouseTouch = rine;
+  flesh.rine = rine;
   flesh.mouserines.push(rine);
-  buttonsHandleTouchStart(flesh, rine);
-  handleUiTouches(mouth, glottis, flesh, mouthflesh, forecontext);
+  handleMouthfleshTouches(mouth, flesh, mouthflesh, forecontext);
 };
 
 export const moveMouse = (
   mouth: Mouth,
-  throat: Throat,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
   forecontext: CanvasRenderingContext2D,
   e: PointerEvent,
 ) => {
-  const rine = flesh.mouseTouch;
-  if (!rine.isAlive) {
+  if (!flesh.rine || !flesh.rine.isDown) {
     return;
   }
 
-  rine.x = e.clientX - forecontext.canvas.offsetLeft;
-  rine.y = e.clientY - forecontext.canvas.offsetTop;
+  flesh.rine.x = e.clientX - forecontext.canvas.offsetLeft;
+  flesh.rine.y = e.clientY - forecontext.canvas.offsetTop;
 
-  const { berth, width } = canvasToTongue({ x: rine.x, y: rine.y });
-  rine.berth = berth;
-  rine.width = width;
-  handleUiTouches(mouth, throat, flesh, mouthflesh, forecontext);
+  const { berth, width } = canvasToTongue(flesh.rine);
+  flesh.rine.berth = berth;
+  flesh.rine.width = width;
+  handleMouthfleshTouches(mouth, flesh, mouthflesh, forecontext);
 };
 
 const endMouse = (
   mouth: Mouth,
-  throat: Throat,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
   tractContext: CanvasRenderingContext2D,
 ) => {
-  const touch = flesh.mouseTouch;
-  if (!touch.isAlive) {
+  if (!flesh.rine || !flesh.rine.isDown) {
     return;
   }
-  touch.isAlive = false;
-  touch.time!.end = performance.now() / 1000;
-  handleUiTouches(mouth, throat, flesh, mouthflesh, tractContext);
-
-  if (!flesh.aboutButton.isOn) flesh.isInInstructionsScreen = true;
-};
-
-const write = (ui: Flesh, tractCtx: CanvasRenderingContext2D, text: string) => {
-  tractCtx.fillText(text, 50, 100 + ui.instructionsLine * 22);
-  ui.instructionsLine += 1;
-  if (text === "") {
-    ui.instructionsLine -= 0.3;
-  }
-};
-
-const drawInstructionsScreen = (
-  ui: Flesh,
-  tractCtx: CanvasRenderingContext2D,
-  audioSystem: Snail,
-) => {
-  mute(audioSystem);
-  var ctx = tractCtx;
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = "white";
-  ctx.rect(0, 0, 600, 600);
-  ctx.fill();
-
-  ctx.globalAlpha = 1.0;
-  ctx.fillStyle = "#C070C6";
-  ctx.strokeStyle = "#C070C6";
-  ctx.font = "24px Arial";
-  ctx.lineWidth = 2;
-  ctx.textAlign = "center";
-
-  ctx.font = "19px Arial";
-  ctx.textAlign = "left";
-  ui.instructionsLine = 0;
-  write(
-    ui,
-    tractCtx,
-    "Sound is generated in the glottis (at the bottom left) then ",
-  );
-  write(
-    ui,
-    tractCtx,
-    "filtered by the shape of the vocal tract. The voicebox ",
-  );
-  write(ui, tractCtx, "controls the pitch and intensity of the initial sound.");
-  write(ui, tractCtx, "");
-  write(ui, tractCtx, "Then, to talk:");
-  write(ui, tractCtx, "");
-  write(ui, tractCtx, "- move the body of the tongue to shape vowels");
-  write(ui, tractCtx, "");
-  write(
-    ui,
-    tractCtx,
-    "- touch the oral cavity to narrow it, for fricative consonants",
-  );
-  write(ui, tractCtx, "");
-  write(
-    ui,
-    tractCtx,
-    "- touch above the oral cavity to close it, for stop consonants",
-  );
-  write(ui, tractCtx, "");
-  write(
-    ui,
-    tractCtx,
-    "- touch the nasal cavity to open the velum and let sound ",
-  );
-  write(ui, tractCtx, "   flow through the nose.");
-  write(ui, tractCtx, "");
-  write(ui, tractCtx, "");
-  write(ui, tractCtx, "(tap anywhere to continue)");
-
-  ctx.textAlign = "center";
-  ctx.fillText("[tap here to RESET]", 470, 535);
-
-  ui.instructionsLine = 18.8;
-  ctx.textAlign = "left";
-  write(ui, tractCtx, "Pink Trombone v1.1");
-  write(ui, tractCtx, "by Neil Thapen");
-  ctx.fillStyle = "blue";
-  ctx.globalAlpha = 0.6;
-  write(ui, tractCtx, "venuspatrol.nfshost.com");
-
-  ctx.globalAlpha = 1.0;
+  flesh.rine.isDown = false;
+  flesh.rine.time!.end = performance.now() / 1000;
+  handleMouthfleshTouches(mouth, flesh, mouthflesh, tractContext);
 };
 
 export const updateTouches = (ui: Flesh) => {
@@ -386,12 +121,22 @@ export const updateTouches = (ui: Flesh) => {
   for (let j = ui.mouserines.length - 1; j >= 0; j--) {
     const touch = ui.mouserines[j];
     const time = performance.now() / 1000;
-    if (!touch.isAlive && time > touch.time.end + 1) {
-      ui.mouserines.splice(j, 1);
-    } else if (touch.isAlive) {
+    if (touch.isDown) {
       touch.fi = clamp((time - touch.time.start) / fricativeAttackTime, 0, 1);
     } else {
-      touch.fi = clamp(1 - (time - touch.time.end) / fricativeAttackTime, 0, 1);
+      if (time > touch.time.end + 1) {
+        ui.mouserines.splice(j, 1);
+      } else {
+        touch.fi = clamp(
+          1 - (time - touch.time.end) / fricativeAttackTime,
+          0,
+          1,
+        );
+      }
     }
   }
+};
+
+export const fleshTools = () => {
+  return { startFlesh, makeFlesh, updateTouches };
 };

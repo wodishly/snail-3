@@ -1,7 +1,7 @@
 import { type Mouth } from "./mouth";
-import { type Throat } from "./throat";
-import { type Rine, type Flesh } from "./flesh";
-import { clamp, type Z } from "./help/math";
+import { setPitch, type Throat } from "./throat";
+import { type Flesh } from "./flesh";
+import { clamp } from "./help/math";
 import {
   Mouthbook,
   palePink,
@@ -11,76 +11,101 @@ import {
   tongueUpperBound,
 } from "./settings";
 import type { Assert, Maybe } from "./help/type";
-import { strokeLine } from "./canvas";
+import { canvasToTongue, strokeLine, tongueToCanvas } from "./canvas";
+import type { Rine, Tongue } from "./rine";
 
-export type Mouthflesh = {
-  /** @trombone `index` */
-  tongueBerth: number;
-
-  /** @trombone `diameter` */
-  tongueWidth: number;
-
+export interface Mouthflesh extends Tongue {
   /** A rine in the tongue control region. */
   tongueRine: Maybe<Rine>;
 
   html: {
     tongueRine: HTMLSpanElement;
   };
-};
+}
 
 export const makeMouthflesh = (): Mouthflesh => {
   return {
-    tongueBerth: 12.9,
-    tongueWidth: 2.43,
-    tongueRine: undefined as Maybe<Rine>,
+    berth: 12.9,
+    width: 2.43,
+    tongueRine: undefined,
     html: {
-      tongueRine: document.querySelector(
-        "#tongueRine",
-      ) as Assert<HTMLSpanElement>,
+      tongueRine: document.querySelector("#tongueRine")!,
     },
   };
 };
 
 export const startMouthflesh = (
+  throat: Throat,
   mouth: Mouth,
+  flesh: Flesh,
   mouthflesh: Mouthflesh,
   backcontext: CanvasRenderingContext2D,
   forecontext: CanvasRenderingContext2D,
 ) => {
+  const aSlider = document.querySelector("#a") as Assert<HTMLInputElement>;
+  const f0Slider = document.querySelector("#f0") as Assert<HTMLInputElement>;
+
+  aSlider.addEventListener("input", () => {
+    setPitch(throat, parseFloat(f0Slider.value), parseFloat(aSlider.value));
+  });
+  f0Slider.addEventListener("input", () => {
+    setPitch(throat, parseFloat(f0Slider.value), parseFloat(aSlider.value));
+  });
+
+  const f1Slider = document.querySelector("#f1") as Assert<HTMLInputElement>;
+  const f2Slider = document.querySelector("#f2") as Assert<HTMLInputElement>;
+  f1Slider.addEventListener("input", () => {
+    mouthflesh.berth = parseFloat(f1Slider.value);
+    mouthflesh.width = parseFloat(f2Slider.value);
+    moveTongue(mouthflesh, mouth, flesh, forecontext);
+  });
+  f2Slider.addEventListener("input", () => {
+    mouthflesh.berth = parseFloat(f1Slider.value);
+    mouthflesh.width = parseFloat(f2Slider.value);
+    moveTongue(mouthflesh, mouth, flesh, forecontext);
+  });
+
+  (
+    document.querySelector("#say-a") as Assert<HTMLButtonElement>
+  ).addEventListener("click", () => {
+    mouthflesh.berth = 13;
+    mouthflesh.width = 2.5;
+    moveTongue(mouthflesh, mouth, flesh, forecontext);
+  });
+  (
+    document.querySelector("#say-e") as Assert<HTMLButtonElement>
+  ).addEventListener("click", () => {
+    mouthflesh.berth = 26;
+    mouthflesh.width = 3;
+    moveTongue(mouthflesh, mouth, flesh, forecontext);
+  });
+  (
+    document.querySelector("#say-i") as Assert<HTMLButtonElement>
+  ).addEventListener("click", () => {
+    mouthflesh.berth = 29;
+    mouthflesh.width = 2;
+    moveTongue(mouthflesh, mouth, flesh, forecontext);
+  });
+  (
+    document.querySelector("#say-o") as Assert<HTMLButtonElement>
+  ).addEventListener("click", () => {
+    mouthflesh.berth = 16;
+    mouthflesh.width = 2;
+    moveTongue(mouthflesh, mouth, flesh, forecontext);
+  });
+  (
+    document.querySelector("#say-u") as Assert<HTMLButtonElement>
+  ).addEventListener("click", () => {
+    mouthflesh.berth = 25;
+    mouthflesh.width = 2;
+    moveTongue(mouthflesh, mouth, flesh, forecontext);
+  });
+
   setRestWidth(mouth, mouthflesh);
   for (let i = 0; i < Mouthbook.n; i++) {
     mouth.width[i].now = mouth.width[i].goal = mouth.width[i].rest;
   }
   drawBackground(mouth, backcontext, forecontext);
-};
-
-export const canvasToTongueBerth = ({ x, y }: Z) => {
-  let winkle = Math.atan2(
-    y - Settings.mouthflesh.originY,
-    x - Settings.mouthflesh.originX,
-  );
-  while (winkle > 0) {
-    winkle -= 2 * Math.PI;
-  }
-
-  return (
-    ((Math.PI + winkle - Settings.mouthflesh.angleOffset) *
-      (Mouthbook.lipStart - 1)) /
-    (Settings.mouthflesh.angleScale * Math.PI)
-  );
-};
-
-export const canvasToTongueWidth = ({ x, y }: Z) => {
-  const offsetX = x - Settings.mouthflesh.originX;
-  const offsetY = y - Settings.mouthflesh.originY;
-
-  const length = Math.sqrt(offsetX ** 2 + offsetY ** 2);
-
-  return (Settings.mouthflesh.radius - length) / Settings.mouthflesh.scale;
-};
-
-export const canvasToTongue = (z: Z) => {
-  return { berth: canvasToTongueBerth(z), width: canvasToTongueWidth(z) };
 };
 
 const drawCircle = (
@@ -160,49 +185,49 @@ const drawAmplitudes = (mouth: Mouth, context: CanvasRenderingContext2D) => {
 /**
  * Sets `mouth.width[i].rest` for each `i` in `[Mouthbook.bladeStart, Mouthbook.lipStart)`
  */
-const setRestWidth = (mouth: Mouth, mouthflesh: Mouthflesh) => {
+const setRestWidth = (mouth: Mouth, { berth, width }: Tongue) => {
   for (let i = Mouthbook.bladeStart; i < Mouthbook.lipStart; i++) {
     const t =
-      (1.1 * Math.PI * (mouthflesh.tongueBerth - i)) /
+      (1.1 * Math.PI * (berth - i)) /
       (Mouthbook.tipStart - Mouthbook.bladeStart);
-    const fixedTongueDiameter = 2 + (mouthflesh.tongueWidth - 2) / 1.5;
+    const fixedTongueDiameter = 2 + (width - 2) / 1.5;
     let curve =
       (1.5 - fixedTongueDiameter + Settings.mouthflesh.gridOffset) *
       Math.cos(t);
-    if (i == Mouthbook.bladeStart - 2 || i == Mouthbook.lipStart - 1) {
+    if (i === Mouthbook.bladeStart - 2 || i === Mouthbook.lipStart - 1) {
       curve *= 0.8;
     }
-    if (i == Mouthbook.bladeStart || i == Mouthbook.lipStart - 2) {
+    if (i === Mouthbook.bladeStart || i === Mouthbook.lipStart - 2) {
       curve *= 0.94;
     }
     mouth.width[i].rest = 1.5 - curve;
   }
 };
 
-const drawPitchControl = (
-  context: CanvasRenderingContext2D,
-  throat: Throat,
-) => {
-  const w = 9;
-  const h = 15;
-  context.lineWidth = 4;
-  context.strokeStyle = "orchid";
-  context.globalAlpha = 0.7;
-
-  context.beginPath();
-  context.moveTo(throat.z.x - w, throat.z.y - h);
-  context.lineTo(throat.z.x + w, throat.z.y - h);
-  context.lineTo(throat.z.x + w, throat.z.y + h);
-  context.lineTo(throat.z.x - w, throat.z.y + h);
-  context.closePath();
-
-  context.stroke();
-
-  context.globalAlpha = 0.15;
-  context.fill();
-
-  context.globalAlpha = 1.0;
-};
+// const drawPitchControl = (
+//   context: CanvasRenderingContext2D,
+//   throat: Throat,
+// ) => {
+//   const w = 9;
+//   const h = 15;
+//   context.lineWidth = 4;
+//   context.strokeStyle = "orchid";
+//   context.globalAlpha = 0.7;
+//
+//   context.beginPath();
+//   context.moveTo(throat.pitchZ.x - w, throat.pitchZ.y - h);
+//   context.lineTo(throat.pitchZ.x + w, throat.pitchZ.y - h);
+//   context.lineTo(throat.pitchZ.x + w, throat.pitchZ.y + h);
+//   context.lineTo(throat.pitchZ.x - w, throat.pitchZ.y + h);
+//   context.closePath();
+//
+//   context.stroke();
+//
+//   context.globalAlpha = 0.15;
+//   context.fill();
+//
+//   context.globalAlpha = 1.0;
+// };
 
 const drawTextStraight = (
   context: CanvasRenderingContext2D,
@@ -410,10 +435,7 @@ const drawTongueControl = (
   context.globalAlpha = 1.0;
 
   //circle for tongue position
-  const { x, y } = tongueToCanvas(
-    mouthflesh.tongueBerth,
-    mouthflesh.tongueWidth,
-  );
+  const { x, y } = tongueToCanvas(mouthflesh.berth, mouthflesh.width);
   context.lineWidth = 4;
   context.strokeStyle = "orchid";
   context.globalAlpha = 0.7;
@@ -427,53 +449,17 @@ const drawTongueControl = (
   context.fillStyle = "orchid";
 };
 
-/**
- * @param berth @trombone index
- * @param width @trombone diameter
- */
-export const tongueToCanvas = (
-  berth: number, // cf. index
-  width: number, // cf. diameter
-  wobbleSettings?: { doesWobble: boolean; mouth: Mouth },
-) => {
-  const wobble =
-    wobbleSettings === undefined
-      ? 0
-      : ((wobbleSettings.mouth.maxAmplitude[Mouthbook.n - 1] +
-          wobbleSettings.mouth.nose.maxAmplitude[Mouthbook.noseLength - 1]) *
-          (0.03 *
-            Math.sin(2 * berth - 50 * (performance.now() / 1000)) *
-            berth)) /
-        Mouthbook.n;
-  const angle =
-    Settings.mouthflesh.angleOffset +
-    (berth * Settings.mouthflesh.angleScale * Math.PI) /
-      (Mouthbook.lipStart - 1) +
-    wobble;
-  const r =
-    Settings.mouthflesh.radius -
-    Settings.mouthflesh.scale * width +
-    100 * wobble;
-
-  return {
-    x: Settings.mouthflesh.originX - r * Math.cos(angle),
-    y: Settings.mouthflesh.originY - r * Math.sin(angle),
-  };
-};
-
 export const drawMouthflesh = (
   mouthflesh: Mouthflesh,
   context: CanvasRenderingContext2D,
   mouth: Mouth,
-  throat: Throat,
-  ui: Flesh,
 ) => {
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
   context.lineCap = "round";
   context.lineJoin = "round";
 
   drawTongueControl(mouthflesh, mouth, context);
-  drawPitchControl(context, throat);
+  // drawPitchControl(context, throat);
 
   const velum = mouth.nose.width[0];
   const velumAngle = velum * 4;
@@ -649,7 +635,7 @@ export const handleMouthfleshTouches = (
   context: CanvasRenderingContext2D,
 ) => {
   // kill dead rine
-  if (!mouthflesh.tongueRine?.isAlive) {
+  if (!mouthflesh.tongueRine?.isDown) {
     console.log("kill dead rine");
     mouthflesh.tongueRine = undefined;
   }
@@ -659,11 +645,11 @@ export const handleMouthfleshTouches = (
     for (let j = 0; j < flesh.mouserines.length; j++) {
       const rine = flesh.mouserines[j];
 
-      if (!rine.isAlive) {
+      if (!rine.isDown) {
         continue;
       }
-      if (rine.fi == 1) {
-        continue; //only new touches will pass tractUi
+      if (rine.fi === 1) {
+        continue; //only new touches will pass mouthflesh
       }
 
       const { berth, width } = canvasToTongue(rine);
@@ -676,9 +662,11 @@ export const handleMouthfleshTouches = (
         width <= Settings.mouthflesh.outerTongueControlRadius + 0.5
       ) {
         mouthflesh.tongueRine = rine;
+        console.log("promote");
       }
     }
-  } else {
+  }
+  if (mouthflesh.tongueRine !== undefined) {
     // we're on the trapezoid
     console.log("rine on tongue");
     const { berth, width } = canvasToTongue(mouthflesh.tongueRine);
@@ -693,21 +681,25 @@ export const handleMouthfleshTouches = (
     //horrible kludge to fit curve to straight line
     fromPoint =
       Math.pow(fromPoint, 0.58) - 0.2 * (fromPoint * fromPoint - fromPoint);
-    mouthflesh.tongueWidth = clamp(
+    mouthflesh.width = clamp(
       width,
       Settings.mouthflesh.innerTongueControlRadius,
       Settings.mouthflesh.outerTongueControlRadius,
     );
 
     const out = fromPoint * 0.5 * (tongueUpperBound() - tongueLowerBound());
-    mouthflesh.tongueBerth = clamp(
-      berth,
-      tongueMiddle() - out,
-      tongueMiddle() + out,
-    );
+    mouthflesh.berth = clamp(berth, tongueMiddle() - out, tongueMiddle() + out);
   }
+  moveTongue(mouthflesh, mouth, flesh, context);
+};
 
-  setRestWidth(mouth, mouthflesh);
+export const moveTongue = (
+  target: Tongue,
+  mouth: Mouth,
+  flesh: Flesh,
+  context: CanvasRenderingContext2D,
+) => {
+  setRestWidth(mouth, target);
   for (let i = 0; i < Mouthbook.n; i++)
     mouth.width[i].goal = mouth.width[i].rest;
 
@@ -715,7 +707,7 @@ export const handleMouthfleshTouches = (
   mouth.velumTarget = 0.01;
   for (let j = 0; j < flesh.mouserines.length; j++) {
     const rine = flesh.mouserines[j];
-    if (!rine.isAlive) {
+    if (!rine.isDown) {
       continue;
     }
     const { berth, width: rawWidth } = canvasToTongue(rine);
@@ -764,4 +756,12 @@ export const handleMouthfleshTouches = (
       }
     }
   }
+};
+
+export const mouthfleshTools = () => {
+  return {
+    drawMouthflesh,
+    startMouthflesh,
+    makeMouthflesh,
+  };
 };

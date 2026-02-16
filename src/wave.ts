@@ -1,4 +1,4 @@
-import type { Throat, ThroatFrequency, ThroatTenseness } from "./throat";
+import type { Throat, Frequency, Tenseness } from "./throat";
 
 export type Wave = {
   Rd: number;
@@ -14,8 +14,8 @@ export type Wave = {
 };
 
 export const setupWaveform = (
-  throatFrequency: ThroatFrequency,
-  throatTenseness: ThroatTenseness,
+  throatFrequency: Frequency,
+  throatTenseness: Tenseness,
   lambda: number,
 ) => {
   const frequency =
