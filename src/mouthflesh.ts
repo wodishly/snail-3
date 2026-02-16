@@ -10,16 +10,15 @@ import {
   tongueMiddle,
   tongueUpperBound,
 } from "./settings";
-import type { Assert, Maybe } from "./help/type";
+import type { Assert } from "./help/type";
 import { canvasToTongue, strokeLine, tongueToCanvas } from "./canvas";
-import type { Rine, Tongue } from "./rine";
+import type { Rineful, Tongue } from "./rine";
+import { pushSpell, type Song } from "./speak";
+import { startSound, type Snail } from "./snail";
 
-export interface Mouthflesh extends Tongue {
-  /** A rine in the tongue control region. */
-  tongueRine: Maybe<Rine>;
-
+export interface Mouthflesh extends Tongue, Rineful {
   html: {
-    tongueRine: HTMLSpanElement;
+    rine: HTMLSpanElement;
   };
 }
 
@@ -27,21 +26,38 @@ export const makeMouthflesh = (): Mouthflesh => {
   return {
     berth: 12.9,
     width: 2.43,
-    tongueRine: undefined,
+    rine: undefined,
     html: {
-      tongueRine: document.querySelector("#tongueRine")!,
+      rine: document.querySelector("#tongueRine")!,
     },
   };
 };
 
 export const startMouthflesh = (
+  snail: Snail,
   throat: Throat,
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
+  song: Song,
   backcontext: CanvasRenderingContext2D,
   forecontext: CanvasRenderingContext2D,
 ) => {
+  const speech = document.querySelector("#speech") as Assert<HTMLInputElement>;
+  speech.addEventListener("input", () => {
+    if (!"aeiou".split("").includes(speech.value.at(-1) ?? "")) {
+      speech.value = speech.value.slice(0, -1);
+    }
+  });
+
+  const speakKnob = document.querySelector(
+    "#speak",
+  ) as Assert<HTMLButtonElement>;
+  speakKnob.addEventListener("click", () => {
+    startSound(snail, throat, mouth, flesh);
+    pushSpell(song, speech, speakKnob);
+  });
+
   const aSlider = document.querySelector("#a") as Assert<HTMLInputElement>;
   const f0Slider = document.querySelector("#f0") as Assert<HTMLInputElement>;
 
@@ -62,42 +78,6 @@ export const startMouthflesh = (
   f2Slider.addEventListener("input", () => {
     mouthflesh.berth = parseFloat(f1Slider.value);
     mouthflesh.width = parseFloat(f2Slider.value);
-    moveTongue(mouthflesh, mouth, flesh, forecontext);
-  });
-
-  (
-    document.querySelector("#say-a") as Assert<HTMLButtonElement>
-  ).addEventListener("click", () => {
-    mouthflesh.berth = 13;
-    mouthflesh.width = 2.5;
-    moveTongue(mouthflesh, mouth, flesh, forecontext);
-  });
-  (
-    document.querySelector("#say-e") as Assert<HTMLButtonElement>
-  ).addEventListener("click", () => {
-    mouthflesh.berth = 26;
-    mouthflesh.width = 3;
-    moveTongue(mouthflesh, mouth, flesh, forecontext);
-  });
-  (
-    document.querySelector("#say-i") as Assert<HTMLButtonElement>
-  ).addEventListener("click", () => {
-    mouthflesh.berth = 29;
-    mouthflesh.width = 2;
-    moveTongue(mouthflesh, mouth, flesh, forecontext);
-  });
-  (
-    document.querySelector("#say-o") as Assert<HTMLButtonElement>
-  ).addEventListener("click", () => {
-    mouthflesh.berth = 16;
-    mouthflesh.width = 2;
-    moveTongue(mouthflesh, mouth, flesh, forecontext);
-  });
-  (
-    document.querySelector("#say-u") as Assert<HTMLButtonElement>
-  ).addEventListener("click", () => {
-    mouthflesh.berth = 25;
-    mouthflesh.width = 2;
     moveTongue(mouthflesh, mouth, flesh, forecontext);
   });
 
@@ -203,31 +183,6 @@ const setRestWidth = (mouth: Mouth, { berth, width }: Tongue) => {
     mouth.width[i].rest = 1.5 - curve;
   }
 };
-
-// const drawPitchControl = (
-//   context: CanvasRenderingContext2D,
-//   throat: Throat,
-// ) => {
-//   const w = 9;
-//   const h = 15;
-//   context.lineWidth = 4;
-//   context.strokeStyle = "orchid";
-//   context.globalAlpha = 0.7;
-//
-//   context.beginPath();
-//   context.moveTo(throat.pitchZ.x - w, throat.pitchZ.y - h);
-//   context.lineTo(throat.pitchZ.x + w, throat.pitchZ.y - h);
-//   context.lineTo(throat.pitchZ.x + w, throat.pitchZ.y + h);
-//   context.lineTo(throat.pitchZ.x - w, throat.pitchZ.y + h);
-//   context.closePath();
-//
-//   context.stroke();
-//
-//   context.globalAlpha = 0.15;
-//   context.fill();
-//
-//   context.globalAlpha = 1.0;
-// };
 
 const drawTextStraight = (
   context: CanvasRenderingContext2D,
@@ -635,13 +590,11 @@ export const handleMouthfleshTouches = (
   context: CanvasRenderingContext2D,
 ) => {
   // kill dead rine
-  if (!mouthflesh.tongueRine?.isDown) {
-    console.log("kill dead rine");
-    mouthflesh.tongueRine = undefined;
+  if (!mouthflesh.rine?.isDown) {
+    mouthflesh.rine = undefined;
   }
 
-  if (mouthflesh.tongueRine === undefined) {
-    console.log("rine not on tongue");
+  if (mouthflesh.rine === undefined) {
     for (let j = 0; j < flesh.mouserines.length; j++) {
       const rine = flesh.mouserines[j];
 
@@ -661,15 +614,13 @@ export const handleMouthfleshTouches = (
         width >= Settings.mouthflesh.innerTongueControlRadius - 0.5 &&
         width <= Settings.mouthflesh.outerTongueControlRadius + 0.5
       ) {
-        mouthflesh.tongueRine = rine;
-        console.log("promote");
+        mouthflesh.rine = rine;
       }
     }
   }
-  if (mouthflesh.tongueRine !== undefined) {
+  if (mouthflesh.rine !== undefined) {
     // we're on the trapezoid
-    console.log("rine on tongue");
-    const { berth, width } = canvasToTongue(mouthflesh.tongueRine);
+    const { berth, width } = canvasToTongue(mouthflesh.rine);
     let fromPoint = clamp(
       (Settings.mouthflesh.outerTongueControlRadius - width) /
         (Settings.mouthflesh.outerTongueControlRadius -

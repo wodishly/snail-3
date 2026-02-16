@@ -1,21 +1,17 @@
 import { canvasToTongue } from "./canvas";
 import type { Z } from "./help/math";
 import { deepRound } from "./help/rime";
-import type { Maybe, Show } from "./help/type";
+import type { Maybe, Json, Span } from "./help/type";
 
 export type Rinemake = (z: Z) => Rine;
 export type RineId<N extends number = number> = `mouse${N}`;
-export type Span<T = number> = {
-  start: T;
-  end: T;
-};
 
 export interface Tongue {
   berth: number;
   width: number;
 }
 
-export interface Rine<B extends boolean = boolean> extends Z, Show, Tongue {
+export interface Rine<B extends boolean = boolean> extends Z, Json, Tongue {
   id: RineId;
   time: Span;
   isDown: B;

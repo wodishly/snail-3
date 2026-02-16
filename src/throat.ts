@@ -84,40 +84,6 @@ export const getNoiseModulator = (throat: Throat) => {
   );
 };
 
-// export const handleThroatTouches = (throat: Throat, ui: Flesh) => {
-//   if (throat.rine !== undefined && !throat.rine.isDown) {
-//     throat.rine = undefined;
-//   }
-//
-//   if (throat.rine === undefined) {
-//     for (let j = 0; j < ui.mouserines.length; j++) {
-//       const touch = ui.mouserines[j];
-//       if (!touch.isDown) {
-//         continue;
-//       }
-//       if (touch.y < Settings.keyboard.keyboardTop) {
-//         continue;
-//       }
-//       throat.rine = touch;
-//     }
-//   }
-//
-//   if (throat.rine !== undefined) {
-//     let local_y = throat.rine.y - Settings.keyboard.keyboardTop - 10;
-//     let local_x = throat.rine.x - Settings.keyboard.keyboardLeft;
-//
-//     const semitone =
-//       (Settings.keyboard.semitones * local_x) /
-//         Settings.keyboard.keyboardWidth +
-//       0.5;
-//     setPitch(throat, Settings.keyboard.baseNote * Math.pow(2, semitone / 12));
-//     // throat.pitchZ.x = throat.rine.x;
-//     // throat.pitchZ.y = local_y + Settings.keyboard.keyboardTop + 10;
-//   }
-//
-//   throat.isTouched = throat.rine !== undefined;
-// };
-
 export const setPitch = (throat: Throat, pitch: number, volume = 1) => {
   throat.frequency.ui = pitch;
 

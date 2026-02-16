@@ -13,8 +13,10 @@ export interface Flesh extends Rineful {
   mouserines: Rine[];
   rinemake: Rinemake;
   html: {
+    time: HTMLDivElement;
+    loudlist: HTMLUListElement;
     mouserines: HTMLUListElement;
-    mouseTouch: HTMLSpanElement;
+    rine: HTMLSpanElement;
   };
 }
 
@@ -27,8 +29,10 @@ export const makeFlesh = (): Flesh => {
     rine: undefined,
     rinemake: makeRinemake(),
     html: {
+      time: document.querySelector("#time")!,
+      loudlist: document.querySelector("#loudlist")!,
       mouserines: document.querySelector("#mouserines")!,
-      mouseTouch: document.querySelector("#mouseTouch")!,
+      rine: document.querySelector("#mouthRine")!,
     },
   };
 };
@@ -60,16 +64,13 @@ export const startFlesh = (
 const startMouse = (
   snail: Snail,
   mouth: Mouth,
-  glottis: Throat,
+  throat: Throat,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
   forecontext: CanvasRenderingContext2D,
   e: PointerEvent,
 ) => {
-  if (!snail.isStarted) {
-    snail.isStarted = true;
-    startSound(snail, glottis, mouth, flesh);
-  }
+  startSound(snail, throat, mouth, flesh);
 
   const z = {
     x: e.clientX - forecontext.canvas.offsetLeft,
@@ -127,11 +128,7 @@ export const updateTouches = (ui: Flesh) => {
       if (time > touch.time.end + 1) {
         ui.mouserines.splice(j, 1);
       } else {
-        touch.fi = clamp(
-          1 - (time - touch.time.end) / fricativeAttackTime,
-          0,
-          1,
-        );
+        touch.fi = clamp(1 - (time - touch.time.end) / fricativeAttackTime);
       }
     }
   }

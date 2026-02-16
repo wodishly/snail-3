@@ -6,6 +6,7 @@ import { updateLeech } from "./leech";
 import { mouthfleshTools } from "./mouthflesh";
 import { fleshTools } from "./flesh";
 import { getContexts } from "./canvas";
+import { makeSong, sing } from "./speak";
 
 window.onload = () => {
   const { backcontext, forecontext } = getContexts();
@@ -19,16 +20,28 @@ window.onload = () => {
   const flesh = makeFlesh();
   const mouthflesh = makeMouthflesh();
 
+  const song = makeSong();
+
   startFlesh(snail, mouth, throat, flesh, mouthflesh, forecontext);
   initMouth(mouth);
-  startMouthflesh(throat, mouth, flesh, mouthflesh, backcontext, forecontext);
+  startMouthflesh(
+    snail,
+    throat,
+    mouth,
+    flesh,
+    mouthflesh,
+    song,
+    backcontext,
+    forecontext,
+  );
 
-  const redraw = () => {
+  const redraw = (now: number) => {
     drawMouthflesh(mouthflesh, forecontext, mouth);
     requestAnimationFrame(redraw);
     updateTouches(flesh);
 
-    updateLeech(flesh, mouthflesh);
+    sing(song, now, mouth, flesh, mouthflesh, forecontext);
+    updateLeech(song, flesh, mouthflesh);
   };
   requestAnimationFrame(redraw);
 };

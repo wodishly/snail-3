@@ -41,6 +41,11 @@
           </canvas>
         </div>
         <div id="knobboard">
+          <div id="time"></div>
+          <div>
+            <input type="text" id="speech" /> <button id="speak">speak</button>
+            <ul id="loudlist"></ul>
+          </div>
           <div>
             <input
               type="range"
@@ -79,19 +84,19 @@
             <label for="f2">\( f_2 \)</label>
           </div>
           <div>
-            <button id="say-a">a</button>
-            <button id="say-e">e</button>
-            <button id="say-i">i</button>
-            <button id="say-o">o</button>
-            <button id="say-u">u</button>
+            <button id="say-a" class="loud">a</button>
+            <button id="say-e" class="loud">e</button>
+            <button id="say-i" class="loud">i</button>
+            <button id="say-o" class="loud">o</button>
+            <button id="say-u" class="loud">u</button>
           </div>
           <div>
-            <span>tongueRine:</span>
+            <span>tongue rine:</span>
             <span id="tongueRine"></span>
           </div>
           <div>
-            <span>mouseTouch:</span>
-            <span id="mouseTouch"></span>
+            <span>mouth rine:</span>
+            <span id="mouthRine"></span>
           </div>
           <div>
             <span>mouserines:</span>

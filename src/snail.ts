@@ -96,39 +96,41 @@ export const createWhiteNoiseNode = (
 };
 
 export const startSound = (
-  audioSystem: Snail,
-  glottis: Throat,
-  tract: Mouth,
-  ui: Flesh,
+  snail: Snail,
+  throat: Throat,
+  mouth: Mouth,
+  flesh: Flesh,
 ): void => {
+  if (snail.isStarted) {
+    return;
+  }
+
+  snail.isStarted = true;
   //scriptProcessor may need a dummy input channel on iOS
-  audioSystem.processor = audioSystem.context.createScriptProcessor(
+  snail.processor = snail.context.createScriptProcessor(
     Fastenings.blockLength,
     2,
     1,
   );
-  audioSystem.processor.connect(audioSystem.context.destination);
-  audioSystem.processor.onaudioprocess = (e: AudioProcessingEvent) =>
-    doScriptProcessor(audioSystem, glottis, tract, ui, e);
+  snail.processor.connect(snail.context.destination);
+  snail.processor.onaudioprocess = (e: AudioProcessingEvent) =>
+    doScriptProcessor(snail, throat, mouth, flesh, e);
 
-  const whiteNoise = createWhiteNoiseNode(
-    audioSystem,
-    2 * audioSystem.context.sampleRate,
-  ); // 2 seconds of noise
+  const whiteNoise = createWhiteNoiseNode(snail, 2 * snail.context.sampleRate); // 2 seconds of noise
 
-  const aspirateFilter = audioSystem.context.createBiquadFilter();
+  const aspirateFilter = snail.context.createBiquadFilter();
   aspirateFilter.type = "bandpass";
   aspirateFilter.frequency.value = 500;
   aspirateFilter.Q.value = 0.5;
   whiteNoise.connect(aspirateFilter);
-  aspirateFilter.connect(audioSystem.processor);
+  aspirateFilter.connect(snail.processor);
 
-  const fricativeFilter = audioSystem.context.createBiquadFilter();
+  const fricativeFilter = snail.context.createBiquadFilter();
   fricativeFilter.type = "bandpass";
   fricativeFilter.frequency.value = 1000;
   fricativeFilter.Q.value = 0.5;
   whiteNoise.connect(fricativeFilter);
-  fricativeFilter.connect(audioSystem.processor);
+  fricativeFilter.connect(snail.processor);
 
   whiteNoise.start(0);
 };
