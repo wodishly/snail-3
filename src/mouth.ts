@@ -2,13 +2,13 @@ import { reckonBlockTime, type Snail } from "./snail";
 import { getNoiseModulator, type Throat } from "./throat";
 import { type Flesh } from "./flesh";
 import { nudge, clamp } from "./help/math";
-import { Fastenings, Mouthbook, Settings } from "./settings";
+import { Fastenings, Mouthbook, noseLength, Settings } from "./settings";
 import { makeTransient, processTransients, type Transient } from "./transient";
 import { row, type Flight } from "./help/list";
 import { after, type After, type Upto } from "./help/rime";
 import type { Assert, Maybe } from "./help/type";
 
-export type Berth = Upto<(typeof Mouthbook)["n"]>;
+export type Berth = Upto<(typeof Mouthbook)["length"]>;
 type Obstruction = Maybe<Berth>;
 
 type Handed<T = number> = Record<"left" | "right", T>;
@@ -38,7 +38,7 @@ interface Hole<B, W, N extends number> {
   bend: Flight<B, After<N>>;
 }
 
-export interface Mouth extends Hole<Bend, Width, (typeof Mouthbook)["n"]> {
+export interface Mouth extends Hole<Bend, Width, (typeof Mouthbook)["length"]> {
   /** @todo yoke with {@link Mouth.overbendRight} */
   overbendLeft: Bend;
   /** @todo yoke with {@link Mouth.overbendLeft} */
@@ -48,41 +48,41 @@ export interface Mouth extends Hole<Bend, Width, (typeof Mouthbook)["n"]> {
   transients: Transient[];
   lipOutput: number;
   noseOutput: number;
-  velumTarget: number;
+  sailgoal: number;
 }
 
 export interface Nose extends Hole<
   number,
   number,
-  (typeof Mouthbook)["noseLength"]
+  ReturnType<typeof noseLength>
 > {
   overbend: Bend;
 }
 
 const makeNose = (): Nose => {
   return {
-    main: row(Mouthbook.noseLength, () => makeHanded(0)),
+    main: row(noseLength(), () => makeHanded(0)),
 
-    area: row(Mouthbook.noseLength, () => 0),
-    maxAmplitude: row(Mouthbook.noseLength, () => 0),
-    width: row(Mouthbook.noseLength, () => 0),
+    area: row(noseLength(), () => 0),
+    maxAmplitude: row(noseLength(), () => 0),
+    width: row(noseLength(), () => 0),
 
-    junctionOutput: row(after(Mouthbook.noseLength), () => makeHanded(0)),
-    bend: row(after(Mouthbook.noseLength), () => 0),
+    junctionOutput: row(after(noseLength()), () => makeHanded(0)),
+    bend: row(after(noseLength()), () => 0),
     overbend: makeBend(0),
   };
 };
 
 export const makeMouth = (): Mouth => {
   return {
-    main: row(Mouthbook.n, () => makeHanded(0)),
+    main: row(Mouthbook.length, () => makeHanded(0)),
 
-    area: row(Mouthbook.n, () => 0),
-    maxAmplitude: row(Mouthbook.n, () => 0),
-    width: row(Mouthbook.n, () => makeWidth(0)),
+    area: row(Mouthbook.length, () => 0),
+    maxAmplitude: row(Mouthbook.length, () => 0),
+    width: row(Mouthbook.length, () => makeWidth(0)),
 
-    junctionOutput: row(after(Mouthbook.n), () => makeHanded(0)),
-    bend: row(after(Mouthbook.n), () => makeBend(0)),
+    junctionOutput: row(after(Mouthbook.length), () => makeHanded(0)),
+    bend: row(after(Mouthbook.length), () => makeBend(0)),
     overbendLeft: makeBend(0),
     overbendRight: makeBend(0),
 
@@ -92,23 +92,23 @@ export const makeMouth = (): Mouth => {
     transients: [],
     lipOutput: 0,
     noseOutput: 0,
-    velumTarget: 0.01,
+    sailgoal: 0.01,
   };
 };
 
 export const initMouth = (mouth: Mouth) => {
-  for (let i = 0; i < Mouthbook.n; i++) {
+  for (let i = 0; i < Mouthbook.length; i++) {
     const diameter =
-      i < (7 * Mouthbook.n) / 44 - 0.5
+      i < (7 * Mouthbook.length) / 44 - 0.5
         ? 0.6
-        : i < (12 * Mouthbook.n) / 44
+        : i < (12 * Mouthbook.length) / 44
           ? 1.1
           : 1.5;
     mouth.width[i] = makeWidth(diameter);
   }
 
-  for (let i = 0; i < Mouthbook.noseLength; i++) {
-    const d = 2 * (i / Mouthbook.noseLength);
+  for (let i = 0; i < noseLength(); i++) {
+    const d = 2 * (i / noseLength());
     mouth.nose.width[i] = Math.min(
       1.9,
       d < 1 ? 0.4 + 1.6 * d : 0.5 + 1.5 * (2 - d),
@@ -117,7 +117,7 @@ export const initMouth = (mouth: Mouth) => {
 
   calculateReflections(mouth);
   calculateNoseReflections(mouth);
-  mouth.nose.width[0] = mouth.velumTarget;
+  mouth.nose.width[0] = mouth.sailgoal;
 };
 
 export const finishMouthBlock = (mouth: Mouth, audioSystem: Snail) => {
@@ -126,10 +126,10 @@ export const finishMouthBlock = (mouth: Mouth, audioSystem: Snail) => {
 };
 
 export const calculateReflections = (mouth: Mouth) => {
-  for (let i = 0; i < Mouthbook.n; i++) {
+  for (let i = 0; i < Mouthbook.length; i++) {
     mouth.area[i] = mouth.width[i].now * mouth.width[i].now; //ignoring PI etc.
   }
-  for (let i = 1; i < Mouthbook.n; i++) {
+  for (let i = 1; i < Mouthbook.length; i++) {
     mouth.bend[i].old = mouth.bend[i].niw;
     if (mouth.area[i] === 0)
       mouth.bend[i].niw = 0.999; //to prevent some bad behaviour if 0
@@ -155,10 +155,10 @@ export const calculateReflections = (mouth: Mouth) => {
 };
 
 export const calculateNoseReflections = (mouth: Mouth) => {
-  for (let i = 0; i < Mouthbook.noseLength; i++) {
+  for (let i = 0; i < noseLength(); i++) {
     mouth.nose.area[i] = mouth.nose.width[i] * mouth.nose.width[i];
   }
-  for (let i = 1; i < Mouthbook.noseLength; i++) {
+  for (let i = 1; i < noseLength(); i++) {
     mouth.nose.bend[i] =
       (mouth.nose.area[i - 1] - mouth.nose.area[i]) /
       (mouth.nose.area[i - 1] + mouth.nose.area[i]);
@@ -173,7 +173,7 @@ export const addTurbulenceNoise = (
 ) => {
   for (let j = 0; j < flesh.mouserines.length; j++) {
     const touch = flesh.mouserines[j];
-    if (touch.berth < 2 || touch.berth > Mouthbook.n) {
+    if (touch.berth < 2 || touch.berth > Mouthbook.length) {
       continue;
     }
     if (touch.width <= 0) {
@@ -222,7 +222,7 @@ export const addTurbulenceNoiseAtIndex = (
 export const reshapeMouth = (mouth: Mouth, deltaTime: number) => {
   let amount = deltaTime * Settings.speed;
   let newLastObstruction: Maybe<Obstruction> = undefined;
-  for (let i = 0; i < Mouthbook.n; i++) {
+  for (let i = 0; i < Mouthbook.length; i++) {
     const diameter = mouth.width[i].now;
     const targetDiameter = mouth.width[i].goal;
     if (diameter <= 0) {
@@ -231,11 +231,11 @@ export const reshapeMouth = (mouth: Mouth, deltaTime: number) => {
     const slowReturn =
       i < Mouthbook.noseStart
         ? 0.6
-        : i >= Mouthbook.tipStart
+        : i >= Mouthbook.bladeStart
           ? 1.0
           : 0.6 +
             (0.4 * (i - Mouthbook.noseStart)) /
-              (Mouthbook.tipStart - Mouthbook.noseStart);
+              (Mouthbook.bladeStart - Mouthbook.noseStart);
     mouth.width[i].now = nudge(
       diameter,
       targetDiameter,
@@ -255,7 +255,7 @@ export const reshapeMouth = (mouth: Mouth, deltaTime: number) => {
   amount = deltaTime * Settings.speed;
   mouth.nose.width[0] = nudge(
     mouth.nose.width[0],
-    mouth.velumTarget,
+    mouth.sailgoal,
     amount * 0.25,
     amount * 0.1,
   );
@@ -279,10 +279,10 @@ export const runMouthStep = (
 
   mouth.junctionOutput[0].right =
     mouth.main[0].left * Fastenings.reflection.glottal + glottalOutput;
-  mouth.junctionOutput[Mouthbook.n].left =
-    mouth.main[Mouthbook.n - 1].right * Fastenings.reflection.lip;
+  mouth.junctionOutput[Mouthbook.length].left =
+    mouth.main[Mouthbook.length - 1].right * Fastenings.reflection.lip;
 
-  for (let i = 1; i < Mouthbook.n; i++) {
+  for (let i = 1; i < Mouthbook.length; i++) {
     const r = mouth.bend[i].old * (1 - lambda) + mouth.bend[i].niw * lambda;
     const w = r * (mouth.main[i - 1].right + mouth.main[i].left);
     mouth.junctionOutput[i].right = mouth.main[i - 1].right - w;
@@ -305,7 +305,7 @@ export const runMouthStep = (
     r * mouth.nose.main[0].left +
     (1 + r) * (mouth.main[j].left + mouth.main[j - 1].right);
 
-  for (let i = 0; i < Mouthbook.n; i++) {
+  for (let i = 0; i < Mouthbook.length; i++) {
     mouth.main[i].right = mouth.junctionOutput[i].right * 0.999;
     mouth.main[i].left = mouth.junctionOutput[i + 1].left * 0.999;
 
@@ -319,13 +319,13 @@ export const runMouthStep = (
     }
   }
 
-  mouth.lipOutput = mouth.main[Mouthbook.n - 1].right;
+  mouth.lipOutput = mouth.main[Mouthbook.length - 1].right;
 
   //nose
-  mouth.nose.junctionOutput[Mouthbook.noseLength].left =
-    mouth.nose.main[Mouthbook.noseLength - 1].right * Fastenings.reflection.lip;
+  mouth.nose.junctionOutput[noseLength()].left =
+    mouth.nose.main[noseLength() - 1].right * Fastenings.reflection.lip;
 
-  for (let i = 1; i < Mouthbook.noseLength; i++) {
+  for (let i = 1; i < noseLength(); i++) {
     const w =
       mouth.nose.bend[i] *
       (mouth.nose.main[i - 1].right + mouth.nose.main[i].left);
@@ -333,7 +333,7 @@ export const runMouthStep = (
     mouth.nose.junctionOutput[i].left = mouth.nose.main[i].left + w;
   }
 
-  for (let i = 0; i < Mouthbook.noseLength; i++) {
+  for (let i = 0; i < noseLength(); i++) {
     mouth.nose.main[i].right =
       mouth.nose.junctionOutput[i].right * Settings.fade;
     mouth.nose.main[i].left =
@@ -351,5 +351,5 @@ export const runMouthStep = (
     }
   }
 
-  mouth.noseOutput = mouth.nose.main[Mouthbook.noseLength - 1].right;
+  mouth.noseOutput = mouth.nose.main[noseLength() - 1].right;
 };

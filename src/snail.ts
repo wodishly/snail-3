@@ -95,6 +95,9 @@ export const createWhiteNoiseNode = (
   return source;
 };
 
+/**
+ * @todo reprecate
+ */
 export const startSound = (
   snail: Snail,
   throat: Throat,

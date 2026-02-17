@@ -40,7 +40,7 @@ window.onload = () => {
     requestAnimationFrame(redraw);
     updateTouches(flesh);
 
-    sing(song, now, mouth, flesh, mouthflesh, forecontext);
+    sing(song, now, mouth, flesh, mouthflesh);
     updateLeech(song, flesh, mouthflesh);
   };
   requestAnimationFrame(redraw);

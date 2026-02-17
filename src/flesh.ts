@@ -54,7 +54,7 @@ export const startFlesh = (
   });
   forecontext.canvas.addEventListener("pointerup", () => {
     flesh.isMouseDown = false;
-    endMouse(mouth, flesh, mouthflesh, forecontext);
+    endMouse(mouth, flesh, mouthflesh);
   });
   forecontext.canvas.addEventListener("pointermove", (e) => {
     moveMouse(mouth, flesh, mouthflesh, forecontext, e);
@@ -80,7 +80,7 @@ const startMouse = (
   const rine = flesh.rinemake(z);
   flesh.rine = rine;
   flesh.mouserines.push(rine);
-  handleMouthfleshTouches(mouth, flesh, mouthflesh, forecontext);
+  handleMouthfleshTouches(mouth, flesh, mouthflesh);
 };
 
 export const moveMouse = (
@@ -100,21 +100,20 @@ export const moveMouse = (
   const { berth, width } = canvasToTongue(flesh.rine);
   flesh.rine.berth = berth;
   flesh.rine.width = width;
-  handleMouthfleshTouches(mouth, flesh, mouthflesh, forecontext);
+  handleMouthfleshTouches(mouth, flesh, mouthflesh);
 };
 
 const endMouse = (
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
-  tractContext: CanvasRenderingContext2D,
 ) => {
   if (!flesh.rine || !flesh.rine.isDown) {
     return;
   }
   flesh.rine.isDown = false;
   flesh.rine.time!.end = performance.now() / 1000;
-  handleMouthfleshTouches(mouth, flesh, mouthflesh, tractContext);
+  handleMouthfleshTouches(mouth, flesh, mouthflesh);
 };
 
 export const updateTouches = (ui: Flesh) => {

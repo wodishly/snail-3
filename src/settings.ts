@@ -1,30 +1,61 @@
-import { plus, minus, halve } from "./help/rime";
+import { plus, minus, halve, after } from "./help/rime";
 
 export const palePink = "#ffeef5";
 
 export const Mouthbook = {
-  bladeStart: 10,
+  /** Where the body of the tongue begins. */
+  bodyStart: 10,
+
+  /** Where the body of the tongue meets the sail. */
   noseStart: 17,
-  noseLength: 28,
-  tipStart: 32,
+
+  /** Where the blade of the tongue begins. */
+  bladeStart: 32,
+
+  /** Where the lips begin. */
   lipStart: 39,
-  n: 44,
+
+  /** The length of the mouth. */
+  length: 44,
 } as const;
 
-export const tongueLowerBound = () => plus(Mouthbook.bladeStart, 2);
-export const tongueUpperBound = () => minus(Mouthbook.tipStart, 3);
+export const noseLength = () =>
+  after(minus(Mouthbook.length, Mouthbook.noseStart));
+export const tongueLowerBound = () => plus(Mouthbook.bodyStart, 2);
+export const tongueUpperBound = () => minus(Mouthbook.bladeStart, 3);
 export const tongueMiddle = () =>
   halve(plus(tongueLowerBound(), tongueUpperBound()));
 
+/**
+ * Allworldly sooth.
+ */
 export const Fastenings = {
   blockLength: 512,
   reflection: {
     glottal: 0.75,
     lip: -0.85,
   },
+
+  /** Of the sail that hides the nosehole from the mouthhole. */
+  sail: {
+    /** Of the sail at rest. */
+    rest: 0.01,
+
+    /** Of the sail bears a nose-loudness. */
+    nosebear: 0.4,
+  },
 } as const;
 
+/**
+ * Worldly truth.
+ */
 export const Settings = {
+  start: {
+    mouthflesh: {
+      berth: 12.9,
+      width: 2.43,
+    },
+  },
   speed: 15, // cm/s
   fade: 1.0, //0.9999,
   vibrato: {
@@ -44,15 +75,6 @@ export const Settings = {
       sharpness: 1000,
       Q: 0.5,
     } satisfies SieveSetting,
-  },
-  keyboard: {
-    keyboardTop: 500,
-    keyboardLeft: 0,
-    keyboardWidth: 600,
-    keyboardHeight: 100,
-    semitones: 20,
-    marks: [0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
-    baseNote: 87.3071, //F
   },
   mouthflesh: {
     originX: 340,

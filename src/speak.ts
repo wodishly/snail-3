@@ -3,7 +3,7 @@ import { type W } from "./help/math";
 import { makeSpan, type Assert, type Maybe } from "./help/type";
 import { makeLoud, loudToTongue, type Loud } from "./loud";
 import type { Mouth } from "./mouth";
-import { moveTongue, type Mouthflesh } from "./mouthflesh";
+import { moveTongueAndLips, type Mouthflesh } from "./mouthflesh";
 import type { Tongue } from "./rine";
 import type { Loudstaff } from "./staff";
 
@@ -13,7 +13,7 @@ export const makeSong = (): Song => {
 
 export const pushSpell = (song: Song, speech: HTMLInputElement) => {
   song.staves = speech.value.split("") as Assert<Loudstaff[]>;
-  // speech.value = "";
+  speech.value = "";
 };
 
 type Step = {
@@ -34,23 +34,22 @@ export const sing = (
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
-  context: CanvasRenderingContext2D,
 ) => {
   if (
     (!song.loud && song.staves.length > 0) ||
     (song.loud && song.loud.time && now > song.loud.time.end)
   ) {
-    console.log("loading next loud");
+    // console.log("loading next loud");
     song.loud = makeLoud(song.staves.shift());
   }
 
   if (!song.loud) {
-    console.log("no louds left, returning");
+    // console.log("no louds left, returning");
     return;
   }
 
   if (song.loud.time) {
-    console.log("loud is live, returning");
+    // console.log("loud is live, returning");
     return;
   }
 
@@ -61,12 +60,13 @@ export const sing = (
   if (!song.step) {
     // the `loud` isn't being stepped to yet
 
+    let n = 15;
     song.step = {
       step: 0,
-      utmost: 30,
+      utmost: n,
       tongue: {
-        berth: (goal.berth - mouthflesh.berth) / 30,
-        width: (goal.width - mouthflesh.width) / 30,
+        berth: (goal.berth - mouthflesh.berth) / n,
+        width: (goal.width - mouthflesh.width) / n,
       },
     };
     // console.log("song step is", song.step);
@@ -78,7 +78,7 @@ export const sing = (
     mouthflesh.berth = goal.berth;
     mouthflesh.width = goal.width;
     song.step = undefined;
-    song.loud.time = makeSpan(250);
+    song.loud.time = makeSpan(1000/16);
     // console.log("we made it", song.loud);
   } else {
     // we step
@@ -86,8 +86,12 @@ export const sing = (
     mouthflesh.berth += song.step.tongue.berth;
     mouthflesh.width += song.step.tongue.width;
     song.step.step += 1;
-    // console.log("step", mouthflesh.berth, mouthflesh.width);
-    moveTongue(mouthflesh, mouth, flesh, context);
+    moveTongueAndLips(
+      mouthflesh,
+      mouth,
+      flesh,
+      ["o", "u"].includes(song.loud.staff),
+    );
   }
 };
 

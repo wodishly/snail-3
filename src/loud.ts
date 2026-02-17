@@ -38,7 +38,7 @@ export const loudToTongue = (staff: Loudstaff): Tongue => {
     case "o":
       return { berth: 16, width: 2 };
     case "u":
-      return { berth: 25, width: 2 };
+      return { berth: 20.5, width: 2 };
   }
   staff satisfies never;
 };
