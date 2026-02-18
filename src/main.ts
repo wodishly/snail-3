@@ -37,11 +37,11 @@ window.onload = () => {
 
   const redraw = (now: number) => {
     drawMouthflesh(mouthflesh, forecontext, mouth);
-    requestAnimationFrame(redraw);
     updateTouches(flesh);
 
     sing(song, now, mouth, flesh, mouthflesh);
     updateLeech(song, flesh, mouthflesh);
+    requestAnimationFrame(redraw);
   };
   requestAnimationFrame(redraw);
 };

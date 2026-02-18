@@ -1,5 +1,5 @@
 import { type Snail } from "./snail";
-import { clamp, type Z } from "./help/math";
+import { clamp } from "./help/math";
 import { Settings } from "./settings";
 import { createNoise2D } from "simplex-noise";
 import type { Maybe } from "./help/type";
@@ -20,9 +20,7 @@ export interface Throat {
   intensity: number;
   loudness: number;
 
-  isTouched: boolean;
   rine: Maybe<Rine>;
-  pitchZ: Z;
 
   wave: Wave;
   hiss: (x: number) => number;
@@ -59,9 +57,7 @@ export const makeThroat = (): Throat => {
     intensity: 0,
     loudness: 1,
 
-    isTouched: false,
     rine: undefined,
-    pitchZ: { x: 240, y: 530 },
 
     wave: setupWaveform(frequency, tenseness, 0),
     hiss: makeHiss(),
@@ -160,12 +156,12 @@ export const finishGlottisBlock = (glottis: Throat, ui: Flesh) => {
     0.1 * glottis.hiss(glottis.totalTime * 0.46) +
     0.05 * glottis.hiss(glottis.totalTime * 0.36);
 
-  if (!glottis.isTouched && ui.isAlwaysVoicing) {
+  if (ui.isAlwaysVoicing) {
     glottis.tenseness.niw +=
       (3 - glottis.tenseness.ui) * (1 - glottis.intensity);
   }
 
-  if (glottis.isTouched || ui.isAlwaysVoicing) {
+  if (ui.isAlwaysVoicing) {
     glottis.intensity += 0.13;
   } else {
     glottis.intensity -= 0.05;

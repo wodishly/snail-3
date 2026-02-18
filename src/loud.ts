@@ -1,5 +1,6 @@
 import type { Maybe, Json, Span } from "./help/type";
 import type { Tongue } from "./rine";
+import { tongueMiddle } from "./settings";
 import type { Loudstaff } from "./staff";
 
 export interface Loud extends Json {
@@ -39,6 +40,7 @@ export const loudToTongue = (staff: Loudstaff): Tongue => {
       return { berth: 16, width: 2 };
     case "u":
       return { berth: 20.5, width: 2 };
+    default:
+      return { berth: tongueMiddle(), width: 2 };
   }
-  staff satisfies never;
 };
