@@ -1,5 +1,5 @@
-import type { Assert } from "./help/type";
-import { ors } from "./flit";
+import type { Assert } from "../help/type";
+import { or } from "../help/flit";
 
 type StaffsOf<S extends string, Treeming extends boolean = true> = _StaffsOf<
   Treeming extends true ? Treem<S> : S
@@ -201,12 +201,10 @@ export const isStrong = (staff: Loudstaff): staff is Strong => {
 };
 
 export const isThru = (staff: Loudstaff): staff is Thru => {
-  return ors(
+  return or(
     faynd(staff, "iuyeøoæa"),
     isSide(staff),
     isStep(staff),
     isStrong(staff),
   );
 };
-
-// gronkboar

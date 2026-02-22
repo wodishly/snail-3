@@ -1,7 +1,7 @@
 import type { Maybe, Json, Span } from "./help/type";
 import type { Tongue } from "./rine";
 import { tongueMiddle } from "./settings";
-import type { Loudstaff } from "./staff";
+import type { Loudstaff } from "./tung/staff";
 
 export interface Loud<S extends Loudstaff = Loudstaff> extends Json {
   staff: S;

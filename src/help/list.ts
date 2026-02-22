@@ -1,13 +1,11 @@
 import type { Assert } from "./type";
 
-export type Twain<T = number> = Flight<T, 2>;
-export type Twainlist<T = number> = T[];
-
 export type Flight<T, N extends number> = N extends N
   ? number extends N
     ? T[]
     : Fledge<T, N, []>
   : never;
+
 type Fledge<T, N extends number, R extends unknown[]> = R["length"] extends N
   ? R
   : Fledge<T, N, [T, ...R]>;

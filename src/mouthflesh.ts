@@ -17,7 +17,7 @@ import { canvasToTongue, strokeLine, tongueToCanvas } from "./canvas";
 import type { Rineful, Tongue } from "./rine";
 import { startSound, type Snail } from "./snail";
 import { understand, type Brain } from "./brain";
-import { isBearing, isLoudstaff } from "./staff";
+import { isBearing, isLoudstaff } from "./tung/staff";
 
 export interface Mouthflesh extends Tongue, Rineful {
   html: {

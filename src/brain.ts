@@ -2,7 +2,7 @@ import type { Assert } from "./help/type";
 import { loudToTongue } from "./loud";
 import type { Mouthflesh } from "./mouthflesh";
 import type { Tongue, Width } from "./rine";
-import { isNosed, isRinged, isThru, type Loudstaff } from "./staff";
+import { isNosed, isRinged, isThru, type Loudstaff } from "./tung/staff";
 import { type Stream, makeStream, step } from "./stream";
 
 export type Sinewbook = {
@@ -24,13 +24,13 @@ export interface Brain {
   sinews: Sinews;
 }
 
-export const makeBrain = (mouthflesh: Mouthflesh): Brain => {
+export const makeBrain = (): Brain => {
   return {
-    sinews: makeSinews(mouthflesh),
+    sinews: makeSinews(),
   };
 };
 
-export const think = (now: number, brain: Brain) => {
+export const think = (now: number, brain: Brain, mouthflesh: Mouthflesh) => {
   step(now, brain.sinews.lip);
   step(now, brain.sinews.tongue);
   step(now, brain.sinews.sail);

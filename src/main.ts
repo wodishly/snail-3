@@ -1,4 +1,5 @@
 import "./style.css";
+
 import { makeThroat } from "./throat";
 import { initMouth, makeMouth } from "./mouth";
 import { makeSnail } from "./snail";
@@ -14,13 +15,13 @@ window.onload = () => {
   const { startFlesh, makeFlesh, updateTouches } = fleshTools();
   const { drawMouthflesh, startMouthflesh, makeMouthflesh } = mouthfleshTools();
 
-  const brain = makeBrain();
-
   const snail = makeSnail();
   const throat = makeThroat();
   const mouth = makeMouth();
   const flesh = makeFlesh();
   const mouthflesh = makeMouthflesh();
+
+  const brain = makeBrain();
 
   startFlesh(snail, mouth, throat, flesh, mouthflesh, forecontext);
   initMouth(mouth);
@@ -39,7 +40,7 @@ window.onload = () => {
     drawMouthflesh(mouthflesh, forecontext, mouth);
     updateTouches(flesh);
 
-    think(now, brain);
+    think(now, brain, mouthflesh);
     // console.log(throat.intensity); // todo make it so intensity climbs up to 1 by 0.13 instead of being instant
     updateLeech(brain, flesh, mouthflesh);
     requestAnimationFrame(redraw);
