@@ -24,5 +24,4 @@ dist-ssr
 *.sw?
 
 # sundries
-performance.test.ts
 pinktrombone-clean.html
