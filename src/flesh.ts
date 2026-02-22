@@ -14,6 +14,7 @@ export interface Flesh extends Rineful {
   rinemake: Rinemake;
   html: {
     time: HTMLDivElement;
+    brain: HTMLDivElement;
     loudlist: HTMLUListElement;
     mouserines: HTMLUListElement;
     rine: HTMLSpanElement;
@@ -30,6 +31,7 @@ export const makeFlesh = (): Flesh => {
     rinemake: makeRinemake(),
     html: {
       time: document.querySelector("#time")!,
+      brain: document.querySelector("#brain")!,
       loudlist: document.querySelector("#loudlist")!,
       mouserines: document.querySelector("#mouserines")!,
       rine: document.querySelector("#mouthRine")!,
@@ -103,11 +105,7 @@ export const moveMouse = (
   handleMouthfleshTouches(mouth, flesh, mouthflesh);
 };
 
-const endMouse = (
-  mouth: Mouth,
-  flesh: Flesh,
-  mouthflesh: Mouthflesh,
-) => {
+const endMouse = (mouth: Mouth, flesh: Flesh, mouthflesh: Mouthflesh) => {
   if (!flesh.rine || !flesh.rine.isDown) {
     return;
   }

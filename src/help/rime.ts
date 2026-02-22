@@ -206,3 +206,27 @@ export const deepRound = <T extends object>(x: T, n = 0) => {
   }
   return y as Assert<DeepRound<T>>;
 };
+
+/** Worthless! */
+export type Onesome<N extends number> = `${N}` extends "0" | `0.${number}` | "1"
+  ? N
+  : never;
+
+expectTypeOf<Onesome<0>>().not.toBeNever();
+expectTypeOf<Onesome<1>>().not.toBeNever();
+
+expectTypeOf<Onesome<2>>().toBeNever();
+expectTypeOf<Onesome<-1>>().toBeNever();
+
+expectTypeOf<Onesome<0.1>>().not.toBeNever();
+expectTypeOf<Onesome<0.21>>().not.toBeNever();
+expectTypeOf<Onesome<0.321>>().not.toBeNever();
+expectTypeOf<Onesome<0.4321>>().not.toBeNever();
+expectTypeOf<Onesome<0.54321>>().not.toBeNever();
+expectTypeOf<Onesome<0.654321>>().not.toBeNever();
+expectTypeOf<Onesome<0.7654321>>().not.toBeNever();
+expectTypeOf<Onesome<0.87654321>>().not.toBeNever();
+
+expectTypeOf<Onesome<1.1>>().toBeNever();
+expectTypeOf<Onesome<-0.1>>().toBeNever();
+expectTypeOf<Onesome<-1.1>>().toBeNever();

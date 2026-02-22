@@ -1,18 +1,20 @@
+import type { Brain } from "./brain";
 import type { Flesh } from "./flesh";
 import type { Show } from "./help/type";
 import type { Mouthflesh } from "./mouthflesh";
-import type { Song } from "./speak";
 
 export const updateLeech = (
-  song: Song,
+  brain: Brain,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
 ) => {
+  flesh.html.brain.innerHTML = JSON.stringify(brain, null, 2);
+
   flesh.html.time.innerHTML = (performance.now() / 1000).toString();
 
-  const first = song.loud ? toLi(song.loud, (l) => `Now: ${l}`).outerHTML : "";
-  const rest = song.staves.map((staff) => toLi(staff).outerHTML).join("");
-  flesh.html.loudlist.innerHTML = first + rest;
+  // const first = song.loud ? toLi(song.loud, (l) => `Now: ${l}`).outerHTML : "";
+  // const rest = song.staves.map((staff) => toLi(staff).outerHTML).join("");
+  // flesh.html.loudlist.innerHTML = first + rest;
 
   flesh.html.rine.innerHTML = JSON.stringify(flesh.rine);
 

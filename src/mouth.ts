@@ -39,9 +39,9 @@ interface Hole<B, W, N extends number> {
 }
 
 export interface Mouth extends Hole<Bend, Width, (typeof Mouthbook)["length"]> {
-  /** @todo yoke with {@link Mouth.overbendRight} */
+  /** @todo yoke with {@linkcode Mouth.overbendRight} */
   overbendLeft: Bend;
-  /** @todo yoke with {@link Mouth.overbendLeft} */
+  /** @todo yoke with {@linkcode Mouth.overbendLeft} */
   overbendRight: Bend;
   nose: Nose;
   lastObstruction: Maybe<Obstruction>;

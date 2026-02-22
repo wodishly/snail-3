@@ -6,9 +6,12 @@ import type { Maybe, Json, Span } from "./help/type";
 export type Rinemake = (z: Z) => Rine;
 export type RineId<N extends number = number> = `mouse${N}`;
 
-export interface Tongue {
-  berth: number;
+export interface Width {
   width: number;
+}
+
+export interface Tongue extends Width {
+  berth: number;
 }
 
 export interface Rine<B extends boolean = boolean> extends Z, Json, Tongue {

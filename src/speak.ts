@@ -1,36 +1,18 @@
 import type { Flesh } from "./flesh";
 import { type W } from "./help/math";
-import { makeSpan, type Assert, type Maybe } from "./help/type";
-import { makeLoud, loudToTongue, type Loud } from "./loud";
+import { makeSpan } from "./help/type";
+import { oldMakeLoud, loudToTongue } from "./loud";
 import type { Mouth } from "./mouth";
 import { moveTongueAndLips, type Mouthflesh } from "./mouthflesh";
 import type { Tongue } from "./rine";
-import type { Loudstaff } from "./staff";
-
-export const makeSong = (): Song => {
-  return { loud: undefined, step: undefined, staves: [] };
-};
-
-export const pushSpell = (song: Song, speech: HTMLInputElement) => {
-  song.staves = speech.value.split("") as Assert<Loudstaff[]>;
-  speech.value = "";
-};
-
-type Step = {
-  step: number;
-  utmost: number;
-  tongue: Tongue;
-};
-
-export type Song = {
-  loud: Maybe<Loud>;
-  step: Maybe<Step>;
-  staves: Loudstaff[];
-};
+import { type Snail } from "./snail";
+import type { Throat } from "./throat";
 
 export const sing = (
   song: Song,
   now: number,
+  snail: Snail,
+  throat: Throat,
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
@@ -40,7 +22,7 @@ export const sing = (
     (song.loud && song.loud.time && now > song.loud.time.end)
   ) {
     // console.log("loading next loud");
-    song.loud = makeLoud(song.staves.shift());
+    song.loud = oldMakeLoud(song.staves.shift());
   }
 
   if (!song.loud) {
@@ -78,7 +60,8 @@ export const sing = (
     mouthflesh.berth = goal.berth;
     mouthflesh.width = goal.width;
     song.step = undefined;
-    song.loud.time = makeSpan(1000/16);
+    song.loud.time = makeSpan(1000 / 16);
+    // startSound(snail, throat, mouth, flesh);
     // console.log("we made it", song.loud);
   } else {
     // we step

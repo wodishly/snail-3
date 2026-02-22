@@ -1,52 +1,71 @@
-import type { Maybe } from "./help/type";
-import { loudToTongue, type Loud } from "./loud";
-import type { Tongue } from "./rine";
+import type { Assert } from "./help/type";
+import { loudToTongue } from "./loud";
+import type { Mouthflesh } from "./mouthflesh";
+import type { Tongue, Width } from "./rine";
+import { isNosed, isRinged, isThru, type Loudstaff } from "./staff";
+import { type Stream, makeStream, step } from "./stream";
 
-type Lip = Tongue;
-
-interface Stream<D extends Dying> {
-  head: Maybe<D>;
-  rest: D[];
-}
-
-interface Dying {
-  start: number;
-  lifespan: number;
-}
-
-interface DyingSinew extends Sinew, Dying {}
-
-interface Sinew {
-  loud: Loud;
+export type Sinewbook = {
+  /** @todo */
+  lip: Width;
+  /** @todo */
   tongue: Tongue;
-  lip: Lip;
+  /** in [0.01, 4] */
+  sail: Width;
+  /** in [0, 1] */
+  lung: Width;
+};
+
+export type SinewKind = keyof Sinewbook & {};
+export type Sinew<K extends SinewKind = SinewKind> = Sinewbook[K];
+
+export type Sinews = { [K in SinewKind]: Stream<Sinew<K>> };
+export interface Brain {
+  sinews: Sinews;
 }
 
-export interface Brain extends Stream<Sinew> {}
-
-export const makeSinew = (loud: Loud, lifespan: number): Sinew => {
+export const makeBrain = (mouthflesh: Mouthflesh): Brain => {
   return {
-    start: performance.now() / 1000,
-    lifespan,
-    loud,
-    ...loudToTongue(loud),
+    sinews: makeSinews(mouthflesh),
   };
 };
 
-export const makeBrain = (): Brain => {
-  return makeThread();
+export const think = (now: number, brain: Brain) => {
+  step(now, brain.sinews.lip);
+  step(now, brain.sinews.tongue);
+  step(now, brain.sinews.sail);
+  step(now, brain.sinews.lung);
+
+  // move mouthflesh
 };
 
-export const makeThread = <T extends Dying>(): Stream<T> => {
-  return { head: undefined, rest: [] };
+export const makeSinews = (): Sinews => {
+  return {
+    lip: makeStream(),
+    tongue: makeStream(),
+    sail: makeStream(),
+    lung: makeStream(),
+  };
 };
 
-export const think = (brain: Brain, now: number) => {
-  if (brain.head && now > brain.head.start + brain.head.lifespan) {
-    brain.head = undefined;
+/** @mut */
+export const forget = (brain: Brain) => {
+  Object.assign(brain, { sinews: makeSinews() });
+};
+
+/** @mut */
+export const understand = (brain: Brain, { value }: HTMLInputElement) => {
+  forget(brain);
+  for (let t = 0; t < value.length; t++) {
+    const staff = value[t] as Assert<Loudstaff>;
+    if (isRinged(staff)) {
+      brain.sinews.lip.tail.push(staff);
+    }
+    if (isNosed(staff)) {
+      brain.sinews.sail.tail.push(staff);
+    }
+    brain.sinews.tongue.tail.push(staff);
+    brain.sinews.lung.tail.push(staff);
   }
-  if (brain.head === undefined && brain.rest.length) {
-    brain.head = brain.rest.shift();
-  }
-  return;
+  return value.split("") as Assert<Loudstaff[]>;
 };

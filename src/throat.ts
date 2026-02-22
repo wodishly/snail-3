@@ -121,51 +121,47 @@ export const runGlottisStep = (
   return out;
 };
 
-export const finishGlottisBlock = (glottis: Throat, ui: Flesh) => {
+export const finishGlottisBlock = (throat: Throat, flesh: Flesh) => {
   let vibrato = 0;
   vibrato +=
     Settings.vibrato.amount *
-    Math.sin(2 * Math.PI * glottis.totalTime * Settings.vibrato.frequency);
-  vibrato += 0.02 * glottis.hiss(glottis.totalTime * 4.07);
-  vibrato += 0.04 * glottis.hiss(glottis.totalTime * 2.15);
+    Math.sin(2 * Math.PI * throat.totalTime * Settings.vibrato.frequency);
+  vibrato += 0.02 * throat.hiss(throat.totalTime * 4.07);
+  vibrato += 0.04 * throat.hiss(throat.totalTime * 2.15);
 
-  if (ui.isAutoWobbling) {
-    vibrato += 0.2 * glottis.hiss(glottis.totalTime * 0.98);
-    vibrato += 0.4 * glottis.hiss(glottis.totalTime * 0.5);
+  if (flesh.isAutoWobbling) {
+    vibrato += 0.2 * throat.hiss(throat.totalTime * 0.98);
+    vibrato += 0.4 * throat.hiss(throat.totalTime * 0.5);
   }
 
-  if (glottis.frequency.ui > glottis.frequency.smooth) {
-    glottis.frequency.smooth = Math.min(
-      glottis.frequency.smooth * 1.1,
-      glottis.frequency.ui,
+  if (throat.frequency.ui > throat.frequency.smooth) {
+    throat.frequency.smooth = Math.min(
+      throat.frequency.smooth * 1.1,
+      throat.frequency.ui,
     );
   }
 
-  if (glottis.frequency.ui < glottis.frequency.smooth) {
-    glottis.frequency.smooth = Math.max(
-      glottis.frequency.smooth / 1.1,
-      glottis.frequency.ui,
+  if (throat.frequency.ui < throat.frequency.smooth) {
+    throat.frequency.smooth = Math.max(
+      throat.frequency.smooth / 1.1,
+      throat.frequency.ui,
     );
   }
 
-  glottis.frequency.old = glottis.frequency.niw;
-  glottis.frequency.niw = glottis.frequency.smooth * (1 + vibrato);
-  glottis.tenseness.old = glottis.tenseness.niw;
-  glottis.tenseness.niw =
-    glottis.tenseness.ui +
-    0.1 * glottis.hiss(glottis.totalTime * 0.46) +
-    0.05 * glottis.hiss(glottis.totalTime * 0.36);
+  throat.frequency.old = throat.frequency.niw;
+  throat.frequency.niw = throat.frequency.smooth * (1 + vibrato);
+  throat.tenseness.old = throat.tenseness.niw;
+  throat.tenseness.niw =
+    throat.tenseness.ui +
+    0.1 * throat.hiss(throat.totalTime * 0.46) +
+    0.05 * throat.hiss(throat.totalTime * 0.36);
 
-  if (ui.isAlwaysVoicing) {
-    glottis.tenseness.niw +=
-      (3 - glottis.tenseness.ui) * (1 - glottis.intensity);
-  }
-
-  if (ui.isAlwaysVoicing) {
-    glottis.intensity += 0.13;
+  if (flesh.isAlwaysVoicing) {
+    throat.tenseness.niw += (3 - throat.tenseness.ui) * (1 - throat.intensity);
+    throat.intensity += 0.13;
   } else {
-    glottis.intensity -= 0.05;
+    throat.intensity -= 0.05;
   }
 
-  glottis.intensity = clamp(glottis.intensity, 0, 1);
+  throat.intensity = clamp(throat.intensity, 0, 1);
 };

@@ -12,11 +12,12 @@ import {
   tongueMiddle,
   tongueUpperBound,
 } from "./settings";
-import type { Assert } from "./help/type";
+import type { Assert, Naybe } from "./help/type";
 import { canvasToTongue, strokeLine, tongueToCanvas } from "./canvas";
 import type { Rineful, Tongue } from "./rine";
-import { pushSpell, type Song } from "./speak";
 import { startSound, type Snail } from "./snail";
+import { understand, type Brain } from "./brain";
+import { isBearing, isLoudstaff } from "./staff";
 
 export interface Mouthflesh extends Tongue, Rineful {
   html: {
@@ -34,64 +35,91 @@ export const makeMouthflesh = (): Mouthflesh => {
   };
 };
 
+const clean = (speech: HTMLInputElement) => () => {
+  // const mood = Array.from(speech.value).every(isBookstaff) ? "book" : "loud";
+  const last = speech.value.at(-1);
+  if (!(last && isLoudstaff(last) && isBearing(last))) {
+    speech.value = speech.value.slice(0, -1);
+  }
+};
+
 export const startListeners = (
   snail: Snail,
+  brain: Brain,
   throat: Throat,
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
-  song: Song,
 ) => {
-  const speech = document.querySelector("#speech") as Assert<HTMLInputElement>;
-  speech.addEventListener("input", () => {
-    if (!"aeiou".split("").includes(speech.value.at(-1) ?? "")) {
-      speech.value = speech.value.slice(0, -1);
-    }
+  const shine = document.querySelector("#shine") as Assert<HTMLInputElement>;
+  shine.addEventListener("change", () => {
+    document.querySelectorAll("canvas").forEach((element) => {
+      element.style.display = shine.checked ? "block" : "none";
+    });
   });
+
+  const speech = document.querySelector("#speech") as Assert<HTMLInputElement>;
+  speech.addEventListener("input", clean(speech));
 
   const speakKnob = document.querySelector(
     "#speak",
   ) as Assert<HTMLButtonElement>;
   speakKnob.addEventListener("click", () => {
     startSound(snail, throat, mouth, flesh);
-    pushSpell(song, speech);
+    understand(brain, speech);
   });
 
-  const aSlider = document.querySelector("#a") as Assert<HTMLInputElement>;
-  const f0Slider = document.querySelector("#f0") as Assert<HTMLInputElement>;
-
-  aSlider.addEventListener("input", () => {
-    setPitch(throat, parseFloat(f0Slider.value), parseFloat(aSlider.value));
-  });
-  f0Slider.addEventListener("input", () => {
-    setPitch(throat, parseFloat(f0Slider.value), parseFloat(aSlider.value));
+  const alwaysSpeak = document.querySelector(
+    "#alwaysSpeak",
+  ) as Assert<HTMLInputElement>;
+  alwaysSpeak.addEventListener("change", () => {
+    flesh.isAlwaysVoicing = alwaysSpeak.checked;
   });
 
-  const f1Slider = document.querySelector("#f1") as Assert<HTMLInputElement>;
-  const f2Slider = document.querySelector("#f2") as Assert<HTMLInputElement>;
-  f1Slider.addEventListener("input", () => {
-    mouthflesh.berth = parseFloat(f1Slider.value);
-    mouthflesh.width = parseFloat(f2Slider.value);
-    moveTongueAndLips(mouthflesh, mouth, flesh);
-  });
-  f2Slider.addEventListener("input", () => {
-    mouthflesh.berth = parseFloat(f1Slider.value);
-    mouthflesh.width = parseFloat(f2Slider.value);
-    moveTongueAndLips(mouthflesh, mouth, flesh);
-  });
+  const aSlider = document.querySelector("#a") as Naybe<HTMLInputElement>;
+  const f0Slider = document.querySelector("#f0") as Naybe<HTMLInputElement>;
+  if (aSlider && f0Slider) {
+    aSlider.addEventListener("input", () => {
+      setPitch(throat, parseFloat(f0Slider.value), parseFloat(aSlider.value));
+    });
+  } else {
+    if (!aSlider) {
+      console.warn("no slider named #a");
+    }
+    if (!f0Slider) {
+      console.warn("no slider named #f0");
+    }
+  }
+
+  const f1Slider = document.querySelector("#f1") as Naybe<HTMLInputElement>;
+  const f2Slider = document.querySelector("#f2") as Naybe<HTMLInputElement>;
+  if (f1Slider && f2Slider) {
+    f1Slider.addEventListener("input", () => {
+      mouthflesh.berth = parseFloat(f1Slider.value);
+      mouthflesh.width = parseFloat(f2Slider.value);
+      moveTongueAndLips(mouthflesh, mouth, flesh);
+    });
+  } else {
+    if (!f1Slider) {
+      console.warn("no slider named #f1");
+    }
+    if (!f2Slider) {
+      console.warn("no slider named #f2");
+    }
+  }
 };
 
 export const startMouthflesh = (
   snail: Snail,
+  brain: Brain,
   throat: Throat,
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
-  song: Song,
   backcontext: CanvasRenderingContext2D,
   forecontext: CanvasRenderingContext2D,
 ) => {
-  startListeners(snail, throat, mouth, flesh, mouthflesh, song);
+  startListeners(snail, brain, throat, mouth, flesh, mouthflesh);
   setRestWidth(mouth, mouthflesh);
   for (let i = 0; i < Mouthbook.length; i++) {
     mouth.width[i].now = mouth.width[i].goal = mouth.width[i].rest;

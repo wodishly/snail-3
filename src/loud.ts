@@ -3,29 +3,21 @@ import type { Tongue } from "./rine";
 import { tongueMiddle } from "./settings";
 import type { Loudstaff } from "./staff";
 
-export interface Loud extends Json {
-  staff: Loudstaff;
+export interface Loud<S extends Loudstaff = Loudstaff> extends Json {
+  staff: S;
 
   /** `undefined` iff `this` is yet to be uttered */
   time: Maybe<Span>;
 }
 
-type LoudOf<S extends Loudstaff | undefined> = S extends Loudstaff
-  ? Loud
-  : undefined;
-
-export const makeLoud = (staff: Maybe<Loudstaff>): LoudOf<typeof staff> => {
-  if (staff === undefined) {
-    return undefined;
-  } else {
-    return {
-      staff,
-      time: undefined,
-      toJSON(this: Loud) {
-        return this.staff + " " + JSON.stringify(this.time);
-      },
-    };
-  }
+export const oldMakeLoud = <S extends Loudstaff>(staff: S): Loud<S> => {
+  return {
+    staff,
+    time: undefined,
+    toJSON() {
+      return this.staff + " " + JSON.stringify(this.time);
+    },
+  };
 };
 
 export const loudToTongue = (staff: Loudstaff): Tongue => {

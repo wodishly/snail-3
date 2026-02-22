@@ -6,7 +6,7 @@ import { updateLeech } from "./leech";
 import { mouthfleshTools } from "./mouthflesh";
 import { fleshTools } from "./flesh";
 import { getContexts } from "./canvas";
-import { makeSong, sing } from "./speak";
+import { makeBrain, think } from "./brain";
 
 window.onload = () => {
   const { backcontext, forecontext } = getContexts();
@@ -14,23 +14,23 @@ window.onload = () => {
   const { startFlesh, makeFlesh, updateTouches } = fleshTools();
   const { drawMouthflesh, startMouthflesh, makeMouthflesh } = mouthfleshTools();
 
+  const brain = makeBrain();
+
   const snail = makeSnail();
   const throat = makeThroat();
   const mouth = makeMouth();
   const flesh = makeFlesh();
   const mouthflesh = makeMouthflesh();
 
-  const song = makeSong();
-
   startFlesh(snail, mouth, throat, flesh, mouthflesh, forecontext);
   initMouth(mouth);
   startMouthflesh(
     snail,
+    brain,
     throat,
     mouth,
     flesh,
     mouthflesh,
-    song,
     backcontext,
     forecontext,
   );
@@ -39,8 +39,9 @@ window.onload = () => {
     drawMouthflesh(mouthflesh, forecontext, mouth);
     updateTouches(flesh);
 
-    sing(song, now, mouth, flesh, mouthflesh);
-    updateLeech(song, flesh, mouthflesh);
+    think(now, brain);
+    // console.log(throat.intensity); // todo make it so intensity climbs up to 1 by 0.13 instead of being instant
+    updateLeech(brain, flesh, mouthflesh);
     requestAnimationFrame(redraw);
   };
   requestAnimationFrame(redraw);
