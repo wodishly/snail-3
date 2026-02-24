@@ -51,8 +51,16 @@ export const faynd = <N extends string, H extends string>(
 };
 
 type EveryOther<S extends string> = S extends `${string}${infer O}${infer R}`
-  ? O | EveryOther<R>
-  : never;
+  ? `${O}${EveryOther<R>}`
+  : "";
+
+const everyother = <S extends string>(s: S) => {
+  let t = "";
+  for (let i = 1; i < s.length; i += 2) {
+    t += s[i];
+  }
+  return t as Assert<EveryOther<S>>;
+};
 
 type Joyn<Ss extends string[], J extends string = ""> = Ss extends [
   infer F extends string,
@@ -63,11 +71,13 @@ type Joyn<Ss extends string[], J extends string = ""> = Ss extends [
 
 /**
  * This betokens only that deal of loudness which is written.
- * It is dealt in deals so as not to beget:
+ *
+ * This type is meant for raw loudness, not loudmarks!
+ *
+ * @dealt This type is dealt in deals so as not to beget:
  * ```
  * Type instantiation is excessively deep and possibly infinite. ts(2589)
  * ```
- * This type is meant for raw loudness, not loudmarks!
  */
 type Allstaff =
   | StaffsOf<Treem<typeof stop>>
@@ -78,12 +88,18 @@ type Allstaff =
   | StaffsOf<Treem<typeof glide>>
   | StaffsOf<Treem<typeof clip>>;
 
-const stop = `pb    td  ʈɖcɟkɡqɢ  ʔ ` as const;
-const hiss = `ɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦ` as const;
-const nose = ` m ɱ   n   ɳ ɲ ŋ ɴ    ` as const;
-const ell = `       ɬɮlʎʟ           ` as const;
-const arr = `        r   ɽ     ʀ    ` as const;
-const glide = `  ʋ   ɹ   ɻ j ɰ      ` as const;
+// prettier-ignore
+const stop =  `pb    td  ʈɖcɟkɡqɢ  ʔ ` as const;
+// prettier-ignore
+const hiss =  `ɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦ` as const;
+// prettier-ignore
+const nose =  ` m ɱ   n   ɳ ɲ ŋ ɴ    ` as const;
+// prettier-ignore
+const ell =   `    ɬɮ l     ʎ ʟ      ` as const;
+// prettier-ignore
+const arr =   `       r   ɽ     ʀ    ` as const;
+// prettier-ignore
+const glide = `   ʋ   ɹ   ɻ j ɰ      ` as const;
 
 const clip = `
 iy ɨʉ ɯu
@@ -110,96 +126,81 @@ export const isLoudstaff = (x: string): x is Loudstaff => {
 };
 
 export type Bear = Smooth | ThroatMark;
+export const isBearing = (staff: Loudstaff): staff is Bear => {
+  return faynd(staff, treem(clip));
+};
 
 export type Smooth =
   | Nose
   | StaffsOf<typeof ell | typeof arr | typeof glide | typeof clip>;
+
 export type Nose = StaffsOf<typeof nose>;
+export const isNosed = (staff: Loudstaff): staff is Nose => {
+  return faynd(staff, treem(nose));
+};
 
 export type ThroatMark = Stave | Spread | Clench;
 
+/**
+ * @dealt This type is dealt in deals so as not to beget:
+ * ```
+ * Type instantiation is excessively deep and possibly infinite. ts(2589)
+ * ```
+ */
 export type Stave =
   | StaffsOf<typeof clip>
-  | Exclude<
-      EveryOther<
-        | typeof stop
-        | typeof hiss
-        | typeof nose
-        | typeof ell
-        | typeof arr
-        | typeof glide
-      >,
-      Whitespace
+  | StaffsOf<
+      Treem<
+        EveryOther<
+          | typeof stop
+          | typeof hiss
+          | typeof nose
+          | typeof ell
+          | typeof arr
+          | typeof glide
+        >
+      >
     >;
+
+export const isStaved = (staff: Loudstaff): staff is Stave => {
+  return or(
+    faynd(staff, treem(clip)),
+    faynd(staff, treem(everyother(stop))),
+    faynd(staff, treem(everyother(hiss))),
+    faynd(staff, treem(everyother(nose))),
+    faynd(staff, treem(everyother(ell))),
+    faynd(staff, treem(everyother(arr))),
+    faynd(staff, treem(everyother(glide))),
+  );
+};
+
+// export const _isStaved = <S extends Loudstaff>(staff: S) => {
+//   return or(
+//     faynd(staff, treem(clip)),
+//     faynd(staff, treem(everyother(stop))),
+//     faynd(staff, treem(everyother(hiss))),
+//     faynd(staff, treem(everyother(nose))),
+//     faynd(staff, treem(everyother(ell))),
+//     faynd(staff, treem(everyother(arr))),
+//     faynd(staff, treem(everyother(glide))),
+//   );
+// };
+//
+// export const _ = <T, U extends T, V extends T>(
+//   f: (_arg: T) => _arg is U,
+//   arg: V,
+// ) => {
+//   return f(arg as unknown as Assert<T>) as Assert<V extends U ? true : false>;
+// };
+//
+// const x = _(isStaved, "v");
+
 export type Spread = "h";
 export type Clench = never;
 
 export type Choke = Thru | Mouth;
 
 export type Thru = Side | Step | Strong | StaffsOf<"iuyeøoæa">;
-
-export type Side = StaffsOf<typeof ell>;
-export type Step = StaffsOf<typeof hiss>;
-export type Strong = StaffsOf<"fvsz">;
-
-export type Mouth = Lip | Blade | Body | Root;
-
-export type Lip = Ring | StaffsOf<"pbfvm">;
-export type Ring = StaffsOf<"wyuøo">;
-
-export type Blade = Far | Wide;
-export type Far = StaffsOf<"tdsznlr">;
-export type Wide = never;
-
-export type Body = High | Fore | Back | StaffsOf<"a">;
-export type High = StaffsOf<"ckiyu">;
-export type Fore = StaffsOf<"ciyeøæ">;
-export type Back = StaffsOf<"quo">;
-
-export type Root = Low | Tight;
-export type Low = StaffsOf<"æa">;
-export type Tight = StaffsOf<"iyueøo">;
-
-export const isNosed = (staff: Loudstaff): staff is Nose => {
-  return faynd(staff, treem(nose));
-};
-
-export const isRinged = (staff: Loudstaff): staff is Ring => {
-  return faynd(staff, "wyuøo");
-};
-
-export const isBody = (staff: Loudstaff): staff is Body => {
-  return faynd(staff, "a") || isHigh(staff) || isFore(staff) || isBack(staff);
-};
-
-export const isHigh = (staff: Loudstaff): staff is High => {
-  return faynd(staff, "ckiyu");
-};
-
-export const isFore = (staff: Loudstaff): staff is Fore => {
-  return faynd(staff, "ciyeøæ");
-};
-
-export const isBack = (staff: Loudstaff): staff is Back => {
-  return faynd(staff, "quo");
-};
-
-export const isBearing = (staff: Loudstaff): staff is Bear => {
-  return faynd(staff, treem(clip));
-};
-
-export const isSide = (staff: Loudstaff): staff is Side => {
-  return faynd(staff, treem(ell));
-};
-
-export const isStep = (staff: Loudstaff): staff is Step => {
-  return faynd(staff, treem(hiss));
-};
-
-export const isStrong = (staff: Loudstaff): staff is Strong => {
-  return faynd(staff, treem("fvsz"));
-};
-
 export const isThru = (staff: Loudstaff): staff is Thru => {
   return or(
     faynd(staff, "iuyeøoæa"),
@@ -208,3 +209,54 @@ export const isThru = (staff: Loudstaff): staff is Thru => {
     isStrong(staff),
   );
 };
+
+export type Side = StaffsOf<typeof ell>;
+export const isSide = (staff: Loudstaff): staff is Side => {
+  return faynd(staff, treem(ell));
+};
+
+export type Step = StaffsOf<typeof hiss>;
+export const isStep = (staff: Loudstaff): staff is Step => {
+  return faynd(staff, treem(hiss));
+};
+
+export type Strong = StaffsOf<"fvsz">;
+export const isStrong = (staff: Loudstaff): staff is Strong => {
+  return faynd(staff, treem("fvsz"));
+};
+
+export type Mouth = Lip | Blade | Body | Root;
+
+export type Lip = Ring | StaffsOf<"pbfvm">;
+export type Ring = StaffsOf<"wyuøo">;
+export const isRinged = (staff: Loudstaff): staff is Ring => {
+  return faynd(staff, "wyuøo");
+};
+
+export type Blade = Far | Wide;
+export type Far = StaffsOf<"tdsznlr">;
+export type Wide = never;
+
+export type Body = High | Fore | Back | StaffsOf<"a">;
+export const isBody = (staff: Loudstaff): staff is Body => {
+  return faynd(staff, "a") || isHigh(staff) || isFore(staff) || isBack(staff);
+};
+
+export type High = StaffsOf<"ckiyu">;
+export const isHigh = (staff: Loudstaff): staff is High => {
+  return faynd(staff, "ckiyu");
+};
+
+export type Fore = StaffsOf<"ciyeøæ">;
+export const isFore = (staff: Loudstaff): staff is Fore => {
+  return faynd(staff, "ciyeøæ");
+};
+
+export type Back = StaffsOf<"quo">;
+export const isBack = (staff: Loudstaff): staff is Back => {
+  return faynd(staff, "quo");
+};
+
+export type Root = Low | Tight;
+export type Low = StaffsOf<"æa">;
+export type Tight = StaffsOf<"iyueøo">;

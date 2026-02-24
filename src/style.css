@@ -80,3 +80,17 @@ canvas {
 #loudlistframe {
   height: 0;
 }
+
+#brain {
+  padding: 0.5rem;
+}
+
+#songboard {
+  border: 0.1rem solid black;
+  border-collapse: collapse;
+}
+
+#songboard td {
+  width: 1rem;
+  text-align: center;
+}

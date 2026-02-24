@@ -16,8 +16,9 @@ import type { Assert, Naybe } from "./help/type";
 import { canvasToTongue, strokeLine, tongueToCanvas } from "./canvas";
 import type { Rineful, Tongue } from "./rine";
 import { startSound, type Snail } from "./snail";
-import { understand, type Brain } from "./brain";
+import { makeBrain, understand, type Brain } from "./brain";
 import { isBearing, isLoudstaff } from "./tung/staff";
+import { loadSpell } from "./songboard";
 
 export interface Mouthflesh extends Tongue, Rineful {
   html: {
@@ -44,13 +45,15 @@ const clean = (speech: HTMLInputElement) => () => {
 };
 
 export const startListeners = (
+  now: number,
   snail: Snail,
-  brain: Brain,
   throat: Throat,
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
-) => {
+): Brain => {
+  const brain = makeBrain(now);
+
   const shine = document.querySelector("#shine") as Assert<HTMLInputElement>;
   shine.addEventListener("change", () => {
     document.querySelectorAll("canvas").forEach((element) => {
@@ -67,6 +70,7 @@ export const startListeners = (
   speakKnob.addEventListener("click", () => {
     startSound(snail, throat, mouth, flesh);
     understand(brain, speech);
+    loadSpell(flesh, brain);
   });
 
   const alwaysSpeak = document.querySelector(
@@ -107,24 +111,27 @@ export const startListeners = (
       console.warn("no slider named #f2");
     }
   }
+  return brain;
 };
 
 export const startMouthflesh = (
+  now: number,
   snail: Snail,
-  brain: Brain,
   throat: Throat,
   mouth: Mouth,
   flesh: Flesh,
   mouthflesh: Mouthflesh,
   backcontext: CanvasRenderingContext2D,
   forecontext: CanvasRenderingContext2D,
-) => {
-  startListeners(snail, brain, throat, mouth, flesh, mouthflesh);
+): Brain => {
+  const brain = startListeners(now, snail, throat, mouth, flesh, mouthflesh);
+
   setRestWidth(mouth, mouthflesh);
   for (let i = 0; i < Mouthbook.length; i++) {
     mouth.width[i].now = mouth.width[i].goal = mouth.width[i].rest;
   }
   drawBackground(mouth, backcontext, forecontext);
+  return brain;
 };
 
 const drawCircle = (

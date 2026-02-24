@@ -1,5 +1,5 @@
 import { expectTypeOf } from "vitest";
-import type { Flight } from "./list";
+import type { Fleep, Flight } from "./list";
 import type { Assert } from "./type";
 
 /**
@@ -230,3 +230,7 @@ expectTypeOf<Onesome<0.87654321>>().not.toBeNever();
 expectTypeOf<Onesome<1.1>>().toBeNever();
 expectTypeOf<Onesome<-0.1>>().toBeNever();
 expectTypeOf<Onesome<-1.1>>().toBeNever();
+
+export type Row<N extends number> = N extends 0
+  ? []
+  : [...Row<Before<N>>, Before<N>];

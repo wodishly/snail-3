@@ -1,4 +1,4 @@
-import type { Assert } from "./type";
+import type { Assert, Write } from "./type";
 
 export type Flight<T, N extends number> = N extends N
   ? number extends N
@@ -42,4 +42,20 @@ export const f64row = <N extends number, T extends number>(
     row[i] = f(n);
   }
   return row;
+};
+
+export type Fleep<T extends any[] | readonly any[]> = number extends T["length"]
+  ? T
+  : _Fleep<Write<T>>;
+
+type _Fleep<T extends any[]> = T extends [infer F, ...infer R]
+  ? [..._Fleep<R>, F]
+  : [];
+
+export const fleep = <T extends any[] | readonly any[]>(xs: T) => {
+  const ys = [];
+  for (let i = 0; i < xs.length; i++) {
+    ys.push(xs[i]);
+  }
+  return ys as Assert<Fleep<T>>;
 };

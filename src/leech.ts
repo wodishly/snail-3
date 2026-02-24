@@ -1,15 +1,8 @@
-import type { Brain } from "./brain";
 import type { Flesh } from "./flesh";
 import type { Show } from "./help/type";
 import type { Mouthflesh } from "./mouthflesh";
 
-export const updateLeech = (
-  brain: Brain,
-  flesh: Flesh,
-  mouthflesh: Mouthflesh,
-) => {
-  flesh.html.brain.innerHTML = JSON.stringify(brain, null, 2);
-
+export const updateLeech = (flesh: Flesh, mouthflesh: Mouthflesh) => {
   flesh.html.time.innerHTML = (performance.now() / 1000).toString();
 
   // const first = song.loud ? toLi(song.loud, (l) => `Now: ${l}`).outerHTML : "";

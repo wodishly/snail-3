@@ -5,6 +5,8 @@ import { clamp } from "./help/math";
 import type { Mouth } from "./mouth";
 import { makeRinemake, type Rine, type Rineful, type Rinemake } from "./rine";
 import { canvasToTongue } from "./canvas";
+import { makeSongboard, type Songboard } from "./songboard";
+import type { Assert } from "./help/type";
 
 export interface Flesh extends Rineful {
   isAutoWobbling: boolean;
@@ -18,10 +20,13 @@ export interface Flesh extends Rineful {
     loudlist: HTMLUListElement;
     mouserines: HTMLUListElement;
     rine: HTMLSpanElement;
+    songboard: Songboard;
   };
 }
 
 export const makeFlesh = (): Flesh => {
+  const brain = document.querySelector("#brain") as Assert<HTMLDivElement>;
+
   return {
     isAutoWobbling: true,
     isAlwaysVoicing: true,
@@ -31,10 +36,11 @@ export const makeFlesh = (): Flesh => {
     rinemake: makeRinemake(),
     html: {
       time: document.querySelector("#time")!,
-      brain: document.querySelector("#brain")!,
+      brain,
       loudlist: document.querySelector("#loudlist")!,
       mouserines: document.querySelector("#mouserines")!,
       rine: document.querySelector("#mouthRine")!,
+      songboard: makeSongboard(brain),
     },
   };
 };

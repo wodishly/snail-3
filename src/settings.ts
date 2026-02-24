@@ -56,6 +56,7 @@ export const Settings = {
       width: 2.43,
     },
   },
+  beat: 250, // s/1000
   speed: 15, // cm/s
   fade: 1.0, //0.9999,
   vibrato: {
