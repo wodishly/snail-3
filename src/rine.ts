@@ -6,26 +6,28 @@ import type { Maybe, Json, Span } from "./help/type";
 export type Rinemake = (z: Z) => Rine;
 export type RineId<N extends number = number> = `mouse${N}`;
 
-export interface Width {
+export type Width = {
   width: number;
-}
+};
 
-export interface Tongue extends Width {
+export type Tongue = Width & {
   berth: number;
-}
+};
 
-export interface Rine<B extends boolean = boolean> extends Z, Json, Tongue {
-  id: RineId;
-  time: Span;
-  isDown: B;
+export type Rine<B extends boolean = boolean> = Z &
+  Json &
+  Tongue & {
+    id: RineId;
+    time: Span;
+    isDown: B;
 
-  /** fricativeIntensity */
-  fi: number;
-}
+    /** fricativeIntensity */
+    fi: number;
+  };
 
-export interface Rineful {
+export type Rineful = {
   rine: Maybe<Rine>;
-}
+};
 
 export const unrine = (id: RineId): Omit<Rine, keyof Z | "berth" | "width"> => {
   return {

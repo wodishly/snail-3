@@ -1,8 +1,8 @@
-import type { Flesh } from "./flesh";
-import type { Show } from "./help/type";
-import type { Mouthflesh } from "./mouthflesh";
+import type { Being } from "./being";
+import { maybeList, maybeStringify, type Maybe, type Show } from "./help/type";
 
-export const updateLeech = (flesh: Flesh, mouthflesh: Mouthflesh) => {
+export const updateLeech = (being: Being) => {
+  const { flesh, mouthflesh } = being;
   flesh.html.time.innerHTML = (performance.now() / 1000).toString();
 
   // const first = song.loud ? toLi(song.loud, (l) => `Now: ${l}`).outerHTML : "";
@@ -25,4 +25,13 @@ const toLi = <T extends Show>(
   const li = document.createElement("li");
   li.innerHTML = shapeshift(JSON.stringify(x));
   return li;
+};
+
+export const log = <T>(x: T, ...xs: any[]): T => {
+  console.log(maybeStringify(x), ...xs.map(maybeStringify));
+  return x;
+};
+
+export const logging = <T>(x: T, aside: Maybe<string> = undefined): T => {
+  return log(x, ...maybeList(aside));
 };

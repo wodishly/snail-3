@@ -96,7 +96,7 @@ export const makeMouth = (): Mouth => {
   };
 };
 
-export const initMouth = (mouth: Mouth) => {
+export const startMouth = (mouth: Mouth) => {
   for (let i = 0; i < Mouthbook.length; i++) {
     const diameter =
       i < (7 * Mouthbook.length) / 44 - 0.5
@@ -127,16 +127,16 @@ export const finishMouthBlock = (mouth: Mouth, audioSystem: Snail) => {
 
 export const calculateReflections = (mouth: Mouth) => {
   for (let i = 0; i < Mouthbook.length; i++) {
-    mouth.area[i] = mouth.width[i].now * mouth.width[i].now; //ignoring PI etc.
+    mouth.area[i] = mouth.width[i]!.now * mouth.width[i]!.now; //ignoring PI etc.
   }
   for (let i = 1; i < Mouthbook.length; i++) {
-    mouth.bend[i].old = mouth.bend[i].niw;
+    mouth.bend[i]!.old = mouth.bend[i]!.niw;
     if (mouth.area[i] === 0)
-      mouth.bend[i].niw = 0.999; //to prevent some bad behaviour if 0
+      mouth.bend[i]!.niw = 0.999; //to prevent some bad behaviour if 0
     else
-      mouth.bend[i].niw =
-        (mouth.area[i - 1] - mouth.area[i]) /
-        (mouth.area[i - 1] + mouth.area[i]);
+      mouth.bend[i]!.niw =
+        (mouth.area[i - 1]! - mouth.area[i]!) /
+        (mouth.area[i - 1]! + mouth.area[i]!);
   }
 
   //now at junction with nose
@@ -146,22 +146,22 @@ export const calculateReflections = (mouth: Mouth) => {
   mouth.nose.overbend.old = mouth.nose.overbend.niw;
   const sum =
     mouth.area[Mouthbook.noseStart] +
-    mouth.area[Mouthbook.noseStart + 1] +
+    mouth.area[Mouthbook.noseStart + 1]! +
     mouth.nose.area[0];
   mouth.overbendLeft.niw = (2 * mouth.area[Mouthbook.noseStart] - sum) / sum;
   mouth.overbendRight.niw =
-    (2 * mouth.area[Mouthbook.noseStart + 1] - sum) / sum;
+    (2 * mouth.area[Mouthbook.noseStart + 1]! - sum) / sum;
   mouth.nose.overbend.niw = (2 * mouth.nose.area[0] - sum) / sum;
 };
 
 export const calculateNoseReflections = (mouth: Mouth) => {
   for (let i = 0; i < noseLength(); i++) {
-    mouth.nose.area[i] = mouth.nose.width[i] * mouth.nose.width[i];
+    mouth.nose.area[i] = mouth.nose.width[i]! * mouth.nose.width[i]!;
   }
   for (let i = 1; i < noseLength(); i++) {
     mouth.nose.bend[i] =
-      (mouth.nose.area[i - 1] - mouth.nose.area[i]) /
-      (mouth.nose.area[i - 1] + mouth.nose.area[i]);
+      (mouth.nose.area[i - 1]! - mouth.nose.area[i]!) /
+      (mouth.nose.area[i - 1]! + mouth.nose.area[i]!);
   }
 };
 
@@ -172,7 +172,7 @@ export const addTurbulenceNoise = (
   turbulenceNoise: number,
 ) => {
   for (let j = 0; j < flesh.mouserines.length; j++) {
-    const touch = flesh.mouserines[j];
+    const touch = flesh.mouserines[j]!;
     if (touch.berth < 2 || touch.berth > Mouthbook.length) {
       continue;
     }
@@ -210,12 +210,12 @@ export const addTurbulenceNoiseAtIndex = (
   const noise0 = turbulenceNoise * (1 - delta) * thinness0 * openness;
   const noise1 = turbulenceNoise * delta * thinness0 * openness;
   if (i + 1 < mouth.main.length) {
-    mouth.main[i + 1].left += noise0 / 2;
-    mouth.main[i + 1].right += noise0 / 2;
+    mouth.main[i + 1]!.left += noise0 / 2;
+    mouth.main[i + 1]!.right += noise0 / 2;
   }
   if (i + 2 < mouth.main.length) {
-    mouth.main[i + 2].left += noise1 / 2;
-    mouth.main[i + 2].right += noise1 / 2;
+    mouth.main[i + 2]!.left += noise1 / 2;
+    mouth.main[i + 2]!.right += noise1 / 2;
   }
 };
 
@@ -223,8 +223,8 @@ export const reshapeMouth = (mouth: Mouth, deltaTime: number) => {
   let amount = deltaTime * Settings.speed;
   let newLastObstruction: Maybe<Obstruction> = undefined;
   for (let i = 0; i < Mouthbook.length; i++) {
-    const diameter = mouth.width[i].now;
-    const targetDiameter = mouth.width[i].goal;
+    const diameter = mouth.width[i]!.now;
+    const targetDiameter = mouth.width[i]!.goal;
     if (diameter <= 0) {
       newLastObstruction = i as Assert<Obstruction>;
     }
@@ -236,7 +236,7 @@ export const reshapeMouth = (mouth: Mouth, deltaTime: number) => {
           : 0.6 +
             (0.4 * (i - Mouthbook.noseStart)) /
               (Mouthbook.bladeStart - Mouthbook.noseStart);
-    mouth.width[i].now = nudge(
+    mouth.width[i]!.now = nudge(
       diameter,
       targetDiameter,
       slowReturn * amount,
@@ -280,13 +280,13 @@ export const runMouthStep = (
   mouth.junctionOutput[0].right =
     mouth.main[0].left * Fastenings.reflection.glottal + glottalOutput;
   mouth.junctionOutput[Mouthbook.length].left =
-    mouth.main[Mouthbook.length - 1].right * Fastenings.reflection.lip;
+    mouth.main[Mouthbook.length - 1]!.right * Fastenings.reflection.lip;
 
   for (let i = 1; i < Mouthbook.length; i++) {
-    const r = mouth.bend[i].old * (1 - lambda) + mouth.bend[i].niw * lambda;
-    const w = r * (mouth.main[i - 1].right + mouth.main[i].left);
-    mouth.junctionOutput[i].right = mouth.main[i - 1].right - w;
-    mouth.junctionOutput[i].left = mouth.main[i].left + w;
+    const r = mouth.bend[i]!.old * (1 - lambda) + mouth.bend[i]!.niw * lambda;
+    const w = r * (mouth.main[i - 1]!.right + mouth.main[i]!.left);
+    mouth.junctionOutput[i]!.right = mouth.main[i - 1]!.right - w;
+    mouth.junctionOutput[i]!.left = mouth.main[i]!.left + w;
   }
 
   //now at junction with nose
@@ -294,62 +294,62 @@ export const runMouthStep = (
   let r =
     mouth.overbendLeft.niw * (1 - lambda) + mouth.overbendLeft.old * lambda;
   mouth.junctionOutput[j].left =
-    r * mouth.main[j - 1].right +
+    r * mouth.main[j - 1]!.right +
     (1 + r) * (mouth.nose.main[0].left + mouth.main[j].left);
   r = mouth.overbendRight.niw * (1 - lambda) + mouth.overbendRight.old * lambda;
   mouth.junctionOutput[j].right =
     r * mouth.main[j].left +
-    (1 + r) * (mouth.main[j - 1].right + mouth.nose.main[0].left);
+    (1 + r) * (mouth.main[j - 1]!.right + mouth.nose.main[0]!.left);
   r = mouth.nose.overbend.niw * (1 - lambda) + mouth.nose.overbend.old * lambda;
-  mouth.nose.junctionOutput[0].right =
-    r * mouth.nose.main[0].left +
-    (1 + r) * (mouth.main[j].left + mouth.main[j - 1].right);
+  mouth.nose.junctionOutput[0]!.right =
+    r * mouth.nose.main[0]!.left +
+    (1 + r) * (mouth.main[j]!.left + mouth.main[j - 1]!.right);
 
   for (let i = 0; i < Mouthbook.length; i++) {
-    mouth.main[i].right = mouth.junctionOutput[i].right * 0.999;
-    mouth.main[i].left = mouth.junctionOutput[i + 1].left * 0.999;
+    mouth.main[i]!.right = mouth.junctionOutput[i]!.right * 0.999;
+    mouth.main[i]!.left = mouth.junctionOutput[i + 1]!.left * 0.999;
 
     if (updateAmplitudes) {
-      const amplitude = Math.abs(mouth.main[i].right + mouth.main[i].left);
-      if (amplitude > mouth.maxAmplitude[i]) {
+      const amplitude = Math.abs(mouth.main[i]!.right + mouth.main[i]!.left);
+      if (amplitude > mouth.maxAmplitude[i]!) {
         mouth.maxAmplitude[i] = amplitude;
       } else {
-        mouth.maxAmplitude[i] *= 0.999;
+        mouth.maxAmplitude[i]! *= 0.999;
       }
     }
   }
 
-  mouth.lipOutput = mouth.main[Mouthbook.length - 1].right;
+  mouth.lipOutput = mouth.main[Mouthbook.length - 1]!.right;
 
   //nose
-  mouth.nose.junctionOutput[noseLength()].left =
-    mouth.nose.main[noseLength() - 1].right * Fastenings.reflection.lip;
+  mouth.nose.junctionOutput[noseLength()]!.left =
+    mouth.nose.main[noseLength() - 1]!.right * Fastenings.reflection.lip;
 
   for (let i = 1; i < noseLength(); i++) {
     const w =
-      mouth.nose.bend[i] *
-      (mouth.nose.main[i - 1].right + mouth.nose.main[i].left);
-    mouth.nose.junctionOutput[i].right = mouth.nose.main[i - 1].right - w;
-    mouth.nose.junctionOutput[i].left = mouth.nose.main[i].left + w;
+      mouth.nose.bend[i]! *
+      (mouth.nose.main[i - 1]!.right + mouth.nose.main[i]!.left);
+    mouth.nose.junctionOutput[i]!.right = mouth.nose.main[i - 1]!.right - w;
+    mouth.nose.junctionOutput[i]!.left = mouth.nose.main[i]!.left + w;
   }
 
   for (let i = 0; i < noseLength(); i++) {
-    mouth.nose.main[i].right =
-      mouth.nose.junctionOutput[i].right * Settings.fade;
-    mouth.nose.main[i].left =
-      mouth.nose.junctionOutput[i + 1].left * Settings.fade;
+    mouth.nose.main[i]!.right =
+      mouth.nose.junctionOutput[i]!.right * Settings.fade;
+    mouth.nose.main[i]!.left =
+      mouth.nose.junctionOutput[i + 1]!.left * Settings.fade;
 
     if (updateAmplitudes) {
       const amplitude = Math.abs(
-        mouth.nose.main[i].right + mouth.nose.main[i].left,
+        mouth.nose.main[i]!.right + mouth.nose.main[i]!.left,
       );
-      if (amplitude > mouth.nose.maxAmplitude[i]) {
+      if (amplitude > mouth.nose.maxAmplitude[i]!) {
         mouth.nose.maxAmplitude[i] = amplitude;
       } else {
-        mouth.nose.maxAmplitude[i] *= 0.999;
+        mouth.nose.maxAmplitude[i]! *= 0.999;
       }
     }
   }
 
-  mouth.noseOutput = mouth.nose.main[noseLength() - 1].right;
+  mouth.noseOutput = mouth.nose.main[noseLength() - 1]!.right;
 };

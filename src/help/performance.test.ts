@@ -25,7 +25,7 @@ const benchmarkArray = <N extends number>(
     const rs = Array(length).map(() => Math.random()) as Assert<
       Flight<number, N>
     >;
-    const r = rs[l * Math.random()];
+    const r = rs[l * Math.random()]!;
 
     const start = performance.now();
     for (let i = 0; i < trials; i++) {

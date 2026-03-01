@@ -1,49 +1,25 @@
 import "./style.css";
 
-import { makeThroat } from "./throat";
-import { initMouth, makeMouth } from "./mouth";
-import { makeSnail } from "./snail";
 import { updateLeech } from "./leech";
-import { mouthfleshTools } from "./mouthflesh";
-import { fleshTools } from "./flesh";
-import { getContexts } from "./canvas";
+import { drawMouthflesh } from "./mouthflesh";
+import { updateTouches } from "./flesh";
 import { think } from "./brain";
 import { stepSpell } from "./songboard";
+import { become } from "./being";
 
 window.onload = () => {
-  const { backcontext, forecontext } = getContexts();
-
-  const { startFlesh, makeFlesh, updateTouches } = fleshTools();
-  const { drawMouthflesh, startMouthflesh, makeMouthflesh } = mouthfleshTools();
-
-  const snail = makeSnail();
-  const throat = makeThroat();
-  const mouth = makeMouth();
-  const flesh = makeFlesh();
-  const mouthflesh = makeMouthflesh();
-
-  startFlesh(snail, mouth, throat, flesh, mouthflesh, forecontext);
-  initMouth(mouth);
-
-  const brain = startMouthflesh(
-    0,
-    snail,
-    throat,
-    mouth,
-    flesh,
-    mouthflesh,
-    backcontext,
-    forecontext,
-  );
+  const being = become();
 
   const redraw = (now: number) => {
-    drawMouthflesh(mouthflesh, forecontext, mouth);
-    updateTouches(flesh);
+    being.now = now;
 
-    think(now, brain, mouthflesh);
+    drawMouthflesh(being);
+    updateTouches(being);
+
+    think(being);
     // console.log(throat.intensity); // todo make it so intensity climbs up to 1 by 0.13 instead of being instant
-    updateLeech(flesh, mouthflesh);
-    stepSpell(now, flesh, brain);
+    updateLeech(being);
+    stepSpell(being);
     requestAnimationFrame(redraw);
   };
   requestAnimationFrame(redraw);

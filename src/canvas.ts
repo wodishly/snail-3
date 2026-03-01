@@ -70,8 +70,8 @@ export const tongueToCanvas = (
   const wobble =
     wobbleSettings === undefined
       ? 0
-      : ((wobbleSettings.mouth.maxAmplitude[Mouthbook.length - 1] +
-          wobbleSettings.mouth.nose.maxAmplitude[noseLength() - 1]) *
+      : ((wobbleSettings.mouth.maxAmplitude[Mouthbook.length - 1]! +
+          wobbleSettings.mouth.nose.maxAmplitude[noseLength() - 1]!) *
           (0.03 *
             Math.sin(2 * berth - 50 * (performance.now() / 1000)) *
             berth)) /

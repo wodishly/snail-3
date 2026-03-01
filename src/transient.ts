@@ -21,7 +21,7 @@ export const makeTransient = (berth: Berth): Transient => {
 
 export const processTransients = (tract: Mouth, snail: Snail) => {
   for (let i = 0; i < tract.transients.length; i++) {
-    const transient = tract.transients[i];
+    const transient = tract.transients[i]!;
     const amplitude =
       transient.strength *
       Math.pow(2, -transient.exponent * transient.timeAlive);
@@ -31,7 +31,7 @@ export const processTransients = (tract: Mouth, snail: Snail) => {
   }
 
   for (let i = tract.transients.length - 1; i >= 0; i--) {
-    const transient = tract.transients[i];
+    const transient = tract.transients[i]!;
     if (transient.timeAlive > transient.lifeTime) {
       tract.transients.splice(i, 1);
     }

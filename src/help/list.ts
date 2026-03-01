@@ -1,4 +1,4 @@
-import type { Assert, Write } from "./type";
+import type { Assert, Maybe, Write } from "./type";
 
 export type Flight<T, N extends number> = N extends N
   ? number extends N
@@ -58,4 +58,19 @@ export const fleep = <T extends any[] | readonly any[]>(xs: T) => {
     ys.push(xs[i]);
   }
   return ys as Assert<Fleep<T>>;
+};
+
+export const findLast = <T>(
+  xs: T[],
+  f: (x: T) => boolean,
+): [Maybe<T>, number] => {
+  for (let i = xs.length - 1; i >= 0; i--) {
+    const x = xs[i]!;
+    const fx = f(x);
+    if (fx) {
+      return [x, i];
+    }
+  }
+
+  return [undefined, -1];
 };

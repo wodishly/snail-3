@@ -7,6 +7,7 @@ import { makeRinemake, type Rine, type Rineful, type Rinemake } from "./rine";
 import { canvasToTongue } from "./canvas";
 import { makeSongboard, type Songboard } from "./songboard";
 import type { Assert } from "./help/type";
+import type { Being } from "./being";
 
 export interface Flesh extends Rineful {
   isAutoWobbling: boolean;
@@ -120,16 +121,18 @@ const endMouse = (mouth: Mouth, flesh: Flesh, mouthflesh: Mouthflesh) => {
   handleMouthfleshTouches(mouth, flesh, mouthflesh);
 };
 
-export const updateTouches = (ui: Flesh) => {
+export const updateTouches = (being: Being) => {
+  const { flesh } = being;
+
   const fricativeAttackTime = 0.1;
-  for (let j = ui.mouserines.length - 1; j >= 0; j--) {
-    const touch = ui.mouserines[j];
+  for (let j = flesh.mouserines.length - 1; j >= 0; j--) {
+    const touch = flesh.mouserines[j]!;
     const time = performance.now() / 1000;
     if (touch.isDown) {
       touch.fi = clamp((time - touch.time.start) / fricativeAttackTime, 0, 1);
     } else {
       if (time > touch.time.end + 1) {
-        ui.mouserines.splice(j, 1);
+        flesh.mouserines.splice(j, 1);
       } else {
         touch.fi = clamp(1 - (time - touch.time.end) / fricativeAttackTime);
       }

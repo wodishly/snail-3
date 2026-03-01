@@ -1,7 +1,7 @@
 import { type Mouth } from "./mouth";
 import { setPitch, type Throat } from "./throat";
 import { type Flesh } from "./flesh";
-import { clamp, weave } from "./help/math";
+import { clamp } from "./help/math";
 import {
   Fastenings,
   Mouthbook,
@@ -16,9 +16,11 @@ import type { Assert, Naybe } from "./help/type";
 import { canvasToTongue, strokeLine, tongueToCanvas } from "./canvas";
 import type { Rineful, Tongue } from "./rine";
 import { startSound, type Snail } from "./snail";
-import { makeBrain, understand, type Brain } from "./brain";
+import { understand, makeBrain, type Brain } from "./brain";
 import { isBearing, isLoudstaff } from "./tung/staff";
-import { loadSpell } from "./songboard";
+import { loadSpellboard } from "./songboard";
+import type { Being } from "./being";
+import { weave } from "./help/rime";
 
 export interface Mouthflesh extends Tongue, Rineful {
   html: {
@@ -69,8 +71,8 @@ export const startListeners = (
   ) as Assert<HTMLButtonElement>;
   speakKnob.addEventListener("click", () => {
     startSound(snail, throat, mouth, flesh);
-    understand(brain, speech);
-    loadSpell(flesh, brain);
+    understand(now, brain, speech);
+    loadSpellboard(flesh, brain);
   });
 
   const alwaysSpeak = document.querySelector(
@@ -128,7 +130,7 @@ export const startMouthflesh = (
 
   setRestWidth(mouth, mouthflesh);
   for (let i = 0; i < Mouthbook.length; i++) {
-    mouth.width[i].now = mouth.width[i].goal = mouth.width[i].rest;
+    mouth.width[i]!.now = mouth.width[i]!.goal = mouth.width[i]!.rest;
   }
   drawBackground(mouth, backcontext, forecontext);
   return brain;
@@ -176,13 +178,13 @@ const drawAmplitudes = (mouth: Mouth, context: CanvasRenderingContext2D) => {
   // mouth
   for (let i = 2; i < Mouthbook.length - 1; i++) {
     const start = tongueToCanvas(i, 0, { doesWobble: true, mouth });
-    const end = tongueToCanvas(i, mouth.width[i].now, {
+    const end = tongueToCanvas(i, mouth.width[i]!.now, {
       doesWobble: true,
       mouth,
     });
 
     strokeLine(context, start, end, {
-      lineWidth: Math.sqrt(mouth.maxAmplitude[i]) * 3,
+      lineWidth: Math.sqrt(mouth.maxAmplitude[i]!) * 3,
     });
     labelAmplitude(context, i, (start.x + end.x) / 2, (start.y + end.y) / 2);
   }
@@ -196,12 +198,12 @@ const drawAmplitudes = (mouth: Mouth, context: CanvasRenderingContext2D) => {
     );
     const end = tongueToCanvas(
       i + Mouthbook.noseStart,
-      -Settings.mouthflesh.noseOffset - mouth.nose.width[i] * 0.9,
+      -Settings.mouthflesh.noseOffset - mouth.nose.width[i]! * 0.9,
       { doesWobble: true, mouth },
     );
 
     strokeLine(context, start, end, {
-      lineWidth: Math.sqrt(mouth.nose.maxAmplitude[i]) * 3,
+      lineWidth: Math.sqrt(mouth.nose.maxAmplitude[i]!) * 3,
     });
     labelAmplitude(context, i, (start.x + end.x) / 2, (start.y + end.y) / 2);
   }
@@ -211,7 +213,7 @@ const drawAmplitudes = (mouth: Mouth, context: CanvasRenderingContext2D) => {
 /**
  * Sets the new rest widths for the given tongue berth and width.
  */
-const setRestWidth = (
+export const setRestWidth = (
   mouth: Mouth,
   { berth, width }: Tongue,
   doRing = false,
@@ -328,8 +330,8 @@ const moveMouthfleshTo = (
       (Mouthbook.lipStart - 1);
 
   let wobble =
-    mouth.maxAmplitude[Mouthbook.length - 1] +
-    mouth.nose.maxAmplitude[noseLength() - 1];
+    mouth.maxAmplitude[Mouthbook.length - 1]! +
+    mouth.nose.maxAmplitude[noseLength() - 1]!;
 
   wobble *=
     (0.03 * Math.sin(2 * index - 50 * (performance.now() / 1000)) * index) /
@@ -359,8 +361,8 @@ const lineMouthfleshTo = (
       (Mouthbook.lipStart - 1);
 
   let wobble =
-    mouth.maxAmplitude[Mouthbook.length - 1] +
-    mouth.nose.maxAmplitude[noseLength() - 1];
+    mouth.maxAmplitude[Mouthbook.length - 1]! +
+    mouth.nose.maxAmplitude[noseLength() - 1]!;
 
   wobble *=
     (0.03 * Math.sin(2 * index - 50 * (performance.now() / 1000)) * index) /
@@ -469,181 +471,183 @@ const drawTongueControl = (
   context.fillStyle = "orchid";
 };
 
-export const drawMouthflesh = (
-  mouthflesh: Mouthflesh,
-  context: CanvasRenderingContext2D,
-  mouth: Mouth,
-) => {
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-  context.lineCap = "round";
-  context.lineJoin = "round";
+export const drawMouthflesh = (being: Being) => {
+  const { mouthflesh, forecontext, mouth } = being;
+  forecontext.clearRect(
+    0,
+    0,
+    forecontext.canvas.width,
+    forecontext.canvas.height,
+  );
+  forecontext.lineCap = "round";
+  forecontext.lineJoin = "round";
 
-  drawTongueControl(mouthflesh, mouth, context);
+  drawTongueControl(mouthflesh, mouth, forecontext);
   // drawPitchControl(context, throat);
 
   const velum = mouth.nose.width[0];
   const velumAngle = velum * 4;
 
   //first draw fill
-  context.beginPath();
-  context.lineWidth = 2;
-  context.strokeStyle = Settings.mouthflesh.fillColour;
-  context.fillStyle = Settings.mouthflesh.fillColour;
-  moveMouthfleshTo(mouth, context, 1, 0);
+  forecontext.beginPath();
+  forecontext.lineWidth = 2;
+  forecontext.strokeStyle = Settings.mouthflesh.fillColour;
+  forecontext.fillStyle = Settings.mouthflesh.fillColour;
+  moveMouthfleshTo(mouth, forecontext, 1, 0);
   for (let i = 1; i < Mouthbook.length; i++)
-    lineMouthfleshTo(mouth, context, i, mouth.width[i].now);
+    lineMouthfleshTo(mouth, forecontext, i, mouth.width[i]!.now);
   for (let i = Mouthbook.length - 1; i >= 2; i--)
-    lineMouthfleshTo(mouth, context, i, 0);
-  context.closePath();
-  context.stroke();
-  context.fill();
+    lineMouthfleshTo(mouth, forecontext, i, 0);
+  forecontext.closePath();
+  forecontext.stroke();
+  forecontext.fill();
 
   //for nose
-  context.beginPath();
-  context.lineWidth = 2;
-  context.strokeStyle = Settings.mouthflesh.fillColour;
-  context.fillStyle = Settings.mouthflesh.fillColour;
+  forecontext.beginPath();
+  forecontext.lineWidth = 2;
+  forecontext.strokeStyle = Settings.mouthflesh.fillColour;
+  forecontext.fillStyle = Settings.mouthflesh.fillColour;
   moveMouthfleshTo(
     mouth,
-    context,
+    forecontext,
     Mouthbook.noseStart,
     -Settings.mouthflesh.noseOffset,
   );
   for (let i = 1; i < noseLength(); i++)
     lineMouthfleshTo(
       mouth,
-      context,
+      forecontext,
       i + Mouthbook.noseStart,
-      -Settings.mouthflesh.noseOffset - mouth.nose.width[i] * 0.9,
+      -Settings.mouthflesh.noseOffset - mouth.nose.width[i]! * 0.9,
     );
   for (let i = noseLength() - 1; i >= 1; i--)
     lineMouthfleshTo(
       mouth,
-      context,
+      forecontext,
       i + Mouthbook.noseStart,
       -Settings.mouthflesh.noseOffset,
     );
-  context.closePath();
-  context.fill();
+  forecontext.closePath();
+  forecontext.fill();
 
   //velum
-  context.beginPath();
-  context.lineWidth = 2;
-  context.strokeStyle = Settings.mouthflesh.fillColour;
-  context.fillStyle = Settings.mouthflesh.fillColour;
-  moveMouthfleshTo(mouth, context, Mouthbook.noseStart - 2, 0);
+  forecontext.beginPath();
+  forecontext.lineWidth = 2;
+  forecontext.strokeStyle = Settings.mouthflesh.fillColour;
+  forecontext.fillStyle = Settings.mouthflesh.fillColour;
+  moveMouthfleshTo(mouth, forecontext, Mouthbook.noseStart - 2, 0);
   lineMouthfleshTo(
     mouth,
-    context,
+    forecontext,
     Mouthbook.noseStart,
     -Settings.mouthflesh.noseOffset,
   );
   lineMouthfleshTo(
     mouth,
-    context,
+    forecontext,
     Mouthbook.noseStart + velumAngle,
     -Settings.mouthflesh.noseOffset,
   );
-  lineMouthfleshTo(mouth, context, Mouthbook.noseStart + velumAngle - 2, 0);
-  context.closePath();
-  context.stroke();
-  context.fill();
+  lineMouthfleshTo(mouth, forecontext, Mouthbook.noseStart + velumAngle - 2, 0);
+  forecontext.closePath();
+  forecontext.stroke();
+  forecontext.fill();
 
   //white text
-  context.fillStyle = "white";
-  context.font = "20px Arial";
-  context.textAlign = "center";
-  context.globalAlpha = 1.0;
-  drawText(context, Mouthbook.length * 0.1, 0.425, "throat");
-  drawText(context, Mouthbook.length * 0.71, -1.8, "nasal");
-  drawText(context, Mouthbook.length * 0.71, -1.3, "cavity");
-  context.font = "22px Arial";
-  drawText(context, Mouthbook.length * 0.6, 0.9, "oral");
-  drawText(context, Mouthbook.length * 0.7, 0.9, "cavity");
+  forecontext.fillStyle = "white";
+  forecontext.font = "20px Arial";
+  forecontext.textAlign = "center";
+  forecontext.globalAlpha = 1.0;
+  drawText(forecontext, Mouthbook.length * 0.1, 0.425, "throat");
+  drawText(forecontext, Mouthbook.length * 0.71, -1.8, "nasal");
+  drawText(forecontext, Mouthbook.length * 0.71, -1.3, "cavity");
+  forecontext.font = "22px Arial";
+  drawText(forecontext, Mouthbook.length * 0.6, 0.9, "oral");
+  drawText(forecontext, Mouthbook.length * 0.7, 0.9, "cavity");
 
-  drawAmplitudes(mouth, context);
+  drawAmplitudes(mouth, forecontext);
 
   //then draw lines
-  context.beginPath();
-  context.lineWidth = 5;
-  context.strokeStyle = Settings.mouthflesh.lineColour;
-  context.lineJoin = "round";
-  context.lineCap = "round";
-  moveMouthfleshTo(mouth, context, 1, mouth.width[0].now);
+  forecontext.beginPath();
+  forecontext.lineWidth = 5;
+  forecontext.strokeStyle = Settings.mouthflesh.lineColour;
+  forecontext.lineJoin = "round";
+  forecontext.lineCap = "round";
+  moveMouthfleshTo(mouth, forecontext, 1, mouth.width[0].now);
   for (let i = 2; i < Mouthbook.length; i++)
-    lineMouthfleshTo(mouth, context, i, mouth.width[i].now);
-  moveMouthfleshTo(mouth, context, 1, 0);
+    lineMouthfleshTo(mouth, forecontext, i, mouth.width[i]!.now);
+  moveMouthfleshTo(mouth, forecontext, 1, 0);
   for (let i = 2; i <= Mouthbook.noseStart - 2; i++)
-    lineMouthfleshTo(mouth, context, i, 0);
-  moveMouthfleshTo(mouth, context, Mouthbook.noseStart + velumAngle - 2, 0);
+    lineMouthfleshTo(mouth, forecontext, i, 0);
+  moveMouthfleshTo(mouth, forecontext, Mouthbook.noseStart + velumAngle - 2, 0);
   for (
     let i = Mouthbook.noseStart + Math.ceil(velumAngle) - 2;
     i < Mouthbook.length;
     i++
   )
-    lineMouthfleshTo(mouth, context, i, 0);
-  context.stroke();
+    lineMouthfleshTo(mouth, forecontext, i, 0);
+  forecontext.stroke();
 
   //for nose
-  context.beginPath();
-  context.lineWidth = 5;
-  context.strokeStyle = Settings.mouthflesh.lineColour;
-  context.lineJoin = "round";
+  forecontext.beginPath();
+  forecontext.lineWidth = 5;
+  forecontext.strokeStyle = Settings.mouthflesh.lineColour;
+  forecontext.lineJoin = "round";
   moveMouthfleshTo(
     mouth,
-    context,
+    forecontext,
     Mouthbook.noseStart,
     -Settings.mouthflesh.noseOffset,
   );
   for (let i = 1; i < noseLength(); i++)
     lineMouthfleshTo(
       mouth,
-      context,
+      forecontext,
       i + Mouthbook.noseStart,
-      -Settings.mouthflesh.noseOffset - mouth.nose.width[i] * 0.9,
+      -Settings.mouthflesh.noseOffset - mouth.nose.width[i]! * 0.9,
     );
   moveMouthfleshTo(
     mouth,
-    context,
+    forecontext,
     Mouthbook.noseStart + velumAngle,
     -Settings.mouthflesh.noseOffset,
   );
   for (let i = Math.ceil(velumAngle); i < noseLength(); i++)
     lineMouthfleshTo(
       mouth,
-      context,
+      forecontext,
       i + Mouthbook.noseStart,
       -Settings.mouthflesh.noseOffset,
     );
-  context.stroke();
+  forecontext.stroke();
 
   //velum
-  context.globalAlpha = velum * 5;
-  context.beginPath();
-  moveMouthfleshTo(mouth, context, Mouthbook.noseStart - 2, 0);
+  forecontext.globalAlpha = velum * 5;
+  forecontext.beginPath();
+  moveMouthfleshTo(mouth, forecontext, Mouthbook.noseStart - 2, 0);
   lineMouthfleshTo(
     mouth,
-    context,
+    forecontext,
     Mouthbook.noseStart,
     -Settings.mouthflesh.noseOffset,
   );
-  moveMouthfleshTo(mouth, context, Mouthbook.noseStart + velumAngle - 2, 0);
+  moveMouthfleshTo(mouth, forecontext, Mouthbook.noseStart + velumAngle - 2, 0);
   lineMouthfleshTo(
     mouth,
-    context,
+    forecontext,
     Mouthbook.noseStart + velumAngle,
     -Settings.mouthflesh.noseOffset,
   );
-  context.stroke();
+  forecontext.stroke();
 
-  context.fillStyle = "orchid";
-  context.font = "20px Arial";
-  context.textAlign = "center";
-  context.globalAlpha = 0.7;
+  forecontext.fillStyle = "orchid";
+  forecontext.font = "20px Arial";
+  forecontext.textAlign = "center";
+  forecontext.globalAlpha = 0.7;
   drawText(
-    context,
+    forecontext,
     Mouthbook.length * 0.95,
-    0.8 + 0.8 * mouth.width[Mouthbook.length - 1].now,
+    0.8 + 0.8 * mouth.width[Mouthbook.length - 1]!.now,
     " lip",
   );
 };
@@ -662,14 +666,14 @@ export const handleMouthfleshTouches = (
     for (let j = 0; j < flesh.mouserines.length; j++) {
       const rine = flesh.mouserines[j];
 
-      if (!rine.isDown) {
+      if (!rine!.isDown) {
         continue;
       }
-      if (rine.fi === 1) {
+      if (rine!.fi === 1) {
         continue; //only new touches will pass mouthflesh
       }
 
-      const { berth, width } = canvasToTongue(rine);
+      const { berth, width } = canvasToTongue(rine!);
 
       // touch is in tongue control area
       if (
@@ -720,7 +724,7 @@ export const moveTongueAndLips = (
 
   // set goal widths to rest widths
   for (let i = 0; i < Mouthbook.length; i++) {
-    mouth.width[i].goal = mouth.width[i].rest;
+    mouth.width[i]!.goal = mouth.width[i]!.rest;
   }
 
   // then, choking tightness
@@ -729,11 +733,11 @@ export const moveTongueAndLips = (
 
   for (let j = 0; j < flesh.mouserines.length; j++) {
     const rine = flesh.mouserines[j];
-    if (!rine.isDown) {
+    if (!rine!.isDown) {
       continue;
     }
 
-    gesture(mouth, canvasToTongue(rine));
+    gesture(mouth, canvasToTongue(rine!));
   }
 };
 
@@ -759,14 +763,13 @@ const gesture = (mouth: Mouth, { berth, width }: Tongue) => {
         continue;
       }
 
-      if (cookedWidth < mouth.width[wholeBerth + i].goal) {
+      if (cookedWidth < mouth.width[wholeBerth + i]!.goal) {
         // reckon farth (in either way) from rinenavel
         const farth = Math.abs(wholeBerth + i - berth) - 0.5;
         const goal = weave(
           cookedWidth,
-          mouth.width[wholeBerth + i].goal,
-          0.5 * (1 - Math.cos((Math.PI * clamp(farth, 0, length)) / length)),
-        );
+          mouth.width[wholeBerth + i]!.goal,
+        )(0.5 * (1 - Math.cos((Math.PI * clamp(farth, 0, length)) / length)));
         reach(mouth, wholeBerth + i, goal);
       }
     }
@@ -791,5 +794,5 @@ const openNose = (mouth: Mouth) => {
  * @todo type `berth` as `Upto<(typeof Mouthbook)["length"]>`
  */
 const reach = (mouth: Mouth, berth: number, goal: number) => {
-  mouth.width[berth].goal = goal;
+  mouth.width[berth]!.goal = goal;
 };

@@ -1,4 +1,5 @@
-import { sinews, wakeBrain, type Brain, type SinewKind } from "./brain";
+import type { Being } from "./being";
+import { sinews, type Brain, type SinewKind } from "./brain";
 import type { Flesh } from "./flesh";
 import { row, sameshift } from "./help/list";
 import { Settings } from "./settings";
@@ -40,8 +41,10 @@ const insertTh = (tr: HTMLTableRowElement, innerHTML: string = "") => {
   return th;
 };
 
-/** @mut */
-export const loadSpell = ({ html: { songboard } }: Flesh, brain: Brain) => {
+export const loadSpellboard = (
+  { html: { songboard } }: Flesh,
+  brain: Brain,
+) => {
   for (const kind of sinews) {
     songboard[kind].tr.replaceChildren();
     if (brain.spell?.length ?? 0 > 0) {
@@ -65,16 +68,19 @@ export const loadSpell = ({ html: { songboard } }: Flesh, brain: Brain) => {
     document.createElement("td"),
   );
   songboard.time.tr.replaceChildren(songboard.time.th, ...songboard.time.tds);
-
-  wakeBrain(brain);
 };
 
-export const stepSpell = (
-  now: number,
-  { html: { songboard } }: Flesh,
-  brain: Brain,
-) => {
-  const n = Math.floor((now - brain.sinews.lip.start) / Settings.beat);
+export const stepSpell = (being: Being) => {
+  const {
+    now,
+    brain,
+    flesh: {
+      html: { songboard },
+    },
+  } = being;
+
+  const then = brain.sinews.tongue.done[0]?.startTime ?? now;
+  const n = Math.floor((now - then) / Settings.beat);
 
   songboard.time.tr.replaceChildren(
     songboard.time.th,

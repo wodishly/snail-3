@@ -27,10 +27,6 @@ export const clamp = (n: number, lower = 0, upper = 1) => {
   }
 };
 
-export const weave = (start: number, end: number, n: number) => {
-  return start + (end - start) * n;
-};
-
 export const nudge = (
   start: number,
   end: number,

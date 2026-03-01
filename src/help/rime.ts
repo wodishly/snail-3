@@ -1,5 +1,5 @@
 import { expectTypeOf } from "vitest";
-import type { Fleep, Flight } from "./list";
+import type { Flight } from "./list";
 import type { Assert } from "./type";
 
 /**
@@ -157,7 +157,7 @@ export const unweave = (start: number, end: number) => (woven: number) =>
 export const mean = (xs: number[]) => {
   let yoke = 0;
   for (let i = 0; i < xs.length; i++) {
-    yoke += xs[i];
+    yoke += xs[i]!;
   }
   return yoke / xs.length;
 };
@@ -182,7 +182,7 @@ export const inside = (greater: Element) => (smaller: Element) =>
 export const rspan = (edge: number = 1) => edge * (2 * Math.random() - 1);
 export const rtell = (n: number) => Math.floor(n * Math.random());
 export const rchoose = <T>(xs: T[]): T =>
-  xs[Math.floor(xs.length * Math.random())];
+  xs[Math.floor(xs.length * Math.random())]!;
 
 export type DeepRound<T extends object, N extends number = 0> = {
   [K in keyof T]: T[K] extends object

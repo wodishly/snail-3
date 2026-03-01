@@ -42,7 +42,7 @@ export const doScriptProcessor = (
       glottis,
       audioSystem,
       lambda1,
-      inputArray1[j],
+      inputArray1[j]!,
     );
 
     let vocalOutput = 0;
@@ -53,7 +53,7 @@ export const doScriptProcessor = (
       audioSystem,
       ui,
       glottalOutput,
-      inputArray2[j],
+      inputArray2[j]!,
       lambda1,
     );
     vocalOutput += tract.lipOutput + tract.noseOutput;
@@ -63,7 +63,7 @@ export const doScriptProcessor = (
       audioSystem,
       ui,
       glottalOutput,
-      inputArray2[j],
+      inputArray2[j]!,
       lambda2,
     );
     vocalOutput += tract.lipOutput + tract.noseOutput;

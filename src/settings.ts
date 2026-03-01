@@ -51,6 +51,9 @@ export const Fastenings = {
  */
 export const Settings = {
   start: {
+    lip: { width: 4 },
+    sail: { width: 0.01 },
+    lung: { strength: 1 },
     mouthflesh: {
       berth: 12.9,
       width: 2.43,
