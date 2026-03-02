@@ -28,7 +28,7 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
-        
+
   deploy:
     name: deploy
     runs-on: ubuntu-latest
@@ -43,4 +43,3 @@ jobs:
       - name: deploy
         id: deployId
         uses: actions/deploy-pages@v4
-        
