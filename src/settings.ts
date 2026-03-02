@@ -36,12 +36,19 @@ export const Fastenings = {
     lip: -0.85,
   },
 
+  lip: {
+    ring: 0.5,
+    unring: 1.5,
+  },
   /** Of the sail that hides the nosehole from the mouthhole. */
   sail: {
     /** Of the sail at rest. */
     rest: 0.01,
 
-    /** Of the sail bears a nose-loudness. */
+    /** Of the gay sail. */
+    gay: 0.35,
+
+    /** Of the sail that bears a nose-loudness. */
     nosebear: 0.4,
   },
 } as const;
@@ -51,13 +58,13 @@ export const Fastenings = {
  */
 export const Settings = {
   start: {
-    lip: { width: 4 },
-    sail: { width: 0.01 },
-    lung: { strength: 1 },
-    mouthflesh: {
+    lip: { width: 1.5 },
+    tongue: {
       berth: 12.9,
       width: 2.43,
     },
+    sail: { width: 0.01 },
+    lung: { strength: 1 },
   },
   beat: 250, // s/1000
   speed: 15, // cm/s

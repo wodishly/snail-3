@@ -13,6 +13,16 @@ export type Maybily<T> = T extends object
   ? { [K in keyof T]: T[K] | undefined }
   : never;
 
+export type NonNullably<T> = T extends object
+  ? { [K in keyof T]: NonNullable<T[K]> }
+  : never;
+
+type Needing<T, K extends keyof any> = Outright<
+  { [P in keyof T & K]-?: T[P] } & {
+    [P in Exclude<keyof T, K>]?: T[P];
+  }
+>;
+
 export type Outright<T> = { [K in keyof T]: T[K] };
 
 export type Dealing<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

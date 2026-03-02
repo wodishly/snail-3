@@ -6,11 +6,11 @@ import type { Maybe, Json, Span } from "./help/type";
 export type Rinemake = (z: Z) => Rine;
 export type RineId<N extends number = number> = `mouse${N}`;
 
-export type Width = {
+export type Widthful = {
   width: number;
 };
 
-export type Tongue = Width & {
+export type Tongue = Widthful & {
   berth: number;
 };
 

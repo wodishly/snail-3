@@ -1,9 +1,8 @@
 import { type Mouth } from "./mouth";
-import { setPitch, type Throat } from "./throat";
+import { type Throat } from "./throat";
 import { type Flesh } from "./flesh";
 import { clamp } from "./help/math";
 import {
-  Fastenings,
   Mouthbook,
   noseLength,
   palePink,
@@ -12,26 +11,35 @@ import {
   tongueMiddle,
   tongueUpperBound,
 } from "./settings";
-import type { Assert, Naybe } from "./help/type";
+import type { Assert } from "./help/type";
 import { canvasToTongue, strokeLine, tongueToCanvas } from "./canvas";
 import type { Rineful, Tongue } from "./rine";
 import { startSound, type Snail } from "./snail";
-import { understand, makeBrain, type Brain } from "./brain";
-import { isBearing, isLoudstaff } from "./tung/staff";
+import {
+  understand,
+  makeBrain,
+  type Brain,
+  moveTongueAndLips,
+  setRestWidth,
+  makeSinewing,
+} from "./brain";
+import { isLoudstaff } from "./tung/staff";
 import { loadSpellboard } from "./songboard";
 import type { Being } from "./being";
-import { weave } from "./help/rime";
 
-export interface Mouthflesh extends Tongue, Rineful {
-  html: {
-    rine: HTMLSpanElement;
+export type Mouthflesh = Tongue &
+  Rineful & {
+    gay: boolean;
+    html: {
+      rine: HTMLSpanElement;
+    };
   };
-}
 
 export const makeMouthflesh = (): Mouthflesh => {
   return {
-    ...Settings.start.mouthflesh,
+    ...Settings.start.tongue,
     rine: undefined,
+    gay: true,
     html: {
       rine: document.querySelector("#tongueRine")!,
     },
@@ -39,10 +47,11 @@ export const makeMouthflesh = (): Mouthflesh => {
 };
 
 const clean = (speech: HTMLInputElement) => () => {
-  // const mood = Array.from(speech.value).every(isBookstaff) ? "book" : "loud";
   const last = speech.value.at(-1);
-  if (!(last && isLoudstaff(last) && isBearing(last))) {
-    speech.value = speech.value.slice(0, -1);
+  if (last) {
+    if (!isLoudstaff(last)) {
+      speech.value = speech.value.slice(0, -1);
+    }
   }
 };
 
@@ -56,13 +65,6 @@ export const startListeners = (
 ): Brain => {
   const brain = makeBrain(now);
 
-  const shine = document.querySelector("#shine") as Assert<HTMLInputElement>;
-  shine.addEventListener("change", () => {
-    document.querySelectorAll("canvas").forEach((element) => {
-      element.style.display = shine.checked ? "block" : "none";
-    });
-  });
-
   const speech = document.querySelector("#speech") as Assert<HTMLInputElement>;
   speech.addEventListener("input", clean(speech));
 
@@ -71,7 +73,7 @@ export const startListeners = (
   ) as Assert<HTMLButtonElement>;
   speakKnob.addEventListener("click", () => {
     startSound(snail, throat, mouth, flesh);
-    understand(now, brain, speech);
+    understand(now, brain, throat, mouth, mouthflesh, speech);
     loadSpellboard(flesh, brain);
   });
 
@@ -82,37 +84,23 @@ export const startListeners = (
     flesh.isAlwaysVoicing = alwaysSpeak.checked;
   });
 
-  const aSlider = document.querySelector("#a") as Naybe<HTMLInputElement>;
-  const f0Slider = document.querySelector("#f0") as Naybe<HTMLInputElement>;
-  if (aSlider && f0Slider) {
-    aSlider.addEventListener("input", () => {
-      setPitch(throat, parseFloat(f0Slider.value), parseFloat(aSlider.value));
-    });
-  } else {
-    if (!aSlider) {
-      console.warn("no slider named #a");
-    }
-    if (!f0Slider) {
-      console.warn("no slider named #f0");
-    }
-  }
+  const gay = document.querySelector("#gay") as Assert<HTMLInputElement>;
+  gay.addEventListener("change", () => {
+    startSound(snail, throat, mouth, flesh);
+    mouthflesh.gay = gay.checked;
+    moveTongueAndLips(
+      { throat, mouth, flesh, mouthflesh },
+      makeSinewing({ throat, mouth, mouthflesh }),
+    );
+  });
 
-  const f1Slider = document.querySelector("#f1") as Naybe<HTMLInputElement>;
-  const f2Slider = document.querySelector("#f2") as Naybe<HTMLInputElement>;
-  if (f1Slider && f2Slider) {
-    f1Slider.addEventListener("input", () => {
-      mouthflesh.berth = parseFloat(f1Slider.value);
-      mouthflesh.width = parseFloat(f2Slider.value);
-      moveTongueAndLips(mouthflesh, mouth, flesh);
+  const shine = document.querySelector("#shine") as Assert<HTMLInputElement>;
+  shine.addEventListener("change", () => {
+    document.querySelectorAll("canvas").forEach((element) => {
+      element.style.display = shine.checked ? "block" : "none";
     });
-  } else {
-    if (!f1Slider) {
-      console.warn("no slider named #f1");
-    }
-    if (!f2Slider) {
-      console.warn("no slider named #f2");
-    }
-  }
+  });
+
   return brain;
 };
 
@@ -128,7 +116,10 @@ export const startMouthflesh = (
 ): Brain => {
   const brain = startListeners(now, snail, throat, mouth, flesh, mouthflesh);
 
-  setRestWidth(mouth, mouthflesh);
+  const sinewing = makeSinewing({ throat, mouth, mouthflesh });
+  sinewing.tongue = mouthflesh;
+
+  setRestWidth({ throat, mouth }, sinewing);
   for (let i = 0; i < Mouthbook.length; i++) {
     mouth.width[i]!.now = mouth.width[i]!.goal = mouth.width[i]!.rest;
   }
@@ -208,42 +199,6 @@ const drawAmplitudes = (mouth: Mouth, context: CanvasRenderingContext2D) => {
     labelAmplitude(context, i, (start.x + end.x) / 2, (start.y + end.y) / 2);
   }
   context.globalAlpha = 1;
-};
-
-/**
- * Sets the new rest widths for the given tongue berth and width.
- */
-export const setRestWidth = (
-  mouth: Mouth,
-  { berth, width }: Tongue,
-  doRing = false,
-) => {
-  for (let i = Mouthbook.bodyStart; i < Mouthbook.lipStart; i++) {
-    const t =
-      (1.1 * Math.PI * (berth - i)) /
-      (Mouthbook.bladeStart - Mouthbook.bodyStart);
-    const fixedTongueDiameter = 2 + (width - 2) / 1.5;
-    let curve =
-      (1.5 - fixedTongueDiameter + Settings.mouthflesh.gridOffset) *
-      Math.cos(t);
-    if (i === Mouthbook.bodyStart - 2 || i === Mouthbook.lipStart - 1) {
-      curve *= 0.8;
-    }
-    if (i === Mouthbook.bodyStart || i === Mouthbook.lipStart - 2) {
-      curve *= 0.94;
-    }
-    mouth.width[i].rest = 1.5 - curve;
-  }
-  if (doRing) {
-    for (let i = Mouthbook.lipStart; i < Mouthbook.length; i++) {
-      mouth.width[i].rest = 0.5;
-    }
-  } else {
-    for (let i = Mouthbook.lipStart; i < Mouthbook.length; i++) {
-      /** @todo find what 1.5 should be (it's eyeballed right now) */
-      mouth.width[i].rest = 1.5;
-    }
-  }
 };
 
 const drawTextStraight = (
@@ -652,11 +607,9 @@ export const drawMouthflesh = (being: Being) => {
   );
 };
 
-export const handleMouthfleshTouches = (
-  mouth: Mouth,
-  flesh: Flesh,
-  mouthflesh: Mouthflesh,
-) => {
+export const handleMouthfleshTouches = (being: Being) => {
+  const { flesh, mouthflesh } = being;
+
   // kill dead rine
   if (!mouthflesh.rine?.isDown) {
     mouthflesh.rine = undefined;
@@ -709,90 +662,8 @@ export const handleMouthfleshTouches = (
     const out = fromPoint * 0.5 * (tongueUpperBound() - tongueLowerBound());
     mouthflesh.berth = clamp(berth, tongueMiddle() - out, tongueMiddle() + out);
   }
-  moveTongueAndLips(mouthflesh, mouth, flesh);
-};
 
-export const moveTongueAndLips = (
-  target: Tongue,
-  mouth: Mouth,
-  flesh: Flesh,
-  doRing = false,
-) => {
-  // first, bearing looseness
-
-  setRestWidth(mouth, target, doRing);
-
-  // set goal widths to rest widths
-  for (let i = 0; i < Mouthbook.length; i++) {
-    mouth.width[i]!.goal = mouth.width[i]!.rest;
-  }
-
-  // then, choking tightness
-
-  mouth.sailgoal = Fastenings.sail.rest;
-
-  for (let j = 0; j < flesh.mouserines.length; j++) {
-    const rine = flesh.mouserines[j];
-    if (!rine!.isDown) {
-      continue;
-    }
-
-    gesture(mouth, canvasToTongue(rine!));
-  }
-};
-
-const gesture = (mouth: Mouth, { berth, width }: Tongue) => {
-  if (berth > Mouthbook.noseStart && width < -Settings.mouthflesh.noseOffset) {
-    openNose(mouth);
-  }
-  if (width < -0.85 - Settings.mouthflesh.noseOffset) {
-    // noseworthy rines skip the forthcoming mouthreckoning
-    return;
-  }
-
-  // nudge the width so that `<= 0` iff fully shut
-  const cookedWidth = Math.max(width - 0.3, 0);
-
-  // vocal tract length?
-  const length = 5 + 5 * clamp(1 - (berth - 25) / (Mouthbook.bladeStart - 25));
-  if (berth >= 2 && berth < Mouthbook.length && cookedWidth < 3) {
-    // clicked in mouth hole
-    const wholeBerth = Math.round(berth);
-    for (let i = -Math.ceil(length) - 1; i < length + 1; i++) {
-      if (wholeBerth + i < 0 || Mouthbook.length <= wholeBerth + i) {
-        continue;
-      }
-
-      if (cookedWidth < mouth.width[wholeBerth + i]!.goal) {
-        // reckon farth (in either way) from rinenavel
-        const farth = Math.abs(wholeBerth + i - berth) - 0.5;
-        const goal = weave(
-          cookedWidth,
-          mouth.width[wholeBerth + i]!.goal,
-        )(0.5 * (1 - Math.cos((Math.PI * clamp(farth, 0, length)) / length)));
-        reach(mouth, wholeBerth + i, goal);
-      }
-    }
-  }
-};
-
-export const mouthfleshTools = () => {
-  return {
-    drawMouthflesh,
-    startMouthflesh,
-    makeMouthflesh,
-  };
-};
-
-/** @mut */
-const openNose = (mouth: Mouth) => {
-  mouth.sailgoal = 0.4;
-};
-
-/**
- * @mut
- * @todo type `berth` as `Upto<(typeof Mouthbook)["length"]>`
- */
-const reach = (mouth: Mouth, berth: number, goal: number) => {
-  mouth.width[berth]!.goal = goal;
+  const sinewing = makeSinewing(being);
+  sinewing.tongue = mouthflesh;
+  moveTongueAndLips(being, sinewing);
 };

@@ -1,8 +1,6 @@
-import { handleMouthfleshTouches, type Mouthflesh } from "./mouthflesh";
-import { startSound, type Snail } from "./snail";
-import { type Throat } from "./throat";
+import { handleMouthfleshTouches } from "./mouthflesh";
+import { startSound } from "./snail";
 import { clamp } from "./help/math";
-import type { Mouth } from "./mouth";
 import { makeRinemake, type Rine, type Rineful, type Rinemake } from "./rine";
 import { canvasToTongue } from "./canvas";
 import { makeSongboard, type Songboard } from "./songboard";
@@ -47,38 +45,34 @@ export const makeFlesh = (): Flesh => {
 };
 
 export const startFlesh = (
-  snail: Snail,
-  mouth: Mouth,
-  throat: Throat,
-  flesh: Flesh,
-  mouthflesh: Mouthflesh,
+  being: Being,
   forecontext: CanvasRenderingContext2D,
 ) => {
+  const { flesh } = being;
+
   flesh.isMouseDown = false;
 
   forecontext.canvas.addEventListener("pointerdown", (e) => {
     flesh.isMouseDown = true;
     e.preventDefault();
-    startMouse(snail, mouth, throat, flesh, mouthflesh, forecontext, e);
+    startMouse(being, forecontext, e);
   });
   forecontext.canvas.addEventListener("pointerup", () => {
     flesh.isMouseDown = false;
-    endMouse(mouth, flesh, mouthflesh);
+    endMouse(being);
   });
   forecontext.canvas.addEventListener("pointermove", (e) => {
-    moveMouse(mouth, flesh, mouthflesh, forecontext, e);
+    moveMouse(being, forecontext, e);
   });
 };
 
 const startMouse = (
-  snail: Snail,
-  mouth: Mouth,
-  throat: Throat,
-  flesh: Flesh,
-  mouthflesh: Mouthflesh,
+  being: Being,
   forecontext: CanvasRenderingContext2D,
   e: PointerEvent,
 ) => {
+  const { snail, throat, mouth, flesh } = being;
+
   startSound(snail, throat, mouth, flesh);
 
   const z = {
@@ -89,16 +83,15 @@ const startMouse = (
   const rine = flesh.rinemake(z);
   flesh.rine = rine;
   flesh.mouserines.push(rine);
-  handleMouthfleshTouches(mouth, flesh, mouthflesh);
+  handleMouthfleshTouches(being);
 };
 
 export const moveMouse = (
-  mouth: Mouth,
-  flesh: Flesh,
-  mouthflesh: Mouthflesh,
+  being: Being,
   forecontext: CanvasRenderingContext2D,
   e: PointerEvent,
 ) => {
+  const { flesh } = being;
   if (!flesh.rine || !flesh.rine.isDown) {
     return;
   }
@@ -109,16 +102,18 @@ export const moveMouse = (
   const { berth, width } = canvasToTongue(flesh.rine);
   flesh.rine.berth = berth;
   flesh.rine.width = width;
-  handleMouthfleshTouches(mouth, flesh, mouthflesh);
+  handleMouthfleshTouches(being);
 };
 
-const endMouse = (mouth: Mouth, flesh: Flesh, mouthflesh: Mouthflesh) => {
+const endMouse = (being: Being) => {
+  const { flesh } = being;
+
   if (!flesh.rine || !flesh.rine.isDown) {
     return;
   }
   flesh.rine.isDown = false;
   flesh.rine.time!.end = performance.now() / 1000;
-  handleMouthfleshTouches(mouth, flesh, mouthflesh);
+  handleMouthfleshTouches(being);
 };
 
 export const updateTouches = (being: Being) => {
@@ -138,8 +133,4 @@ export const updateTouches = (being: Being) => {
       }
     }
   }
-};
-
-export const fleshTools = () => {
-  return { startFlesh, makeFlesh, updateTouches };
 };

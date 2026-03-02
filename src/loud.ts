@@ -1,29 +1,47 @@
+import type { Sinewing } from "./brain";
 import type { Maybe, Json, Span } from "./help/type";
 import type { Tongue } from "./rine";
-import { tongueMiddle } from "./settings";
-import type { Loudstaff } from "./tung/staff";
+import { Fastenings } from "./settings";
+import {
+  isBlade,
+  isLip,
+  isNosed,
+  isRinged,
+  isStaved,
+  type Loudstaff,
+} from "./tung/staff";
 
-export interface Loud<S extends Loudstaff = Loudstaff> extends Json {
+export type Loud<S extends Loudstaff = Loudstaff> = Json & {
   staff: S;
 
   /** `undefined` iff `this` is yet to be uttered */
   time: Maybe<Span>;
-}
+};
 
-export const oldMakeLoud = <S extends Loudstaff>(staff: S): Loud<S> => {
+export const loudToSinewing = (staff: Loudstaff): Sinewing => {
   return {
-    staff,
-    time: undefined,
-    toJSON() {
-      return this.staff + " " + JSON.stringify(this.time);
+    lip: {
+      width: isLip(staff)
+        ? isRinged(staff)
+          ? Fastenings.lip.ring
+          : 0
+        : Fastenings.lip.unring,
+    },
+    tongue: bleh(staff),
+    sail: {
+      width: isNosed(staff) ? Fastenings.sail.nosebear : Fastenings.sail.rest,
+    },
+    lung: {
+      strength: +isStaved(staff),
     },
   };
 };
 
-export const loudToTongue = (staff: Loudstaff): Tongue => {
+const bleh = (staff: Loudstaff): Tongue => {
+  if (isBlade(staff)) {
+    return { berth: 32, width: 1.5 };
+  }
   switch (staff) {
-    case "a":
-      return { berth: 13, width: 2.5 };
     case "e":
       return { berth: 26, width: 3 };
     case "i":
@@ -32,7 +50,9 @@ export const loudToTongue = (staff: Loudstaff): Tongue => {
       return { berth: 16, width: 2 };
     case "u":
       return { berth: 20.5, width: 2 };
+    case "a":
     default:
-      return { berth: tongueMiddle(), width: 2 };
+      return { berth: 13, width: 2.5 };
+    // return { berth: tongueMiddle(), width: 2 };
   }
 };

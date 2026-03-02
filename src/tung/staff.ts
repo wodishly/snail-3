@@ -62,7 +62,7 @@ const everyother = <S extends string>(s: S) => {
   return t as Assert<EveryOther<S>>;
 };
 
-type Joyn<Ss extends string[], J extends string = ""> = Ss extends [
+export type Joyn<Ss extends string[], J extends string = ""> = Ss extends [
   infer F extends string,
   ...infer R extends string[],
 ]
@@ -89,7 +89,7 @@ type Allstaff =
   | StaffsOf<Treem<typeof clip>>;
 
 // prettier-ignore
-const stop =  `pb    td  ʈɖcɟkɡqɢ  ʔ ` as const;
+const stop =  `pb    td  ʈɖcɟkgqɢ  ʔ ` as const;
 // prettier-ignore
 const hiss =  `ɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦ` as const;
 // prettier-ignore
@@ -99,7 +99,7 @@ const ell =   `    ɬɮ l     ʎ ʟ      ` as const;
 // prettier-ignore
 const arr =   `       r   ɽ     ʀ    ` as const;
 // prettier-ignore
-const glide = `   ʋ   ɹ   ɻ j ɰ      ` as const;
+const glide = ` w ʋ   ɹ   ɻ j ɰ      ` as const;
 
 const clip = `
 iy ɨʉ ɯu
@@ -108,6 +108,8 @@ eø ə  ɤo
 ɛœ    ʌɔ
 æɶ a  ɑɒ
 ` as const;
+
+export const unstaff = () => "" as Loudstaff;
 
 const book = "abcdefghijklmnopqrstuvwxyz" as const;
 
@@ -122,7 +124,15 @@ export type Unbookstaff = Exclude<Allstaff, Bookstaff>;
 export type Loudstaff = Bear | Choke;
 
 export const isLoudstaff = (x: string): x is Loudstaff => {
-  return x.length === 1;
+  return [
+    ...stop,
+    ...hiss,
+    ...nose,
+    ...ell,
+    ...arr,
+    ...glide,
+    ...clip,
+  ].includes(x as any);
 };
 
 export type Bear = Smooth | ThroatMark;
@@ -174,31 +184,10 @@ export const isStaved = (staff: Loudstaff): staff is Stave => {
   );
 };
 
-// export const _isStaved = <S extends Loudstaff>(staff: S) => {
-//   return or(
-//     faynd(staff, treem(clip)),
-//     faynd(staff, treem(everyother(stop))),
-//     faynd(staff, treem(everyother(hiss))),
-//     faynd(staff, treem(everyother(nose))),
-//     faynd(staff, treem(everyother(ell))),
-//     faynd(staff, treem(everyother(arr))),
-//     faynd(staff, treem(everyother(glide))),
-//   );
-// };
-//
-// export const _ = <T, U extends T, V extends T>(
-//   f: (_arg: T) => _arg is U,
-//   arg: V,
-// ) => {
-//   return f(arg as unknown as Assert<T>) as Assert<V extends U ? true : false>;
-// };
-//
-// const x = _(isStaved, "v");
-
 export type Spread = "h";
 export type Clench = never;
 
-export type Choke = Thru | Mouth;
+export type Choke = Thru | MouthMark;
 
 export type Thru = Side | Step | Strong | StaffsOf<"iuyeøoæa">;
 export const isThru = (staff: Loudstaff): staff is Thru => {
@@ -225,15 +214,23 @@ export const isStrong = (staff: Loudstaff): staff is Strong => {
   return faynd(staff, treem("fvsz"));
 };
 
-export type Mouth = Lip | Blade | Body | Root;
+export type MouthMark = Lip | Blade | Body | Root;
 
 export type Lip = Ring | StaffsOf<"pbfvm">;
+export const isLip = (staff: Loudstaff): staff is Lip => {
+  return faynd(staff, "pbfvm") || isRinged(staff);
+};
+
 export type Ring = StaffsOf<"wyuøo">;
 export const isRinged = (staff: Loudstaff): staff is Ring => {
   return faynd(staff, "wyuøo");
 };
 
 export type Blade = Far | Wide;
+export const isBlade = (staff: Loudstaff): staff is Blade => {
+  return faynd(staff, "tdsznlr");
+};
+
 export type Far = StaffsOf<"tdsznlr">;
 export type Wide = never;
 

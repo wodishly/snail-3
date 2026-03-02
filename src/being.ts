@@ -27,10 +27,7 @@ export const become = (now: number = 0): Being => {
 
   const { backcontext, forecontext } = getContexts();
 
-  startFlesh(snail, mouth, throat, flesh, mouthflesh, forecontext);
-  startMouth(mouth);
-
-  return {
+  const being = {
     now,
     snail,
     throat,
@@ -50,4 +47,9 @@ export const become = (now: number = 0): Being => {
     forecontext,
     backcontext,
   };
+
+  startFlesh(being, forecontext);
+  startMouth(mouth);
+
+  return being;
 };
